@@ -3,7 +3,7 @@ import fs from "fs";
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
-const ETH_ADDRESS = "0xc858Db9Fd379d21B49B2216e8bFC6588bE3354D7";
+const ETH_ADDRESS = "0x829C0F59FF906fd617F84f6790AF18f440D0C108";
 const CSV_FILE = "rewards.csv";
 
 function formatDate(date) {
@@ -67,6 +67,13 @@ async function getPriceAt(timestamp) {
   const date = new Date(timestamp * 1000);
   const dateString = formatDateForCoinGecko(date);
   
+  // Debug API key
+  console.log(`API Key present: ${COINGECKO_API_KEY ? 'Yes' : 'No'}`);
+  if (COINGECKO_API_KEY) {
+    console.log(`API Key length: ${COINGECKO_API_KEY.length}`);
+    console.log(`API Key starts with: ${COINGECKO_API_KEY.substring(0, 8)}...`);
+  }
+  
   // Demo (Beta) tier uses the regular API endpoint with x-cg-demo-api-key header
   const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   const headers = {
@@ -75,10 +82,12 @@ async function getPriceAt(timestamp) {
   
   // Add Demo API key header if available
   if (COINGECKO_API_KEY) {
-    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY;
+    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY.trim(); // Remove any whitespace
   }
   
   console.log(`Fetching price for ${dateString}...`);
+  console.log(`Headers:`, JSON.stringify(headers, null, 2));
+  
   const res = await fetch(url, { headers });
   
   if (!res.ok) {
