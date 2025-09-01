@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Track ETH balance and save to CSV",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node index.js"
   },
