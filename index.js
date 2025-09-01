@@ -3,7 +3,7 @@ import fs from "fs";
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
-const ETH_ADDRESS = "0xc858Db9Fd379d21B49B2216e8bFC6588bE3354D7";
+const ETH_ADDRESS = "0x3A647735800601dFCa9a9709DE9122EB7b311E64";
 const CSV_FILE = "rewards.csv";
 
 function formatDate(date) {
@@ -67,6 +67,15 @@ async function getPriceAt(timestamp) {
   const date = new Date(timestamp * 1000);
   const dateString = formatDateForCoinGecko(date);
   
+  // Check if date is within the last 365 days (Demo plan limitation)
+  const now = new Date();
+  const oneYearAgo = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000));
+  
+  if (date < oneYearAgo) {
+    console.log(`⚠️  Skipping ${dateString} - Demo plan only supports last 365 days of data`);
+    return null;
+  }
+  
   // Demo (Beta) tier uses query parameter, not header
   let url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   
@@ -90,6 +99,12 @@ async function getPriceAt(timestamp) {
     } else if (res.status === 429) {
       console.log("Rate limited, waiting 60 seconds...");
       await new Promise(resolve => setTimeout(resolve, 60000));
+    } else if (res.status === 400) {
+      // This is likely the 365-day limitation error
+      const errorData = await res.json().catch(() => null);
+      if (errorData && errorData.error && errorData.error.status.error_code === 10012) {
+        console.log(`⚠️  Date ${dateString} is outside Demo plan's 365-day limit`);
+      }
     }
     return null;
   }
