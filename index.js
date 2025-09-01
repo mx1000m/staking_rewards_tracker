@@ -17,13 +17,40 @@ async function getTransactions() {
   return data.result.filter(tx => tx.to.toLowerCase() === ETH_ADDRESS.toLowerCase());
 }
 
-async function getPriceAt(timestamp) {
-  const date = new Date(timestamp * 1000);
-  const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}&localization=false&x_cg_pro_api_key=${COINGECKO_API_KEY}`;
-  const res = await fetch(url);
+
+
+
+
+async function getPriceAt(date) {
+  const url = `https://pro-api.coingecko.com/api/v3/coins/ethereum/history?date=${date}&localization=false`;
+
+  const res = await fetch(url, {
+    headers: {
+      accept: "application/json",
+      "x-cg-pro-api-key": process.env.COINGECKO_API_KEY,
+    },
+  });
+
+  if (!res.ok) {
+    throw new Error(`CoinGecko API error: ${res.status} ${res.statusText}`);
+  }
+
   const data = await res.json();
+
+  if (!data.market_data || !data.market_data.current_price) {
+    console.error("DEBUG CoinGecko response:", JSON.stringify(data, null, 2));
+    throw new Error("Missing market_data in CoinGecko response");
+  }
+
   return data.market_data.current_price.eur;
 }
+
+
+
+
+
+
+
 
 async function main() {
   const txs = await getTransactions();
