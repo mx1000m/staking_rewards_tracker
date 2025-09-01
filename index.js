@@ -3,7 +3,7 @@ import fs from "fs";
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
-const ETH_ADDRESS = "0x829C0F59FF906fd617F84f6790AF18f440D0C108";
+const ETH_ADDRESS = "0xc858Db9Fd379d21B49B2216e8bFC6588bE3354D7";
 const CSV_FILE = "rewards.csv";
 
 function formatDate(date) {
