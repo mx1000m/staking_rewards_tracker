@@ -6,20 +6,48 @@ on:
   workflow_dispatch: # allow manual run
 
 jobs:
-  build:
+  track-rewards:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v3
-      - name: Setup Node
-        uses: actions/setup-node@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 18
-      - run: npm install node-fetch
-      - run: node index.js
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Download existing CSV (if exists)
+        uses: actions/download-artifact@v4
+        with:
+          name: rewards-csv
+          path: .
+        continue-on-error: true
+        
+      - name: Run ETH tracker
+        run: node index.js
         env:
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
-      - uses: actions/upload-artifact@v4
+          
+      - name: Upload updated CSV
+        uses: actions/upload-artifact@v4
         with:
           name: rewards-csv
           path: rewards.csv
+          retention-days: 400 # Keep for over a year
+          
+      - name: Display CSV contents
+        run: |
+          echo "📊 Current rewards data:"
+          if [ -f rewards.csv ]; then
+            wc -l rewards.csv
+            echo "Recent entries:"
+            tail -10 rewards.csv
+          else
+            echo "No CSV file found"
+          fi
