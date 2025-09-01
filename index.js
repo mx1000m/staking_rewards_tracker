@@ -3,7 +3,7 @@ import fs from "fs";
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
-const ETH_ADDRESS = "0x829C0F59FF906fd617F84f6790AF18f440D0C108";
+const ETH_ADDRESS = "0xc858Db9Fd379d21B49B2216e8bFC6588bE3354D7";
 const CSV_FILE = "rewards.csv";
 
 function formatDate(date) {
@@ -67,51 +67,27 @@ async function getPriceAt(timestamp) {
   const date = new Date(timestamp * 1000);
   const dateString = formatDateForCoinGecko(date);
   
-  // Debug API key
-  console.log(`API Key present: ${COINGECKO_API_KEY ? 'Yes' : 'No'}`);
+  // Demo (Beta) tier uses query parameter, not header
+  let url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
+  
+  // Add Demo API key as query parameter if available
   if (COINGECKO_API_KEY) {
-    console.log(`API Key length: ${COINGECKO_API_KEY.length}`);
-    console.log(`API Key starts with: ${COINGECKO_API_KEY.substring(0, 8)}...`);
+    url += `&x_cg_demo_api_key=${COINGECKO_API_KEY.trim()}`;
   }
   
-  // Demo (Beta) tier uses the regular API endpoint with x-cg-demo-api-key header
-  const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   const headers = {
     accept: "application/json"
   };
   
-  // Add Demo API key header if available
-  if (COINGECKO_API_KEY) {
-    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY.trim(); // Remove any whitespace
-  }
-  
   console.log(`Fetching price for ${dateString}...`);
-  console.log(`Headers:`, JSON.stringify(headers, null, 2));
-  
   const res = await fetch(url, { headers });
   
   if (!res.ok) {
     console.error(`CoinGecko API error for date ${dateString}: ${res.status} ${res.statusText}`);
     
-    // For Demo tier, 401 usually means invalid API key or quota exceeded
     if (res.status === 401) {
       console.error("Authentication failed - check your Demo API key");
-      // Try without API key as fallback
-      console.log("Trying without API key as fallback...");
-      const fallbackRes = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`, {
-        headers: { accept: "application/json" }
-      });
-      
-      if (fallbackRes.ok) {
-        const fallbackData = await fallbackRes.json();
-        if (fallbackData.market_data && fallbackData.market_data.current_price && fallbackData.market_data.current_price.eur) {
-          console.log("Fallback successful");
-          return fallbackData.market_data.current_price.eur;
-        }
-      }
-    }
-    
-    if (res.status === 429) {
+    } else if (res.status === 429) {
       console.log("Rate limited, waiting 60 seconds...");
       await new Promise(resolve => setTimeout(resolve, 60000));
     }
