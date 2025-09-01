@@ -3,7 +3,7 @@ import fs from "fs";
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
-const ETH_ADDRESS = "0xc858Db9Fd379d21B49B2216e8bFC6588bE3354D7";
+const ETH_ADDRESS = "0x829C0F59FF906fd617F84f6790AF18f440D0C108";
 const CSV_FILE = "rewards.csv";
 
 function formatDate(date) {
@@ -67,23 +67,41 @@ async function getPriceAt(timestamp) {
   const date = new Date(timestamp * 1000);
   const dateString = formatDateForCoinGecko(date);
   
-  // Use free API endpoint instead of pro
+  // Demo (Beta) tier uses the regular API endpoint with x-cg-demo-api-key header
   const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
-  
   const headers = {
     accept: "application/json"
   };
   
-  // Only add API key header if it exists (for free tier, it might not be needed)
+  // Add Demo API key header if available
   if (COINGECKO_API_KEY) {
-    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY; // Free tier uses x-cg-demo-api-key
+    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY;
   }
   
+  console.log(`Fetching price for ${dateString}...`);
   const res = await fetch(url, { headers });
   
   if (!res.ok) {
     console.error(`CoinGecko API error for date ${dateString}: ${res.status} ${res.statusText}`);
-    // If we get rate limited or error, wait and return null to skip this transaction
+    
+    // For Demo tier, 401 usually means invalid API key or quota exceeded
+    if (res.status === 401) {
+      console.error("Authentication failed - check your Demo API key");
+      // Try without API key as fallback
+      console.log("Trying without API key as fallback...");
+      const fallbackRes = await fetch(`https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`, {
+        headers: { accept: "application/json" }
+      });
+      
+      if (fallbackRes.ok) {
+        const fallbackData = await fallbackRes.json();
+        if (fallbackData.market_data && fallbackData.market_data.current_price && fallbackData.market_data.current_price.eur) {
+          console.log("Fallback successful");
+          return fallbackData.market_data.current_price.eur;
+        }
+      }
+    }
+    
     if (res.status === 429) {
       console.log("Rate limited, waiting 60 seconds...");
       await new Promise(resolve => setTimeout(resolve, 60000));
