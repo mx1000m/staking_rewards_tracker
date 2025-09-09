@@ -115,8 +115,8 @@ async function main() {
     if (fs.existsSync(CSV_FILE)) {
       const content = fs.readFileSync(CSV_FILE, "utf8").split("\n").slice(1); // skip header
       for (const line of content) {
-        if (line.trim().length > 0) {
-          existingRows.add(line.split(",")[0]); // store date as unique key
+        if (line.trim().length > 0 && !line.includes("DAILY TOTAL")) {
+          existingRows.add(line.split(",")[0].replace(/"/g, "")); // store date as unique key, remove quotes
         }
       }
       console.log(`Found ${existingRows.size} existing entries`);
@@ -124,12 +124,17 @@ async function main() {
     
     let rows = [];
     let processedCount = 0;
+    const TAX_RATE = 0.24; // 24% tax rate
+    
+    // Group transactions by date for daily summaries
+    let dailyTotals = new Map();
     
     for (const tx of txs) {
       const amountEth = parseFloat(tx.value) / 1e18;
       const timestamp = parseInt(tx.timeStamp);
       const date = new Date(timestamp * 1000);
       const dateFormatted = formatDate(date);
+      const dateOnly = dateFormatted.split(' ')[0]; // Get just the date part (DD/MM/YYYY)
       
       if (!existingRows.has(dateFormatted)) {
         console.log(`Processing transaction from ${dateFormatted}...`);
@@ -141,14 +146,35 @@ async function main() {
           continue;
         }
         
-        const totalValue = (amountEth * priceEur).toFixed(2);
-        // Ensure no commas in the data that could break CSV format
-        const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValue}"`;
+        const totalValueEur = amountEth * priceEur;
+        const ethForTaxes = amountEth * TAX_RATE;
+        const taxesInEur = totalValueEur * TAX_RATE;
+        
+        // Create individual transaction row
+        const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValueEur.toFixed(2)}","24%","${ethForTaxes.toFixed(6)}","${taxesInEur.toFixed(2)}"`;
         rows.push(csvRow);
+        
+        // Add to daily totals
+        if (!dailyTotals.has(dateOnly)) {
+          dailyTotals.set(dateOnly, {
+            totalEth: 0,
+            totalValueEur: 0,
+            totalEthForTaxes: 0,
+            totalTaxesEur: 0,
+            count: 0
+          });
+        }
+        
+        const dayTotal = dailyTotals.get(dateOnly);
+        dayTotal.totalEth += amountEth;
+        dayTotal.totalValueEur += totalValueEur;
+        dayTotal.totalEthForTaxes += ethForTaxes;
+        dayTotal.totalTaxesEur += taxesInEur;
+        dayTotal.count += 1;
         
         processedCount++;
         
-        // Add delay between API calls to respect rate limits (free tier allows ~10-50 calls per minute)
+        // Add delay between API calls to respect rate limits
         if (processedCount % 5 === 0) {
           console.log("Pausing to respect rate limits...");
           await new Promise(resolve => setTimeout(resolve, 12000)); // 12 second delay
@@ -156,14 +182,40 @@ async function main() {
       }
     }
     
-    // Create CSV file with header if it doesn't exist
+    // Create CSV file with new header structure if it doesn't exist
     if (!fs.existsSync(CSV_FILE)) {
-      fs.writeFileSync(CSV_FILE, "Date,Amount ETH,ETH Price (EUR),Value (EUR)\n");
+      fs.writeFileSync(CSV_FILE, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO\n");
     }
     
     if (rows.length > 0) {
-      fs.appendFileSync(CSV_FILE, rows.join("\n") + "\n");
-      console.log(`✅ Added ${rows.length} new transactions`);
+      // Sort rows by date and add daily summary rows
+      const sortedRows = [];
+      const dateGroups = new Map();
+      
+      // Group rows by date
+      for (const row of rows) {
+        const dateOnly = row.split('","')[0].replace('"', '').split(' ')[0];
+        if (!dateGroups.has(dateOnly)) {
+          dateGroups.set(dateOnly, []);
+        }
+        dateGroups.get(dateOnly).push(row);
+      }
+      
+      // Add rows and daily summaries
+      for (const [dateOnly, dateRows] of dateGroups) {
+        // Add all transactions for this date
+        sortedRows.push(...dateRows);
+        
+        // Add daily summary row if there are totals for this date
+        if (dailyTotals.has(dateOnly)) {
+          const dayTotal = dailyTotals.get(dateOnly);
+          const summaryRow = `"${dateOnly} - DAILY TOTAL","${dayTotal.totalEth.toFixed(6)}","","${dayTotal.totalValueEur.toFixed(2)}","24%","${dayTotal.totalEthForTaxes.toFixed(6)}","${dayTotal.totalTaxesEur.toFixed(2)}"`;
+          sortedRows.push(summaryRow);
+        }
+      }
+      
+      fs.appendFileSync(CSV_FILE, sortedRows.join("\n") + "\n");
+      console.log(`✅ Added ${rows.length} new transactions with daily summaries`);
     } else {
       console.log("ℹ️ No new transactions found");
     }
