@@ -9,9 +9,14 @@ jobs:
   track-rewards:
     runs-on: ubuntu-latest
     
+    permissions:
+      contents: write  # Allow the workflow to write to repository
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -42,8 +47,8 @@ jobs:
           
       - name: Commit and push changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
           git add rewards.csv
           
           # Only commit if there are changes
@@ -51,5 +56,5 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update staking rewards data - $(date '+%Y-%m-%d %H:%M:%S')"
-            git push
+            git push origin main
           fi
