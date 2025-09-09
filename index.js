@@ -67,28 +67,18 @@ async function getPriceAt(timestamp) {
   const date = new Date(timestamp * 1000);
   const dateString = formatDateForCoinGecko(date);
   
-  // Check if date is within the last 365 days (Demo plan limitation)
-  const now = new Date();
-  const oneYearAgo = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000));
-  
-  if (date < oneYearAgo) {
-    console.log(`⚠️  Skipping ${dateString} - Demo plan only supports last 365 days of data`);
-    return null;
-  }
-  
-  // Demo (Beta) tier uses query parameter, not header
-  let url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
-  
-  // Add Demo API key as query parameter if available
-  if (COINGECKO_API_KEY) {
-    url += `&x_cg_demo_api_key=${COINGECKO_API_KEY.trim()}`;
-  }
+  // Use free API endpoint instead of pro
+  const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   
   const headers = {
     accept: "application/json"
   };
   
-  console.log(`Fetching price for ${dateString}...`);
+  // Only add API key header if it exists (for free tier, it might not be needed)
+  if (COINGECKO_API_KEY) {
+    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY; // Free tier uses x-cg-demo-api-key
+  }
+  
   const res = await fetch(url, { headers });
   
   if (!res.ok) {
@@ -99,12 +89,6 @@ async function getPriceAt(timestamp) {
     } else if (res.status === 429) {
       console.log("Rate limited, waiting 60 seconds...");
       await new Promise(resolve => setTimeout(resolve, 60000));
-    } else if (res.status === 400) {
-      // This is likely the 365-day limitation error
-      const errorData = await res.json().catch(() => null);
-      if (errorData && errorData.error && errorData.error.status.error_code === 10012) {
-        console.log(`⚠️  Date ${dateString} is outside Demo plan's 365-day limit`);
-      }
     }
     return null;
   }
@@ -158,7 +142,9 @@ async function main() {
         }
         
         const totalValue = (amountEth * priceEur).toFixed(2);
-        rows.push(`${dateFormatted},${amountEth.toFixed(6)},${priceEur.toFixed(2)},${totalValue}`);
+        // Ensure no commas in the data that could break CSV format
+        const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValue}"`;
+        rows.push(csvRow);
         
         processedCount++;
         
