@@ -26,7 +26,7 @@ jobs:
         with:
           name: rewards-csv
           path: .
-        continue-on-error: true
+        continue-on-error: true # Don't fail if artifact doesn't exist yet
         
       - name: Run ETH tracker
         run: node index.js
@@ -39,13 +39,15 @@ jobs:
         with:
           name: rewards-csv
           path: rewards.csv
-          retention-days: 400 # Keep for over a year
+          retention-days: 90 # Max allowed by your repository settings
           
       - name: Display CSV contents
         run: |
           echo "📊 Current rewards data:"
           if [ -f rewards.csv ]; then
-            wc -l rewards.csv
+            echo "Total lines: $(wc -l < rewards.csv)"
+            echo "File size: $(ls -lh rewards.csv | awk '{print $5}')"
+            echo ""
             echo "Recent entries:"
             tail -10 rewards.csv
           else
