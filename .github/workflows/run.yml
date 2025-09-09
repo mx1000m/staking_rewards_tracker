@@ -2,7 +2,7 @@ name: ETH Tracker
 
 on:
   schedule:
-    - cron: "0 10 * * 1" # Runs every Monday 10:00 UTC
+    - cron: "59 21 * * *" # Runs daily at 21:59 UTC (23:59 Zagreb time)
   workflow_dispatch: # allow manual run
 
 jobs:
