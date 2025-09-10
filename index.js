@@ -110,16 +110,29 @@ async function main() {
     const txs = await getTransactions();
     console.log(`Found ${txs.length} incoming transactions`);
     
-    // Read existing CSV rows (if file exists)
-    let existingRows = new Set();
+    // Read existing transaction hashes (if file exists)
+    let existingTxHashes = new Set();
+    let existingDailyTotals = new Set();
+    
     if (fs.existsSync(CSV_FILE)) {
       const content = fs.readFileSync(CSV_FILE, "utf8").split("\n").slice(1); // skip header
       for (const line of content) {
-        if (line.trim().length > 0 && !line.includes("DAILY TOTAL")) {
-          existingRows.add(line.split(",")[0].replace(/"/g, "")); // store date as unique key, remove quotes
+        if (line.trim().length > 0) {
+          const columns = line.split('","');
+          if (columns.length >= 8) { // Make sure we have the hash column
+            const txHash = columns[7]?.replace(/"/g, ''); // Remove quotes from hash
+            const dateField = columns[0]?.replace(/"/g, '');
+            
+            if (dateField && dateField.includes("DAILY TOTAL")) {
+              existingDailyTotals.add(dateField.split(' - ')[0]); // Store date part only
+            } else if (txHash && txHash !== 'Transaction Hash') { // Skip header
+              existingTxHashes.add(txHash);
+            }
+          }
         }
       }
-      console.log(`Found ${existingRows.size} existing entries`);
+      console.log(`Found ${existingTxHashes.size} existing transaction hashes`);
+      console.log(`Found ${existingDailyTotals.size} existing daily totals`);
     }
     
     let rows = [];
@@ -130,61 +143,64 @@ async function main() {
     let dailyTotals = new Map();
     
     for (const tx of txs) {
+      // Skip if we already processed this transaction hash
+      if (existingTxHashes.has(tx.hash)) {
+        continue;
+      }
+      
       const amountEth = parseFloat(tx.value) / 1e18;
       const timestamp = parseInt(tx.timeStamp);
       const date = new Date(timestamp * 1000);
       const dateFormatted = formatDate(date);
       const dateOnly = dateFormatted.split(' ')[0]; // Get just the date part (DD/MM/YYYY)
       
-      if (!existingRows.has(dateFormatted)) {
-        console.log(`Processing transaction from ${dateFormatted}...`);
-        
-        const priceEur = await getPriceAt(timestamp);
-        
-        if (priceEur === null) {
-          console.log(`Skipping transaction from ${dateFormatted} due to price fetch error`);
-          continue;
-        }
-        
-        const totalValueEur = amountEth * priceEur;
-        const ethForTaxes = amountEth * TAX_RATE;
-        const taxesInEur = totalValueEur * TAX_RATE;
-        
-        // Create individual transaction row
-        const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValueEur.toFixed(2)}","24%","${ethForTaxes.toFixed(6)}","${taxesInEur.toFixed(2)}"`;
-        rows.push(csvRow);
-        
-        // Add to daily totals
-        if (!dailyTotals.has(dateOnly)) {
-          dailyTotals.set(dateOnly, {
-            totalEth: 0,
-            totalValueEur: 0,
-            totalEthForTaxes: 0,
-            totalTaxesEur: 0,
-            count: 0
-          });
-        }
-        
-        const dayTotal = dailyTotals.get(dateOnly);
-        dayTotal.totalEth += amountEth;
-        dayTotal.totalValueEur += totalValueEur;
-        dayTotal.totalEthForTaxes += ethForTaxes;
-        dayTotal.totalTaxesEur += taxesInEur;
-        dayTotal.count += 1;
-        
-        processedCount++;
-        
-        // Add delay between API calls to respect rate limits
-        if (processedCount % 5 === 0) {
-          console.log("Pausing to respect rate limits...");
-          await new Promise(resolve => setTimeout(resolve, 12000)); // 12 second delay
-        }
+      console.log(`Processing new transaction ${tx.hash} from ${dateFormatted}...`);
+      
+      const priceEur = await getPriceAt(timestamp);
+      
+      if (priceEur === null) {
+        console.log(`Skipping transaction ${tx.hash} from ${dateFormatted} due to price fetch error`);
+        continue;
+      }
+      
+      const totalValueEur = amountEth * priceEur;
+      const ethForTaxes = amountEth * TAX_RATE;
+      const taxesInEur = totalValueEur * TAX_RATE;
+      
+      // Create individual transaction row with hash
+      const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValueEur.toFixed(2)}","24%","${ethForTaxes.toFixed(6)}","${taxesInEur.toFixed(2)}","${tx.hash}"`;
+      rows.push(csvRow);
+      
+      // Add to daily totals
+      if (!dailyTotals.has(dateOnly)) {
+        dailyTotals.set(dateOnly, {
+          totalEth: 0,
+          totalValueEur: 0,
+          totalEthForTaxes: 0,
+          totalTaxesEur: 0,
+          count: 0
+        });
+      }
+      
+      const dayTotal = dailyTotals.get(dateOnly);
+      dayTotal.totalEth += amountEth;
+      dayTotal.totalValueEur += totalValueEur;
+      dayTotal.totalEthForTaxes += ethForTaxes;
+      dayTotal.totalTaxesEur += taxesInEur;
+      dayTotal.count += 1;
+      
+      processedCount++;
+      
+      // Add delay between API calls to respect rate limits
+      if (processedCount % 5 === 0) {
+        console.log("Pausing to respect rate limits...");
+        await new Promise(resolve => setTimeout(resolve, 12000)); // 12 second delay
       }
     }
     
     // Create CSV file with new header structure if it doesn't exist
     if (!fs.existsSync(CSV_FILE)) {
-      fs.writeFileSync(CSV_FILE, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO\n");
+      fs.writeFileSync(CSV_FILE, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash\n");
     }
     
     if (rows.length > 0) {
@@ -201,15 +217,15 @@ async function main() {
         dateGroups.get(dateOnly).push(row);
       }
       
-      // Add rows and daily summaries
+      // Add rows and daily summaries (only for dates that don't already have them)
       for (const [dateOnly, dateRows] of dateGroups) {
         // Add all transactions for this date
         sortedRows.push(...dateRows);
         
-        // Add daily summary row if there are totals for this date
-        if (dailyTotals.has(dateOnly)) {
+        // Add daily summary row only if we don't already have one for this date
+        if (dailyTotals.has(dateOnly) && !existingDailyTotals.has(dateOnly)) {
           const dayTotal = dailyTotals.get(dateOnly);
-          const summaryRow = `"${dateOnly} - DAILY TOTAL","${dayTotal.totalEth.toFixed(6)}","","${dayTotal.totalValueEur.toFixed(2)}","24%","${dayTotal.totalEthForTaxes.toFixed(6)}","${dayTotal.totalTaxesEur.toFixed(2)}"`;
+          const summaryRow = `"${dateOnly} - DAILY TOTAL","${dayTotal.totalEth.toFixed(6)}","","${dayTotal.totalValueEur.toFixed(2)}","24%","${dayTotal.totalEthForTaxes.toFixed(6)}","${dayTotal.totalTaxesEur.toFixed(2)}",""`;
           sortedRows.push(summaryRow);
         }
       }
@@ -221,8 +237,8 @@ async function main() {
     }
     
     // Log summary
-    const totalRows = existingRows.size + rows.length;
-    console.log(`📊 Total entries in CSV: ${totalRows}`);
+    const totalProcessed = existingTxHashes.size + rows.length;
+    console.log(`📊 Total transactions processed: ${totalProcessed}`);
     
   } catch (error) {
     console.error("Error in main function:", error);
