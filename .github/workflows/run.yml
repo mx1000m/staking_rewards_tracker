@@ -1,22 +1,18 @@
-name: ETH Tracker
-
+name: Multi-Node ETH Tracker
 on:
   schedule:
-    - cron: "59 21 * * *" # Runs daily at 21:59 UTC (23:59 Zagreb time)
-  workflow_dispatch: # allow manual run
+    - cron: "59 21 * * *" # Fixed the cron syntax
+  workflow_dispatch:
 
 jobs:
   track-rewards:
     runs-on: ubuntu-latest
-    
     permissions:
-      contents: write  # Allow the workflow to write to repository
+      contents: write
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -26,35 +22,35 @@ jobs:
       - name: Install dependencies
         run: npm install
         
-      - name: Run ETH tracker
+      - name: Run multi-node ETH tracker
         run: node index.js
         env:
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
           
-      - name: Display CSV contents
+      - name: Display results
         run: |
-          echo "📊 Current rewards data:"
-          if [ -f rewards.csv ]; then
-            echo "Total lines: $(wc -l < rewards.csv)"
-            echo "File size: $(ls -lh rewards.csv | awk '{print $5}')"
-            echo ""
-            echo "Last 10 entries:"
-            tail -10 rewards.csv
-          else
-            echo "No CSV file found"
-          fi
+          echo "📊 Node tracking results:"
+          for file in rewards_node*.csv combined_daily_report.csv; do
+            if [ -f "$file" ]; then
+              echo "=== $file ==="
+              echo "Lines: $(wc -l < "$file")"
+              echo "Size: $(ls -lh "$file" | awk '{print $5}')"
+              echo "Last 5 entries:"
+              tail -5 "$file"
+              echo ""
+            fi
+          done
           
       - name: Commit and push changes
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git add rewards.csv
+          git add rewards_node*.csv combined_daily_report.csv dashboard.html
           
-          # Only commit if there are changes
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "Update staking rewards data - $(date '+%Y-%m-%d %H:%M:%S')"
+            git commit -m "Update multi-node staking rewards - $(date '+%Y-%m-%d %H:%M:%S')"
             git push origin main
           fi
