@@ -55,8 +55,8 @@ jobs:
           echo "Files in directory:"
           ls -la *.csv 2>/dev/null || echo "No CSV files found"
           
-          # Add only files that exist
-          git add rewards_node*.csv combined_daily_report.csv 2>/dev/null || true
+          # Add only files that exist (removed dashboard.html since it doesn't exist)
+          git add rewards_node*.csv combined_daily_report.csv
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
