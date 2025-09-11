@@ -30,14 +30,37 @@ function formatDateForCoinGecko(date) {
   return `${day}-${month}-${year}`;
 }
 
-async function getTransactions(ethAddress) {
+function getDateOnly(date) {
+  // Get date in DD/MM/YYYY format (Zagreb timezone)
+  return date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" });
+}
+
+function isToday(timestamp) {
+  const txDate = new Date(timestamp * 1000);
+  const today = new Date();
+  
+  // Get both dates in Zagreb timezone and compare only the date part
+  const txDateOnly = getDateOnly(txDate);
+  const todayOnly = getDateOnly(today);
+  
+  return txDateOnly === todayOnly;
+}
+
+async function getTodaysTransactions(ethAddress) {
+  console.log(`Getting today's transactions for ${ethAddress}...`);
+  
   // Get both regular and internal transactions
   const [regularTxs, internalTxs] = await Promise.all([
     getRegularTransactions(ethAddress),
     getInternalTransactions(ethAddress)
   ]);
   
-  return [...regularTxs, ...internalTxs].sort((a, b) => parseInt(a.timeStamp) - parseInt(b.timeStamp));
+  // Combine and filter for today's transactions only
+  const allTxs = [...regularTxs, ...internalTxs];
+  const todaysTxs = allTxs.filter(tx => isToday(parseInt(tx.timeStamp)));
+  
+  // Sort by timestamp
+  return todaysTxs.sort((a, b) => parseInt(a.timeStamp) - parseInt(b.timeStamp));
 }
 
 async function getRegularTransactions(ethAddress) {
@@ -75,192 +98,182 @@ async function getInternalTransactions(ethAddress) {
   );
 }
 
-async function getPriceAt(timestamp) {
-  const date = new Date(timestamp * 1000);
-  const dateString = formatDateForCoinGecko(date);
-  
-  // Use free API endpoint instead of pro
-  const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
+async function getCurrentPrice() {
+  // Get current ETH price in EUR
+  const url = `https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur`;
   
   const headers = {
     accept: "application/json"
   };
   
-  // Only add API key header if it exists (for free tier, it might not be needed)
+  // Only add API key header if it exists
   if (COINGECKO_API_KEY) {
-    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY; // Free tier uses x-cg-demo-api-key
+    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY;
   }
   
   const res = await fetch(url, { headers });
   
   if (!res.ok) {
-    console.error(`CoinGecko API error for date ${dateString}: ${res.status} ${res.statusText}`);
+    console.error(`CoinGecko API error: ${res.status} ${res.statusText}`);
     
     if (res.status === 401) {
       console.error("Authentication failed - check your Demo API key");
     } else if (res.status === 429) {
       console.log("Rate limited, waiting 60 seconds...");
       await new Promise(resolve => setTimeout(resolve, 60000));
+      // Retry once after rate limit
+      return getCurrentPrice();
     }
-    return null;
+    throw new Error(`Failed to fetch current ETH price: ${res.status} ${res.statusText}`);
   }
   
   const data = await res.json();
   
-  if (!data.market_data || !data.market_data.current_price || !data.market_data.current_price.eur) {
-    console.error(`Missing price data for date ${dateString}`);
-    console.error("DEBUG CoinGecko response:", JSON.stringify(data, null, 2));
-    return null;
+  if (!data.ethereum || !data.ethereum.eur) {
+    console.error("Missing price data in response:", JSON.stringify(data, null, 2));
+    throw new Error("Missing EUR price data from CoinGecko");
   }
   
-  return data.market_data.current_price.eur;
+  return data.ethereum.eur;
+}
+
+function getExistingTransactionHashes(csvFile) {
+  const existingTxHashes = new Set();
+  
+  if (fs.existsSync(csvFile)) {
+    const content = fs.readFileSync(csvFile, "utf8").split("\n").slice(1); // skip header
+    for (const line of content) {
+      if (line.trim().length > 0) {
+        const columns = line.split('","');
+        if (columns.length >= 8) { // Make sure we have the hash column
+          const txHash = columns[7]?.replace(/"/g, ''); // Remove quotes from hash
+          const dateField = columns[0]?.replace(/"/g, '');
+          
+          // Only collect actual transaction hashes, not daily totals
+          if (txHash && txHash !== 'Transaction Hash' && !dateField.includes("DAILY TOTAL")) {
+            existingTxHashes.add(txHash);
+          }
+        }
+      }
+    }
+  }
+  
+  return existingTxHashes;
+}
+
+function hasExistingDailyTotal(csvFile, dateOnly) {
+  if (!fs.existsSync(csvFile)) {
+    return false;
+  }
+  
+  const content = fs.readFileSync(csvFile, "utf8");
+  const searchPattern = `"${dateOnly} - DAILY TOTAL"`;
+  return content.includes(searchPattern);
 }
 
 async function processAddress(config) {
   const { address, csvFile, name } = config;
   
-  console.log(`\n🔄 Processing ${name} (${address})...`);
+  console.log(`\n🔄 Processing ${name} (${address}) for today's transactions...`);
   
   try {
-    console.log(`Fetching transactions for ${name}...`);
-    const txs = await getTransactions(address);
-    console.log(`Found ${txs.length} incoming transactions for ${name}`);
+    const todaysTxs = await getTodaysTransactions(address);
+    console.log(`Found ${todaysTxs.length} transactions today for ${name}`);
     
-    // Read existing transaction hashes (if file exists)
-    let existingTxHashes = new Set();
-    let existingDailyTotals = new Set();
-    
-    if (fs.existsSync(csvFile)) {
-      const content = fs.readFileSync(csvFile, "utf8").split("\n").slice(1); // skip header
-      for (const line of content) {
-        if (line.trim().length > 0) {
-          const columns = line.split('","');
-          if (columns.length >= 8) { // Make sure we have the hash column
-            const txHash = columns[7]?.replace(/"/g, ''); // Remove quotes from hash
-            const dateField = columns[0]?.replace(/"/g, '');
-            
-            if (dateField && dateField.includes("DAILY TOTAL")) {
-              existingDailyTotals.add(dateField.split(' - ')[0]); // Store date part only
-            } else if (txHash && txHash !== 'Transaction Hash') { // Skip header
-              existingTxHashes.add(txHash);
-            }
-          }
-        }
-      }
-      console.log(`Found ${existingTxHashes.size} existing transaction hashes for ${name}`);
-      console.log(`Found ${existingDailyTotals.size} existing daily totals for ${name}`);
+    if (todaysTxs.length === 0) {
+      console.log(`ℹ️ No transactions found today for ${name}`);
+      return {
+        name,
+        address,
+        newTransactions: 0,
+        totalTransactions: 0
+      };
     }
     
-    let rows = [];
-    let processedCount = 0;
+    // Get existing transaction hashes to avoid duplicates
+    const existingTxHashes = getExistingTransactionHashes(csvFile);
+    console.log(`Found ${existingTxHashes.size} existing transaction hashes for ${name}`);
+    
+    // Filter out transactions we've already processed
+    const newTxs = todaysTxs.filter(tx => !existingTxHashes.has(tx.hash));
+    console.log(`Found ${newTxs.length} new transactions today for ${name}`);
+    
+    if (newTxs.length === 0) {
+      console.log(`ℹ️ No new transactions to process for ${name} today`);
+      return {
+        name,
+        address,
+        newTransactions: 0,
+        totalTransactions: existingTxHashes.size
+      };
+    }
+    
+    // Create CSV file with header if it doesn't exist
+    if (!fs.existsSync(csvFile)) {
+      fs.writeFileSync(csvFile, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash\n");
+    }
+    
     const TAX_RATE = 0.24; // 24% tax rate
+    let rows = [];
+    let dailyTotal = {
+      totalEth: 0,
+      totalValueEur: 0,
+      totalEthForTaxes: 0,
+      totalTaxesEur: 0,
+      count: 0
+    };
     
-    // Group transactions by date for daily summaries
-    let dailyTotals = new Map();
-    
-    for (const tx of txs) {
-      // Skip if we already processed this transaction hash
-      if (existingTxHashes.has(tx.hash)) {
-        continue;
-      }
-      
+    // Process each new transaction with its specific timestamp price
+    for (const tx of newTxs) {
       const amountEth = parseFloat(tx.value) / 1e18;
       const timestamp = parseInt(tx.timeStamp);
       const date = new Date(timestamp * 1000);
       const dateFormatted = formatDate(date);
-      const dateOnly = dateFormatted.split(' ')[0]; // Get just the date part (DD/MM/YYYY)
       
-      console.log(`Processing new transaction ${tx.hash} from ${dateFormatted} for ${name}...`);
-      
+      console.log(`Fetching ETH price for transaction at ${dateFormatted}...`);
       const priceEur = await getPriceAt(timestamp);
-      
-      if (priceEur === null) {
-        console.log(`Skipping transaction ${tx.hash} from ${dateFormatted} for ${name} due to price fetch error`);
-        continue;
-      }
       
       const totalValueEur = amountEth * priceEur;
       const ethForTaxes = amountEth * TAX_RATE;
       const taxesInEur = totalValueEur * TAX_RATE;
       
-      // Create individual transaction row with hash
+      // Create individual transaction row
       const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValueEur.toFixed(2)}","24%","${ethForTaxes.toFixed(6)}","${taxesInEur.toFixed(2)}","${tx.hash}"`;
       rows.push(csvRow);
       
-      // Add to daily totals
-      if (!dailyTotals.has(dateOnly)) {
-        dailyTotals.set(dateOnly, {
-          totalEth: 0,
-          totalValueEur: 0,
-          totalEthForTaxes: 0,
-          totalTaxesEur: 0,
-          count: 0
-        });
-      }
+      // Add to daily total
+      dailyTotal.totalEth += amountEth;
+      dailyTotal.totalValueEur += totalValueEur;
+      dailyTotal.totalEthForTaxes += ethForTaxes;
+      dailyTotal.totalTaxesEur += taxesInEur;
+      dailyTotal.count += 1;
       
-      const dayTotal = dailyTotals.get(dateOnly);
-      dayTotal.totalEth += amountEth;
-      dayTotal.totalValueEur += totalValueEur;
-      dayTotal.totalEthForTaxes += ethForTaxes;
-      dayTotal.totalTaxesEur += taxesInEur;
-      dayTotal.count += 1;
+      console.log(`Processed transaction: ${amountEth.toFixed(6)} ETH @ €${priceEur.toFixed(2)} = €${totalValueEur.toFixed(2)}`);
       
-      processedCount++;
-      
-      // Add delay between API calls to respect rate limits
-      if (processedCount % 5 === 0) {
-        console.log("Pausing to respect rate limits...");
-        await new Promise(resolve => setTimeout(resolve, 12000)); // 12 second delay
-      }
+      // Small delay between price fetches to be respectful to the API
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
     }
     
-    // Create CSV file with new header structure if it doesn't exist
-    if (!fs.existsSync(csvFile)) {
-      fs.writeFileSync(csvFile, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash\n");
+    // Add daily total if we have transactions and don't already have a daily total for today
+    const todayDateOnly = getDateOnly(new Date());
+    if (dailyTotal.count > 0 && !hasExistingDailyTotal(csvFile, todayDateOnly)) {
+      const summaryRow = `"${todayDateOnly} - DAILY TOTAL","${dailyTotal.totalEth.toFixed(6)}","","${dailyTotal.totalValueEur.toFixed(2)}","24%","${dailyTotal.totalEthForTaxes.toFixed(6)}","${dailyTotal.totalTaxesEur.toFixed(2)}",""`;
+      rows.push(summaryRow);
+      console.log(`Added daily total: ${dailyTotal.totalEth.toFixed(6)} ETH = €${dailyTotal.totalValueEur.toFixed(2)}`);
     }
     
+    // Write all rows to CSV
     if (rows.length > 0) {
-      // Sort rows by date and add daily summary rows
-      const sortedRows = [];
-      const dateGroups = new Map();
-      
-      // Group rows by date
-      for (const row of rows) {
-        const dateOnly = row.split('","')[0].replace('"', '').split(' ')[0];
-        if (!dateGroups.has(dateOnly)) {
-          dateGroups.set(dateOnly, []);
-        }
-        dateGroups.get(dateOnly).push(row);
-      }
-      
-      // Add rows and daily summaries (only for dates that don't already have them)
-      for (const [dateOnly, dateRows] of dateGroups) {
-        // Add all transactions for this date
-        sortedRows.push(...dateRows);
-        
-        // Add daily summary row only if we don't already have one for this date
-        if (dailyTotals.has(dateOnly) && !existingDailyTotals.has(dateOnly)) {
-          const dayTotal = dailyTotals.get(dateOnly);
-          const summaryRow = `"${dateOnly} - DAILY TOTAL","${dayTotal.totalEth.toFixed(6)}","","${dayTotal.totalValueEur.toFixed(2)}","24%","${dayTotal.totalEthForTaxes.toFixed(6)}","${dayTotal.totalTaxesEur.toFixed(2)}",""`;
-          sortedRows.push(summaryRow);
-        }
-      }
-      
-      fs.appendFileSync(csvFile, sortedRows.join("\n") + "\n");
-      console.log(`✅ Added ${rows.length} new transactions with daily summaries for ${name}`);
-    } else {
-      console.log(`ℹ️ No new transactions found for ${name}`);
+      fs.appendFileSync(csvFile, rows.join("\n") + "\n");
+      console.log(`✅ Added ${newTxs.length} new transactions with daily summary for ${name}`);
     }
-    
-    // Log summary for this address
-    const totalProcessed = existingTxHashes.size + rows.length;
-    console.log(`📊 Total transactions processed for ${name}: ${totalProcessed}`);
     
     return {
       name,
       address,
-      newTransactions: rows.length,
-      totalTransactions: totalProcessed
+      newTransactions: newTxs.length,
+      totalTransactions: existingTxHashes.size + newTxs.length,
+      todayTotal: dailyTotal
     };
     
   } catch (error) {
@@ -276,7 +289,8 @@ async function processAddress(config) {
 }
 
 async function main() {
-  console.log("🚀 Starting multi-address ETH tracker...");
+  const today = getDateOnly(new Date());
+  console.log(`🚀 Starting daily ETH tracker for ${today} (Zagreb time)...`);
   console.log(`📍 Tracking ${ADDRESSES_CONFIG.length} addresses`);
   
   const results = [];
@@ -285,32 +299,39 @@ async function main() {
     const result = await processAddress(config);
     results.push(result);
     
-    // Add delay between addresses to be extra careful with rate limits
+    // Small delay between addresses
     if (config !== ADDRESSES_CONFIG[ADDRESSES_CONFIG.length - 1]) {
-      console.log("⏳ Waiting before processing next address...");
-      await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay between addresses
+      console.log("⏳ Brief pause before next address...");
+      await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
     }
   }
   
   // Final summary
-  console.log("\n📊 FINAL SUMMARY:");
-  console.log("=" * 50);
+  console.log(`\n📊 DAILY SUMMARY FOR ${today}:`);
+  console.log("=" * 60);
   
   let totalNewTransactions = 0;
   let totalAllTransactions = 0;
+  let totalDailyRewards = 0;
   
   for (const result of results) {
     if (result.error) {
       console.log(`❌ ${result.name}: ERROR - ${result.error}`);
     } else {
-      console.log(`✅ ${result.name}: ${result.newTransactions} new, ${result.totalTransactions} total transactions`);
+      const dailyRewardsText = result.todayTotal ? `€${result.todayTotal.totalValueEur.toFixed(2)}` : "€0.00";
+      console.log(`✅ ${result.name}: ${result.newTransactions} new transactions today, ${result.totalTransactions} total - Today's rewards: ${dailyRewardsText}`);
       totalNewTransactions += result.newTransactions;
       totalAllTransactions += result.totalTransactions;
+      if (result.todayTotal) {
+        totalDailyRewards += result.todayTotal.totalValueEur;
+      }
     }
   }
   
-  console.log("=" * 50);
-  console.log(`🎯 GRAND TOTAL: ${totalNewTransactions} new transactions, ${totalAllTransactions} total across all addresses`);
+  console.log("=" * 60);
+  console.log(`🎯 GRAND TOTAL: ${totalNewTransactions} new transactions today`);
+  console.log(`💰 Total daily rewards: €${totalDailyRewards.toFixed(2)}`);
+  console.log(`📈 Combined total transactions across all addresses: ${totalAllTransactions}`);
 }
 
 main().catch(error => {
