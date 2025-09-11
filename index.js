@@ -105,17 +105,32 @@ async function getPriceAt(timestamp) {
   return data.market_data.current_price.eur;
 }
 
+
+
+
+
 async function processNodeTransactions(nodeId, nodeConfig) {
   console.log(`\n🔄 Processing ${nodeConfig.name} (${nodeConfig.address})...`);
   
-  const txs = await getTransactions(nodeConfig.address);
-  console.log(`Found ${txs.length} incoming transactions for ${nodeConfig.name}`);
-  
-  // Read existing transaction hashes
-  let existingTxHashes = new Set();
-  let existingDailyTotals = new Set();
-  
-  if (fs.existsSync(nodeConfig.csvFile)) {
+  try {
+    // Always create the CSV file first, even if empty
+    if (!fs.existsSync(nodeConfig.csvFile)) {
+      fs.writeFileSync(nodeConfig.csvFile, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash,Node\n");
+      console.log(`✅ Created CSV file for ${nodeConfig.name}`);
+    }
+    
+    const txs = await getTransactions(nodeConfig.address);
+    console.log(`Found ${txs.length} incoming transactions for ${nodeConfig.name}`);
+    
+    if (txs.length === 0) {
+      console.log(`ℹ️ No transactions found for ${nodeConfig.name} - CSV file already created with headers`);
+      return { processedCount: 0, dailyTotals: new Map() };
+    }
+    
+    // Read existing transaction hashes
+    let existingTxHashes = new Set();
+    let existingDailyTotals = new Set();
+    
     const content = fs.readFileSync(nodeConfig.csvFile, "utf8").split("\n").slice(1);
     for (const line of content) {
       if (line.trim().length > 0) {
@@ -133,94 +148,105 @@ async function processNodeTransactions(nodeId, nodeConfig) {
       }
     }
     console.log(`Found ${existingTxHashes.size} existing transaction hashes for ${nodeConfig.name}`);
-  }
-  
-  let rows = [];
-  let processedCount = 0;
-  const TAX_RATE = 0.24;
-  let dailyTotals = new Map();
-  
-  for (const tx of txs) {
-    if (existingTxHashes.has(tx.hash)) continue;
     
-    const amountEth = parseFloat(tx.value) / 1e18;
-    const timestamp = parseInt(tx.timeStamp);
-    const date = new Date(timestamp * 1000);
-    const dateFormatted = formatDate(date);
-    const dateOnly = dateFormatted.split(' ')[0];
+    let rows = [];
+    let processedCount = 0;
+    const TAX_RATE = 0.24;
+    let dailyTotals = new Map();
     
-    console.log(`Processing new transaction ${tx.hash} from ${dateFormatted}...`);
-    
-    const priceEur = await getPriceAt(timestamp);
-    if (priceEur === null) {
-      console.log(`Skipping transaction ${tx.hash} due to price fetch error`);
-      continue;
-    }
-    
-    const totalValueEur = amountEth * priceEur;
-    const ethForTaxes = amountEth * TAX_RATE;
-    const taxesInEur = totalValueEur * TAX_RATE;
-    
-    const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValueEur.toFixed(2)}","24%","${ethForTaxes.toFixed(6)}","${taxesInEur.toFixed(2)}","${tx.hash}","${nodeConfig.name}"`;
-    rows.push(csvRow);
-    
-    // Track daily totals
-    if (!dailyTotals.has(dateOnly)) {
-      dailyTotals.set(dateOnly, {
-        totalEth: 0, totalValueEur: 0, totalEthForTaxes: 0, totalTaxesEur: 0, count: 0
-      });
-    }
-    
-    const dayTotal = dailyTotals.get(dateOnly);
-    dayTotal.totalEth += amountEth;
-    dayTotal.totalValueEur += totalValueEur;
-    dayTotal.totalEthForTaxes += ethForTaxes;
-    dayTotal.totalTaxesEur += taxesInEur;
-    dayTotal.count += 1;
-    
-    processedCount++;
-    
-    if (processedCount % 5 === 0) {
-      console.log("Pausing to respect rate limits...");
-      await new Promise(resolve => setTimeout(resolve, 12000));
-    }
-  }
-  
-  // Create CSV with node column
-  if (!fs.existsSync(nodeConfig.csvFile)) {
-    fs.writeFileSync(nodeConfig.csvFile, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash,Node\n");
-  }
-  
-  if (rows.length > 0) {
-    const sortedRows = [];
-    const dateGroups = new Map();
-    
-    for (const row of rows) {
-      const dateOnly = row.split('","')[0].replace('"', '').split(' ')[0];
-      if (!dateGroups.has(dateOnly)) {
-        dateGroups.set(dateOnly, []);
-      }
-      dateGroups.get(dateOnly).push(row);
-    }
-    
-    for (const [dateOnly, dateRows] of dateGroups) {
-      sortedRows.push(...dateRows);
+    for (const tx of txs) {
+      if (existingTxHashes.has(tx.hash)) continue;
       
-      if (dailyTotals.has(dateOnly) && !existingDailyTotals.has(dateOnly)) {
-        const dayTotal = dailyTotals.get(dateOnly);
-        const summaryRow = `"${dateOnly} - DAILY TOTAL","${dayTotal.totalEth.toFixed(6)}","","${dayTotal.totalValueEur.toFixed(2)}","24%","${dayTotal.totalEthForTaxes.toFixed(6)}","${dayTotal.totalTaxesEur.toFixed(2)}","","${nodeConfig.name}"`;
-        sortedRows.push(summaryRow);
+      const amountEth = parseFloat(tx.value) / 1e18;
+      const timestamp = parseInt(tx.timeStamp);
+      const date = new Date(timestamp * 1000);
+      const dateFormatted = formatDate(date);
+      const dateOnly = dateFormatted.split(' ')[0];
+      
+      console.log(`Processing new transaction ${tx.hash} from ${dateFormatted} for ${nodeConfig.name}...`);
+      
+      const priceEur = await getPriceAt(timestamp);
+      if (priceEur === null) {
+        console.log(`⚠️ Skipping transaction ${tx.hash} for ${nodeConfig.name} due to price fetch error`);
+        continue;
+      }
+      
+      const totalValueEur = amountEth * priceEur;
+      const ethForTaxes = amountEth * TAX_RATE;
+      const taxesInEur = totalValueEur * TAX_RATE;
+      
+      const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValueEur.toFixed(2)}","24%","${ethForTaxes.toFixed(6)}","${taxesInEur.toFixed(2)}","${tx.hash}","${nodeConfig.name}"`;
+      rows.push(csvRow);
+      
+      // Track daily totals
+      if (!dailyTotals.has(dateOnly)) {
+        dailyTotals.set(dateOnly, {
+          totalEth: 0, totalValueEur: 0, totalEthForTaxes: 0, totalTaxesEur: 0, count: 0
+        });
+      }
+      
+      const dayTotal = dailyTotals.get(dateOnly);
+      dayTotal.totalEth += amountEth;
+      dayTotal.totalValueEur += totalValueEur;
+      dayTotal.totalEthForTaxes += ethForTaxes;
+      dayTotal.totalTaxesEur += taxesInEur;
+      dayTotal.count += 1;
+      
+      processedCount++;
+      
+      if (processedCount % 5 === 0) {
+        console.log("Pausing to respect rate limits...");
+        await new Promise(resolve => setTimeout(resolve, 12000));
       }
     }
     
-    fs.appendFileSync(nodeConfig.csvFile, sortedRows.join("\n") + "\n");
-    console.log(`✅ Added ${rows.length} new transactions for ${nodeConfig.name}`);
-  } else {
-    console.log(`ℹ️ No new transactions found for ${nodeConfig.name}`);
+    if (rows.length > 0) {
+      const sortedRows = [];
+      const dateGroups = new Map();
+      
+      for (const row of rows) {
+        const dateOnly = row.split('","')[0].replace('"', '').split(' ')[0];
+        if (!dateGroups.has(dateOnly)) {
+          dateGroups.set(dateOnly, []);
+        }
+        dateGroups.get(dateOnly).push(row);
+      }
+      
+      for (const [dateOnly, dateRows] of dateGroups) {
+        sortedRows.push(...dateRows);
+        
+        if (dailyTotals.has(dateOnly) && !existingDailyTotals.has(dateOnly)) {
+          const dayTotal = dailyTotals.get(dateOnly);
+          const summaryRow = `"${dateOnly} - DAILY TOTAL","${dayTotal.totalEth.toFixed(6)}","","${dayTotal.totalValueEur.toFixed(2)}","24%","${dayTotal.totalEthForTaxes.toFixed(6)}","${dayTotal.totalTaxesEur.toFixed(2)}","","${nodeConfig.name}"`;
+          sortedRows.push(summaryRow);
+        }
+      }
+      
+      fs.appendFileSync(nodeConfig.csvFile, sortedRows.join("\n") + "\n");
+      console.log(`✅ Added ${rows.length} new transactions for ${nodeConfig.name}`);
+    } else {
+      console.log(`ℹ️ No new transactions found for ${nodeConfig.name}, but CSV file exists with headers`);
+    }
+    
+    return { processedCount: rows.length, dailyTotals };
+    
+  } catch (error) {
+    console.error(`❌ Error processing ${nodeConfig.name}:`, error);
+    
+    // Make sure CSV file exists even on error
+    if (!fs.existsSync(nodeConfig.csvFile)) {
+      fs.writeFileSync(nodeConfig.csvFile, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash,Node\n");
+      console.log(`✅ Created empty CSV file for ${nodeConfig.name} after error`);
+    }
+    
+    throw error; // Re-throw to maintain error handling in main function
   }
-  
-  return { processedCount: rows.length, dailyTotals };
 }
+
+
+
+
+
 
 function generateCombinedDailyReport() {
   console.log("\n📊 Generating combined daily report...");
@@ -315,6 +341,14 @@ function generateCombinedDailyReport() {
   console.log(`✅ Combined daily report saved to ${COMBINED_REPORT_FILE}`);
   console.log(`📈 Generated report for ${sortedDates.length} days across ${nodeIds.length} nodes`);
 }
+
+
+
+
+
+
+
+
 
 async function main() {
   try {
