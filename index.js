@@ -12,7 +12,7 @@ const ADDRESSES_CONFIG = [
     name: "Node1"
   },
   {
-    address: "0x3fc2e5D10fa56CC17A66088987130991A2430aC7",
+    address: "0xc858Db9Fd379d21B49B2216e8bFC6588bE3354D7",
     csvFile: "RewardsNode2.csv",
     name: "Node2"
   }
@@ -55,9 +55,43 @@ async function getTodaysTransactions(ethAddress) {
     getInternalTransactions(ethAddress)
   ]);
   
-  // Combine and filter for today's transactions only
+  // Combine all transactions
   const allTxs = [...regularTxs, ...internalTxs];
-  const todaysTxs = allTxs.filter(tx => isToday(parseInt(tx.timeStamp)));
+  console.log(`Found ${allTxs.length} total incoming transactions for ${ethAddress}`);
+  
+  // Debug: Show the most recent transactions
+  if (allTxs.length > 0) {
+    const sortedTxs = allTxs.sort((a, b) => parseInt(b.timeStamp) - parseInt(a.timeStamp));
+    console.log(`Most recent transactions for ${ethAddress}:`);
+    for (let i = 0; i < Math.min(3, sortedTxs.length); i++) {
+      const tx = sortedTxs[i];
+      const date = new Date(parseInt(tx.timeStamp) * 1000);
+      const dateFormatted = formatDate(date);
+      const dateOnly = getDateOnly(date);
+      const amountEth = (parseFloat(tx.value) / 1e18).toFixed(6);
+      console.log(`  ${i + 1}. ${dateFormatted} (${dateOnly}) - ${amountEth} ETH - Hash: ${tx.hash}`);
+    }
+  }
+  
+  // Filter for today's transactions only
+  const today = new Date();
+  const todayOnly = getDateOnly(today);
+  console.log(`Today's date (Zagreb timezone): ${todayOnly}`);
+  
+  const todaysTxs = allTxs.filter(tx => {
+    const txTimestamp = parseInt(tx.timeStamp);
+    const isTodayTx = isToday(txTimestamp);
+    
+    if (isTodayTx) {
+      const txDate = new Date(txTimestamp * 1000);
+      const txDateFormatted = formatDate(txDate);
+      console.log(`Found today's transaction: ${txDateFormatted}`);
+    }
+    
+    return isTodayTx;
+  });
+  
+  console.log(`Found ${todaysTxs.length} transactions for today`);
   
   // Sort by timestamp
   return todaysTxs.sort((a, b) => parseInt(a.timeStamp) - parseInt(b.timeStamp));
@@ -190,10 +224,9 @@ function getExistingTransactionHashes(csvFile) {
         const columns = line.split('","');
         if (columns.length >= 8) { // Make sure we have the hash column
           const txHash = columns[7]?.replace(/"/g, ''); // Remove quotes from hash
-          const dateField = columns[0]?.replace(/"/g, '');
           
-          // Only collect actual transaction hashes, not daily totals
-          if (txHash && txHash !== 'Transaction Hash' && !dateField.includes("DAILY TOTAL")) {
+          // Collect transaction hashes (no more daily totals to filter out)
+          if (txHash && txHash !== 'Transaction Hash') {
             existingTxHashes.add(txHash);
           }
         }
@@ -204,34 +237,22 @@ function getExistingTransactionHashes(csvFile) {
   return existingTxHashes;
 }
 
-function hasExistingDailyTotal(csvFile, dateOnly) {
-  if (!fs.existsSync(csvFile)) {
-    return false;
-  }
-  
-  const content = fs.readFileSync(csvFile, "utf8");
-  const searchPattern = `"${dateOnly} - DAILY TOTAL"`;
-  return content.includes(searchPattern);
-}
-
 async function processAddress(config) {
   const { address, csvFile, name } = config;
   
   console.log(`\n🔄 Processing ${name} (${address}) for today's transactions...`);
   
   try {
+    // Create CSV file with header if it doesn't exist (do this first)
+    if (!fs.existsSync(csvFile)) {
+      console.log(`Creating new CSV file: ${csvFile}`);
+      fs.writeFileSync(csvFile, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash,Tax Status,Tax Transaction Hash\n");
+    } else {
+      console.log(`CSV file ${csvFile} already exists`);
+    }
+    
     const todaysTxs = await getTodaysTransactions(address);
     console.log(`Found ${todaysTxs.length} transactions today for ${name}`);
-    
-    if (todaysTxs.length === 0) {
-      console.log(`ℹ️ No transactions found today for ${name}`);
-      return {
-        name,
-        address,
-        newTransactions: 0,
-        totalTransactions: 0
-      };
-    }
     
     // Get existing transaction hashes to avoid duplicates
     const existingTxHashes = getExistingTransactionHashes(csvFile);
@@ -241,30 +262,48 @@ async function processAddress(config) {
     const newTxs = todaysTxs.filter(tx => !existingTxHashes.has(tx.hash));
     console.log(`Found ${newTxs.length} new transactions today for ${name}`);
     
+    const todayDateOnly = getDateOnly(new Date());
+    
     if (newTxs.length === 0) {
       console.log(`ℹ️ No new transactions to process for ${name} today`);
-      return {
-        name,
-        address,
-        newTransactions: 0,
-        totalTransactions: existingTxHashes.size
-      };
-    }
-    
-    // Create CSV file with header if it doesn't exist
-    if (!fs.existsSync(csvFile)) {
-      fs.writeFileSync(csvFile, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash\n");
+      
+      // Check if we already have a transaction for today (no daily totals needed)
+      const todaysTransactionsExist = existingTxHashes.size > 0 && 
+        fs.existsSync(csvFile) && 
+        fs.readFileSync(csvFile, "utf8").includes(todayDateOnly);
+      
+      if (!todaysTransactionsExist) {
+        console.log(`Adding 0 ETH record for ${name} today`);
+        
+        // Get current ETH price for the 0 ETH record
+        const currentPriceEur = await getCurrentPrice();
+        
+        // Add a 0 ETH transaction row (not daily total)
+        const zeroEthRow = `"${todayDateOnly}, 00:00:00","0.000000","${currentPriceEur.toFixed(2)}","0.00","24%","0.000000","0.00","","Unpaid",""`;
+        fs.appendFileSync(csvFile, zeroEthRow + "\n");
+        console.log(`✅ Added 0 ETH record for ${name} on ${todayDateOnly}`);
+        
+        return {
+          name,
+          address,
+          newTransactions: 0,
+          totalTransactions: existingTxHashes.size + 1,
+          addedZeroRecord: true
+        };
+      } else {
+        console.log(`ℹ️ Already have a record for ${name} today`);
+        return {
+          name,
+          address,
+          newTransactions: 0,
+          totalTransactions: existingTxHashes.size,
+          addedZeroRecord: false
+        };
+      }
     }
     
     const TAX_RATE = 0.24; // 24% tax rate
     let rows = [];
-    let dailyTotal = {
-      totalEth: 0,
-      totalValueEur: 0,
-      totalEthForTaxes: 0,
-      totalTaxesEur: 0,
-      count: 0
-    };
     
     // Process each new transaction with its specific timestamp price
     for (const tx of newTxs) {
@@ -281,15 +320,8 @@ async function processAddress(config) {
       const taxesInEur = totalValueEur * TAX_RATE;
       
       // Create individual transaction row
-      const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValueEur.toFixed(2)}","24%","${ethForTaxes.toFixed(6)}","${taxesInEur.toFixed(2)}","${tx.hash}"`;
+      const csvRow = `"${dateFormatted}","${amountEth.toFixed(6)}","${priceEur.toFixed(2)}","${totalValueEur.toFixed(2)}","24%","${ethForTaxes.toFixed(6)}","${taxesInEur.toFixed(2)}","${tx.hash}","Unpaid",""`;
       rows.push(csvRow);
-      
-      // Add to daily total
-      dailyTotal.totalEth += amountEth;
-      dailyTotal.totalValueEur += totalValueEur;
-      dailyTotal.totalEthForTaxes += ethForTaxes;
-      dailyTotal.totalTaxesEur += taxesInEur;
-      dailyTotal.count += 1;
       
       console.log(`Processed transaction: ${amountEth.toFixed(6)} ETH @ €${priceEur.toFixed(2)} = €${totalValueEur.toFixed(2)}`);
       
@@ -297,26 +329,17 @@ async function processAddress(config) {
       await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay
     }
     
-    // Add daily total if we have transactions and don't already have a daily total for today
-    const todayDateOnly = getDateOnly(new Date());
-    if (dailyTotal.count > 0 && !hasExistingDailyTotal(csvFile, todayDateOnly)) {
-      const summaryRow = `"${todayDateOnly} - DAILY TOTAL","${dailyTotal.totalEth.toFixed(6)}","","${dailyTotal.totalValueEur.toFixed(2)}","24%","${dailyTotal.totalEthForTaxes.toFixed(6)}","${dailyTotal.totalTaxesEur.toFixed(2)}",""`;
-      rows.push(summaryRow);
-      console.log(`Added daily total: ${dailyTotal.totalEth.toFixed(6)} ETH = €${dailyTotal.totalValueEur.toFixed(2)}`);
-    }
-    
-    // Write all rows to CSV
+    // Write all transaction rows to CSV (no daily totals)
     if (rows.length > 0) {
       fs.appendFileSync(csvFile, rows.join("\n") + "\n");
-      console.log(`✅ Added ${newTxs.length} new transactions with daily summary for ${name}`);
+      console.log(`✅ Added ${newTxs.length} new transactions for ${name}`);
     }
     
     return {
       name,
       address,
       newTransactions: newTxs.length,
-      totalTransactions: existingTxHashes.size + newTxs.length,
-      todayTotal: dailyTotal
+      totalTransactions: existingTxHashes.size + newTxs.length
     };
     
   } catch (error) {
@@ -368,9 +391,8 @@ async function main() {
       } else if (result.newTransactions === 0) {
         statusText += `0 transactions (record already exists)`;
       } else {
-        const dailyRewardsText = result.todayTotal ? `€${result.todayTotal.totalValueEur.toFixed(2)}` : "€0.00";
-        statusText += `${result.newTransactions} new transactions - Today's rewards: ${dailyRewardsText}`;
-        totalDailyRewards += result.todayTotal ? result.todayTotal.totalValueEur : 0;
+        statusText += `${result.newTransactions} new transactions`;
+        totalDailyRewards += result.newTransactions; // Count transactions instead of EUR value
       }
       
       statusText += ` - Total: ${result.totalTransactions} records`;
