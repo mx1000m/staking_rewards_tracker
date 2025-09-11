@@ -40,37 +40,108 @@ async function getTransactions(address) {
   return [...regularTxs, ...internalTxs].sort((a, b) => parseInt(a.timeStamp) - parseInt(b.timeStamp));
 }
 
+
+
+
+
+
 async function getRegularTransactions(address) {
   const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
   
-  if (!data.result) {
-    throw new Error(`Etherscan API error: ${data.message || 'Unknown error'}`);
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    console.log(`📡 Etherscan API response for ${address}:`, {
+      status: data.status,
+      message: data.message,
+      resultType: typeof data.result,
+      resultLength: Array.isArray(data.result) ? data.result.length : 'not an array'
+    });
+    
+    // Check if API returned an error
+    if (data.status === "0") {
+      console.log(`⚠️ Etherscan API error for ${address}: ${data.message}`);
+      // If "No transactions found", return empty array instead of throwing error
+      if (data.message === "No transactions found") {
+        console.log(`ℹ️ No regular transactions found for ${address}`);
+        return [];
+      }
+      throw new Error(`Etherscan API error: ${data.message}`);
+    }
+    
+    // Check if result is an array
+    if (!Array.isArray(data.result)) {
+      console.log(`⚠️ Unexpected result format for ${address}:`, data.result);
+      return [];
+    }
+    
+    const filteredTxs = data.result.filter(tx => 
+      tx.to.toLowerCase() === address.toLowerCase() && 
+      parseFloat(tx.value) > 0 &&
+      tx.isError === '0'
+    );
+    
+    console.log(`📈 Regular transactions for ${address}: ${filteredTxs.length} out of ${data.result.length} total`);
+    return filteredTxs;
+    
+  } catch (error) {
+    console.error(`❌ Error fetching regular transactions for ${address}:`, error.message);
+    throw error;
   }
-  
-  return data.result.filter(tx => 
-    tx.to.toLowerCase() === address.toLowerCase() && 
-    parseFloat(tx.value) > 0 &&
-    tx.isError === '0'
-  );
 }
+
+
+
 
 async function getInternalTransactions(address) {
   const url = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
-  const res = await fetch(url);
-  const data = await res.json();
   
-  if (!data.result) {
-    console.log(`No internal transactions found for ${address}`);
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    console.log(`📡 Etherscan internal API response for ${address}:`, {
+      status: data.status,
+      message: data.message,
+      resultType: typeof data.result,
+      resultLength: Array.isArray(data.result) ? data.result.length : 'not an array'
+    });
+    
+    // Check if API returned an error
+    if (data.status === "0") {
+      console.log(`⚠️ Etherscan internal API error for ${address}: ${data.message}`);
+      // If "No transactions found", return empty array instead of throwing error
+      if (data.message === "No transactions found" || data.message.includes("No internal transactions found")) {
+        console.log(`ℹ️ No internal transactions found for ${address}`);
+        return [];
+      }
+      // For internal transactions, some addresses legitimately have no internal txs
+      console.log(`ℹ️ No internal transactions found for ${address}`);
+      return [];
+    }
+    
+    // Check if result is an array
+    if (!Array.isArray(data.result)) {
+      console.log(`⚠️ Unexpected internal result format for ${address}:`, data.result);
+      return [];
+    }
+    
+    const filteredTxs = data.result.filter(tx => 
+      tx.to.toLowerCase() === address.toLowerCase() && 
+      parseFloat(tx.value) > 0 &&
+      tx.isError === '0'
+    );
+    
+    console.log(`📈 Internal transactions for ${address}: ${filteredTxs.length} out of ${data.result.length} total`);
+    return filteredTxs;
+    
+  } catch (error) {
+    console.error(`❌ Error fetching internal transactions for ${address}:`, error.message);
+    // For internal transactions, return empty array instead of throwing error
+    console.log(`ℹ️ Continuing without internal transactions for ${address}`);
     return [];
   }
-  
-  return data.result.filter(tx => 
-    tx.to.toLowerCase() === address.toLowerCase() && 
-    parseFloat(tx.value) > 0 &&
-    tx.isError === '0'
-  );
 }
 
 async function getPriceAt(timestamp) {
