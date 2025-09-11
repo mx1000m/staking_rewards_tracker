@@ -137,6 +137,49 @@ async function getCurrentPrice() {
   return data.ethereum.eur;
 }
 
+async function getPriceAt(timestamp) {
+  const date = new Date(timestamp * 1000);
+  const dateString = formatDateForCoinGecko(date);
+  
+  // Use historical price API endpoint
+  const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
+  
+  const headers = {
+    accept: "application/json"
+  };
+  
+  // Only add API key header if it exists
+  if (COINGECKO_API_KEY) {
+    headers["x-cg-demo-api-key"] = COINGECKO_API_KEY;
+  }
+  
+  const res = await fetch(url, { headers });
+  
+  if (!res.ok) {
+    console.error(`CoinGecko API error for date ${dateString}: ${res.status} ${res.statusText}`);
+    
+    if (res.status === 401) {
+      console.error("Authentication failed - check your Demo API key");
+    } else if (res.status === 429) {
+      console.log("Rate limited, waiting 60 seconds...");
+      await new Promise(resolve => setTimeout(resolve, 60000));
+      // Retry once after rate limit
+      return getPriceAt(timestamp);
+    }
+    throw new Error(`Failed to fetch ETH price for ${dateString}: ${res.status} ${res.statusText}`);
+  }
+  
+  const data = await res.json();
+  
+  if (!data.market_data || !data.market_data.current_price || !data.market_data.current_price.eur) {
+    console.error(`Missing price data for date ${dateString}`);
+    console.error("DEBUG CoinGecko response:", JSON.stringify(data, null, 2));
+    throw new Error(`Missing EUR price data for ${dateString}`);
+  }
+  
+  return data.market_data.current_price.eur;
+}
+
 function getExistingTransactionHashes(csvFile) {
   const existingTxHashes = new Set();
   
