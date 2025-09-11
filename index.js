@@ -32,18 +32,25 @@ function formatDateForCoinGecko(date) {
 }
 
 async function getTransactions(address) {
-  const [regularTxs, internalTxs] = await Promise.all([
-    getRegularTransactions(address),
-    getInternalTransactions(address)
-  ]);
+  console.log(`🔍 Fetching all transactions for ${address}...`);
   
-  return [...regularTxs, ...internalTxs].sort((a, b) => parseInt(a.timeStamp) - parseInt(b.timeStamp));
+  try {
+    const [regularTxs, internalTxs] = await Promise.all([
+      getRegularTransactions(address),
+      getInternalTransactions(address)
+    ]);
+    
+    const allTxs = [...regularTxs, ...internalTxs].sort((a, b) => parseInt(a.timeStamp) - parseInt(b.timeStamp));
+    
+    console.log(`📊 Total transactions for ${address}: ${allTxs.length} (${regularTxs.length} regular + ${internalTxs.length} internal)`);
+    
+    return allTxs;
+    
+  } catch (error) {
+    console.error(`❌ Error in getTransactions for ${address}:`, error.message);
+    throw error;
+  }
 }
-
-
-
-
-
 
 async function getRegularTransactions(address) {
   const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
@@ -90,9 +97,6 @@ async function getRegularTransactions(address) {
     throw error;
   }
 }
-
-
-
 
 async function getInternalTransactions(address) {
   const url = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
@@ -175,10 +179,6 @@ async function getPriceAt(timestamp) {
   
   return data.market_data.current_price.eur;
 }
-
-
-
-
 
 async function processNodeTransactions(nodeId, nodeConfig) {
   console.log(`\n🔄 Processing ${nodeConfig.name} (${nodeConfig.address})...`);
@@ -314,11 +314,6 @@ async function processNodeTransactions(nodeId, nodeConfig) {
   }
 }
 
-
-
-
-
-
 function generateCombinedDailyReport() {
   console.log("\n📊 Generating combined daily report...");
   
@@ -413,14 +408,6 @@ function generateCombinedDailyReport() {
   console.log(`📈 Generated report for ${sortedDates.length} days across ${nodeIds.length} nodes`);
 }
 
-
-
-
-
-
-
-
-
 async function main() {
   try {
     console.log("🚀 Starting multi-node ETH staking rewards tracker...");
@@ -429,6 +416,11 @@ async function main() {
     for (const [nodeId, nodeConfig] of Object.entries(NODES)) {
       console.log(`   ${nodeConfig.name}: ${nodeConfig.address}`);
     }
+    
+    // Check API keys
+    console.log(`🔑 API Keys status:`);
+    console.log(`   Etherscan API Key: ${ETHERSCAN_API_KEY ? '✅ Present' : '❌ Missing'}`);
+    console.log(`   CoinGecko API Key: ${COINGECKO_API_KEY ? '✅ Present' : '⚠️ Missing (will use free tier)'}`);
     
     let totalNewTransactions = 0;
     const results = {};
