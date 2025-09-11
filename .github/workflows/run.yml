@@ -71,7 +71,17 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git add RewardsNode1.csv RewardsNode2.csv
+          
+          # Add CSV files only if they exist
+          if [ -f RewardsNode1.csv ]; then
+            git add RewardsNode1.csv
+            echo "Added RewardsNode1.csv"
+          fi
+          
+          if [ -f RewardsNode2.csv ]; then
+            git add RewardsNode2.csv
+            echo "Added RewardsNode2.csv"
+          fi
           
           # Only commit if there are changes
           if git diff --staged --quiet; then
