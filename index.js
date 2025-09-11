@@ -3,8 +3,20 @@ import fs from "fs";
 
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 const COINGECKO_API_KEY = process.env.COINGECKO_API_KEY;
-const ETH_ADDRESS = "0x3A647735800601dFCa9a9709DE9122EB7b311E64";
-const CSV_FILE = "rewards.csv";
+
+// Configuration for multiple addresses
+const ADDRESSES_CONFIG = [
+  {
+    address: "0x3A647735800601dFCa9a9709DE9122EB7b311E64",
+    csvFile: "RewardsNode1.csv",
+    name: "Node1"
+  },
+  {
+    address: "0xc858Db9Fd379d21B49B2216e8bFC6588bE3354D7",
+    csvFile: "RewardsNode2.csv",
+    name: "Node2"
+  }
+];
 
 function formatDate(date) {
   return date.toLocaleString("en-GB", { timeZone: "Europe/Zagreb" });
@@ -18,18 +30,18 @@ function formatDateForCoinGecko(date) {
   return `${day}-${month}-${year}`;
 }
 
-async function getTransactions() {
+async function getTransactions(ethAddress) {
   // Get both regular and internal transactions
   const [regularTxs, internalTxs] = await Promise.all([
-    getRegularTransactions(),
-    getInternalTransactions()
+    getRegularTransactions(ethAddress),
+    getInternalTransactions(ethAddress)
   ]);
   
   return [...regularTxs, ...internalTxs].sort((a, b) => parseInt(a.timeStamp) - parseInt(b.timeStamp));
 }
 
-async function getRegularTransactions() {
-  const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${ETH_ADDRESS}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+async function getRegularTransactions(ethAddress) {
+  const url = `https://api.etherscan.io/api?module=account&action=txlist&address=${ethAddress}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
   
@@ -39,25 +51,25 @@ async function getRegularTransactions() {
   
   // Filter for incoming transactions only (where our address is the recipient)
   return data.result.filter(tx => 
-    tx.to.toLowerCase() === ETH_ADDRESS.toLowerCase() && 
+    tx.to.toLowerCase() === ethAddress.toLowerCase() && 
     parseFloat(tx.value) > 0 &&
     tx.isError === '0' // Only successful transactions
   );
 }
 
-async function getInternalTransactions() {
-  const url = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${ETH_ADDRESS}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
+async function getInternalTransactions(ethAddress) {
+  const url = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${ethAddress}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${ETHERSCAN_API_KEY}`;
   const res = await fetch(url);
   const data = await res.json();
   
   if (!data.result) {
-    console.log("No internal transactions found or API error");
+    console.log(`No internal transactions found for ${ethAddress} or API error`);
     return [];
   }
   
   // Filter for incoming internal transactions only
   return data.result.filter(tx => 
-    tx.to.toLowerCase() === ETH_ADDRESS.toLowerCase() && 
+    tx.to.toLowerCase() === ethAddress.toLowerCase() && 
     parseFloat(tx.value) > 0 &&
     tx.isError === '0' // Only successful transactions
   );
@@ -104,18 +116,22 @@ async function getPriceAt(timestamp) {
   return data.market_data.current_price.eur;
 }
 
-async function main() {
+async function processAddress(config) {
+  const { address, csvFile, name } = config;
+  
+  console.log(`\n🔄 Processing ${name} (${address})...`);
+  
   try {
-    console.log("Fetching transactions...");
-    const txs = await getTransactions();
-    console.log(`Found ${txs.length} incoming transactions`);
+    console.log(`Fetching transactions for ${name}...`);
+    const txs = await getTransactions(address);
+    console.log(`Found ${txs.length} incoming transactions for ${name}`);
     
     // Read existing transaction hashes (if file exists)
     let existingTxHashes = new Set();
     let existingDailyTotals = new Set();
     
-    if (fs.existsSync(CSV_FILE)) {
-      const content = fs.readFileSync(CSV_FILE, "utf8").split("\n").slice(1); // skip header
+    if (fs.existsSync(csvFile)) {
+      const content = fs.readFileSync(csvFile, "utf8").split("\n").slice(1); // skip header
       for (const line of content) {
         if (line.trim().length > 0) {
           const columns = line.split('","');
@@ -131,8 +147,8 @@ async function main() {
           }
         }
       }
-      console.log(`Found ${existingTxHashes.size} existing transaction hashes`);
-      console.log(`Found ${existingDailyTotals.size} existing daily totals`);
+      console.log(`Found ${existingTxHashes.size} existing transaction hashes for ${name}`);
+      console.log(`Found ${existingDailyTotals.size} existing daily totals for ${name}`);
     }
     
     let rows = [];
@@ -154,12 +170,12 @@ async function main() {
       const dateFormatted = formatDate(date);
       const dateOnly = dateFormatted.split(' ')[0]; // Get just the date part (DD/MM/YYYY)
       
-      console.log(`Processing new transaction ${tx.hash} from ${dateFormatted}...`);
+      console.log(`Processing new transaction ${tx.hash} from ${dateFormatted} for ${name}...`);
       
       const priceEur = await getPriceAt(timestamp);
       
       if (priceEur === null) {
-        console.log(`Skipping transaction ${tx.hash} from ${dateFormatted} due to price fetch error`);
+        console.log(`Skipping transaction ${tx.hash} from ${dateFormatted} for ${name} due to price fetch error`);
         continue;
       }
       
@@ -199,8 +215,8 @@ async function main() {
     }
     
     // Create CSV file with new header structure if it doesn't exist
-    if (!fs.existsSync(CSV_FILE)) {
-      fs.writeFileSync(CSV_FILE, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash\n");
+    if (!fs.existsSync(csvFile)) {
+      fs.writeFileSync(csvFile, "Date,ETH Rewards,ETH Price (EURO),ETH Rewards in EURO,Income Tax Rate,ETH for Taxes,Taxes in EURO,Transaction Hash\n");
     }
     
     if (rows.length > 0) {
@@ -230,20 +246,74 @@ async function main() {
         }
       }
       
-      fs.appendFileSync(CSV_FILE, sortedRows.join("\n") + "\n");
-      console.log(`✅ Added ${rows.length} new transactions with daily summaries`);
+      fs.appendFileSync(csvFile, sortedRows.join("\n") + "\n");
+      console.log(`✅ Added ${rows.length} new transactions with daily summaries for ${name}`);
     } else {
-      console.log("ℹ️ No new transactions found");
+      console.log(`ℹ️ No new transactions found for ${name}`);
     }
     
-    // Log summary
+    // Log summary for this address
     const totalProcessed = existingTxHashes.size + rows.length;
-    console.log(`📊 Total transactions processed: ${totalProcessed}`);
+    console.log(`📊 Total transactions processed for ${name}: ${totalProcessed}`);
+    
+    return {
+      name,
+      address,
+      newTransactions: rows.length,
+      totalTransactions: totalProcessed
+    };
     
   } catch (error) {
-    console.error("Error in main function:", error);
-    process.exit(1);
+    console.error(`Error processing ${name} (${address}):`, error);
+    return {
+      name,
+      address,
+      error: error.message,
+      newTransactions: 0,
+      totalTransactions: 0
+    };
   }
 }
 
-main();
+async function main() {
+  console.log("🚀 Starting multi-address ETH tracker...");
+  console.log(`📍 Tracking ${ADDRESSES_CONFIG.length} addresses`);
+  
+  const results = [];
+  
+  for (const config of ADDRESSES_CONFIG) {
+    const result = await processAddress(config);
+    results.push(result);
+    
+    // Add delay between addresses to be extra careful with rate limits
+    if (config !== ADDRESSES_CONFIG[ADDRESSES_CONFIG.length - 1]) {
+      console.log("⏳ Waiting before processing next address...");
+      await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay between addresses
+    }
+  }
+  
+  // Final summary
+  console.log("\n📊 FINAL SUMMARY:");
+  console.log("=" * 50);
+  
+  let totalNewTransactions = 0;
+  let totalAllTransactions = 0;
+  
+  for (const result of results) {
+    if (result.error) {
+      console.log(`❌ ${result.name}: ERROR - ${result.error}`);
+    } else {
+      console.log(`✅ ${result.name}: ${result.newTransactions} new, ${result.totalTransactions} total transactions`);
+      totalNewTransactions += result.newTransactions;
+      totalAllTransactions += result.totalTransactions;
+    }
+  }
+  
+  console.log("=" * 50);
+  console.log(`🎯 GRAND TOTAL: ${totalNewTransactions} new transactions, ${totalAllTransactions} total across all addresses`);
+}
+
+main().catch(error => {
+  console.error("Fatal error in main function:", error);
+  process.exit(1);
+});
