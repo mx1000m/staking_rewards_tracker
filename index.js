@@ -318,13 +318,23 @@ async function main() {
     if (result.error) {
       console.log(`❌ ${result.name}: ERROR - ${result.error}`);
     } else {
-      const dailyRewardsText = result.todayTotal ? `€${result.todayTotal.totalValueEur.toFixed(2)}` : "€0.00";
-      console.log(`✅ ${result.name}: ${result.newTransactions} new transactions today, ${result.totalTransactions} total - Today's rewards: ${dailyRewardsText}`);
+      let statusText = `✅ ${result.name}: `;
+      
+      if (result.addedZeroRecord) {
+        statusText += `0 transactions (added 0 ETH record)`;
+      } else if (result.newTransactions === 0) {
+        statusText += `0 transactions (record already exists)`;
+      } else {
+        const dailyRewardsText = result.todayTotal ? `€${result.todayTotal.totalValueEur.toFixed(2)}` : "€0.00";
+        statusText += `${result.newTransactions} new transactions - Today's rewards: ${dailyRewardsText}`;
+        totalDailyRewards += result.todayTotal ? result.todayTotal.totalValueEur : 0;
+      }
+      
+      statusText += ` - Total: ${result.totalTransactions} records`;
+      console.log(statusText);
+      
       totalNewTransactions += result.newTransactions;
       totalAllTransactions += result.totalTransactions;
-      if (result.todayTotal) {
-        totalDailyRewards += result.todayTotal.totalValueEur;
-      }
     }
   }
   
