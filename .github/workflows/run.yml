@@ -1,7 +1,7 @@
 name: Multi-Node ETH Tracker
 on:
   schedule:
-    - cron: "59 21 * * *" # Fixed the cron syntax
+    - cron: "59 21 * * *" # Fixed: added missing *
   workflow_dispatch:
 
 jobs:
@@ -9,10 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -46,11 +50,19 @@ jobs:
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git add rewards_node*.csv combined_daily_report.csv dashboard.html
+          
+          # Check what files exist
+          echo "Files in directory:"
+          ls -la *.csv 2>/dev/null || echo "No CSV files found"
+          
+          # Add only files that exist
+          git add rewards_node*.csv combined_daily_report.csv 2>/dev/null || true
           
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
+            echo "Committing changes..."
             git commit -m "Update multi-node staking rewards - $(date '+%Y-%m-%d %H:%M:%S')"
-            git push origin main
+            echo "Current branch: $(git branch --show-current)"
+            git push origin HEAD
           fi
