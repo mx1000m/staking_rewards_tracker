@@ -1,10 +1,8 @@
 name: ETH Tracker
-
 on:
   schedule:
     - cron: "59 21 * * *" # Runs daily at 21:59 UTC (23:59 Zagreb time)
   workflow_dispatch: # allow manual run
-
 jobs:
   track-rewards:
     runs-on: ubuntu-latest
@@ -35,21 +33,45 @@ jobs:
       - name: Display CSV contents
         run: |
           echo "📊 Current rewards data:"
-          if [ -f rewards.csv ]; then
-            echo "Total lines: $(wc -l < rewards.csv)"
-            echo "File size: $(ls -lh rewards.csv | awk '{print $5}')"
+          
+          echo ""
+          echo "=== NODE 1 REWARDS (RewardsNode1.csv) ==="
+          if [ -f RewardsNode1.csv ]; then
+            echo "Total lines: $(wc -l < RewardsNode1.csv)"
+            echo "File size: $(ls -lh RewardsNode1.csv | awk '{print $5}')"
             echo ""
-            echo "Last 10 entries:"
-            tail -10 rewards.csv
+            echo "Last 5 entries:"
+            tail -5 RewardsNode1.csv
           else
-            echo "No CSV file found"
+            echo "No RewardsNode1.csv file found"
+          fi
+          
+          echo ""
+          echo "=== NODE 2 REWARDS (RewardsNode2.csv) ==="
+          if [ -f RewardsNode2.csv ]; then
+            echo "Total lines: $(wc -l < RewardsNode2.csv)"
+            echo "File size: $(ls -lh RewardsNode2.csv | awk '{print $5}')"
+            echo ""
+            echo "Last 5 entries:"
+            tail -5 RewardsNode2.csv
+          else
+            echo "No RewardsNode2.csv file found"
+          fi
+          
+          echo ""
+          echo "=== LEGACY FILE CHECK ==="
+          if [ -f rewards.csv ]; then
+            echo "⚠️  Legacy rewards.csv still exists - consider removing it"
+            echo "File size: $(ls -lh rewards.csv | awk '{print $5}')"
+          else
+            echo "✅ No legacy rewards.csv found"
           fi
           
       - name: Commit and push changes
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
-          git add rewards.csv
+          git add RewardsNode1.csv RewardsNode2.csv
           
           # Only commit if there are changes
           if git diff --staged --quiet; then
