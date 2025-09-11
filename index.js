@@ -12,7 +12,7 @@ const ADDRESSES_CONFIG = [
     name: "Node1"
   },
   {
-    address: "0x3fc2e5D10fa56CC17A66088987130991A2430aC7",
+    address: "0xc858Db9Fd379d21B49B2216e8bFC6588bE3354D7",
     csvFile: "RewardsNode2.csv",
     name: "Node2"
   }
@@ -383,7 +383,6 @@ async function main() {
   
   console.log("=" * 60);
   console.log(`🎯 GRAND TOTAL: ${totalNewTransactions} new transactions today`);
-  console.log(`💰 Total daily rewards: €${totalDailyRewards.toFixed(2)}`);
   console.log(`📈 Combined total transactions across all addresses: ${totalAllTransactions}`);
 }
 
