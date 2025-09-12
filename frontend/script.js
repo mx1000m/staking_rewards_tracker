@@ -1,7 +1,7 @@
 // Configuration
 const CONFIG = {
-    GITHUB_USERNAME: 'mx1000m', // Replace with your GitHub username
-    GITHUB_REPO: 'Staking_Rewards',          // Replace with your repository name
+    GITHUB_USERNAME: 'YOUR_GITHUB_USERNAME', // Replace with your GitHub username
+    GITHUB_REPO: 'YOUR_REPO_NAME',          // Replace with your repository name
     CSV_FILES: {
         node1: 'RewardsNode1.csv',
         node2: 'RewardsNode2.csv'
@@ -408,7 +408,7 @@ function updateCSVContent(csvContent, targetTransaction, taxTxHash) {
     
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (line.includes(targetTxHash) && !line.includes('DAILY TOTAL')) {
+        if (line.includes(targetTxHash) && targetTxHash) { // Make sure we have a valid hash to match
             // Parse the line and update tax status
             const values = parseCSVLine(line);
             if (values.length >= 10) {
