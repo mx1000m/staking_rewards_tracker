@@ -381,9 +381,7 @@ body {
     font-weight: 600;
 }
 
-
-
-
+/* Transaction Hash Styling */
 .tx-hash-link {
     color: #8b5cf6 !important; /* Purple color */
     text-decoration: none;
@@ -402,10 +400,6 @@ body {
     margin-left: 4px;
     opacity: 0.7;
 }
-
-
-
-
 
 .status-paid {
     background: #d4edda;
