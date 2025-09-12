@@ -322,10 +322,12 @@ function updateTransactionTable(nodeKey) {
                     ${taxTxHash ? `<br><small>Tax TX: <a href="https://etherscan.io/tx/${taxTxHash}" target="_blank" class="tx-hash-link">${taxTxHash.substring(0, 6)}...${taxTxHash.substring(taxTxHash.length - 4)} <i class="fas fa-external-link-alt"></i></a></small>` : ''}
                 </td>
                 <td>
-                    ${!isDailyTotal && taxStatus === 'Unpaid' && taxAmountEur > 0 ? 
-                        `<button class="mark-paid-btn" onclick="openTaxModal('${nodeKey}', ${index})">Mark as Paid</button>` : 
-                        ''}
-                </td>
+    ${!isDailyTotal && taxStatus === 'Unpaid' && taxAmountEur > 0 ? 
+        `<button class="mark-paid-btn" onclick="openTaxModal('${nodeKey}', ${index})">Mark as Paid</button>` : 
+        (taxStatus === 'Paid' ? 
+            `<button class="mark-paid-btn" disabled style="background: #6c757d; cursor: not-allowed;">Paid</button>` : 
+            '')}
+</td>
             </tr>
         `;
     });
