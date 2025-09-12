@@ -267,6 +267,67 @@ body {
     color: #e74c3c;
 }
 
+/* Date Filter */
+.date-filter {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9em;
+}
+
+.filter-group select {
+    padding: 8px 12px;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.9em;
+    color: #495057;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.filter-group select:hover {
+    border-color: #3498db;
+}
+
+.filter-info {
+    margin-left: auto;
+    color: #6c757d;
+    font-size: 0.85em;
+    font-style: italic;
+}
+
+.filter-info span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.filter-info .fas {
+    color: #3498db;
+}
+
 /* Transactions Table */
 .transactions-table {
     overflow-x: auto;
