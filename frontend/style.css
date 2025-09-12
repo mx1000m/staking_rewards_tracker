@@ -279,6 +279,18 @@ body {
     color: #e74c3c;
 }
 
+
+/* Green color for rewards in node stats */
+.stat .value.rewards {
+    color: #4b9f53 !important;
+}
+
+.stat .eth-amount.rewards {
+    color: #4b9f53 !important;
+}
+
+
+
 /* Date Filter */
 .date-filter {
     background: #f8f9fa;
