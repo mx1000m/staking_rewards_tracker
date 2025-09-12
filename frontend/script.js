@@ -274,7 +274,7 @@ function updateTransactionTable(nodeKey) {
                     <th>ETH for Taxes</th>
                     <th>Tax Amount (EUR)</th>
                     <th>Transaction Hash</th>
-                    <th>Tax Status</th>
+                    <th>Status</th>
                     <th></th>
                 </tr>
             </thead>
