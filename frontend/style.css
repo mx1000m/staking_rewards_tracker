@@ -219,7 +219,7 @@ body {
     background: white;
     border-radius: 15px;
     padding: 30px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: 2px solid #e5e6ea;
 }
 
 .node-content.active {
