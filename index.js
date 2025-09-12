@@ -267,39 +267,13 @@ async function processAddress(config) {
     if (newTxs.length === 0) {
       console.log(`ℹ️ No new transactions to process for ${name} today`);
       
-      // Check if we already have a transaction for today (no daily totals needed)
-      const todaysTransactionsExist = existingTxHashes.size > 0 && 
-        fs.existsSync(csvFile) && 
-        fs.readFileSync(csvFile, "utf8").includes(todayDateOnly);
-      
-      if (!todaysTransactionsExist) {
-        console.log(`Adding 0 ETH record for ${name} today`);
-        
-        // Get current ETH price for the 0 ETH record
-        const currentPriceEur = await getCurrentPrice();
-        
-        // Add a 0 ETH transaction row (not daily total)
-        const zeroEthRow = `"${todayDateOnly}, 00:00:00","0.000000","${currentPriceEur.toFixed(2)}","0.00","24%","0.000000","0.00","","Unpaid",""`;
-        fs.appendFileSync(csvFile, zeroEthRow + "\n");
-        console.log(`✅ Added 0 ETH record for ${name} on ${todayDateOnly}`);
-        
-        return {
-          name,
-          address,
-          newTransactions: 0,
-          totalTransactions: existingTxHashes.size + 1,
-          addedZeroRecord: true
-        };
-      } else {
-        console.log(`ℹ️ Already have a record for ${name} today`);
-        return {
-          name,
-          address,
-          newTransactions: 0,
-          totalTransactions: existingTxHashes.size,
-          addedZeroRecord: false
-        };
-      }
+      return {
+        name,
+        address,
+        newTransactions: 0,
+        totalTransactions: existingTxHashes.size,
+        addedZeroRecord: false
+      };
     }
     
     const TAX_RATE = 0.24; // 24% tax rate
