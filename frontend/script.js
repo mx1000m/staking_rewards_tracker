@@ -300,16 +300,17 @@ function updateTransactionTable(nodeKey) {
         
         const rowClass = isDailyTotal ? 'daily-total-row' : '';
         const statusClass = taxStatus === 'Paid' ? 'status-paid' : 'status-unpaid';
-        
+
+    
         tableHTML += `
             <tr class="${rowClass}">
                 <td>${row.Date}</td>
-                <td class="eth-amount">${ethRewards.toFixed(6)} ETH</td>
+                <td><span style="color: #4b9f53;">${ethRewards.toFixed(6)} ETH</span></td>
                 <td>${ethPrice > 0 ? `€${ethPrice.toFixed(2)}` : ''}</td>
-                <td class="eur-amount">€${rewardsEur.toFixed(2)}</td>
+                <td><span style="color: #4b9f53;">€${rewardsEur.toFixed(2)}</td>
                 <td>${row['Income Tax Rate'] || ''}</td>
-                <td class="eth-amount">${parseFloat(row['ETH for Taxes'] || 0).toFixed(6)} ETH</td>
-                <td class="eur-amount">€${taxAmountEur.toFixed(2)}</td>
+                <td><span style="color: #e8a23b;">${parseFloat(row['ETH for Taxes'] || 0).toFixed(6)} ETH</td>
+                 <td><span style="color: #e8a23b;">€${taxAmountEur.toFixed(2)}</td>
                 <td class="tx-hash">
                     ${txHash ? `<a href="https://etherscan.io/tx/${txHash}" target="_blank" class="tx-hash-link">${txHash.substring(0, 6)}...${txHash.substring(txHash.length - 4)} <i class="fas fa-external-link-alt"></i></a>` : ''}
                 </td>
