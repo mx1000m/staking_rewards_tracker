@@ -213,7 +213,6 @@ function calculateNodeTotals(data) {
 
 function updateNodeStats(nodeKey, stats) {
     document.getElementById(`${nodeKey}TotalRewards`).textContent = `€${stats.rewards.toFixed(2)}`;
-    document.getElementById(`${nodeKey}TotalRewardsEth`).textContent = `$ETH ${stats.rewardsEth.toFixed(6)}`;
     document.getElementById(`${nodeKey}TotalTaxes`).textContent = `€${stats.taxes.toFixed(2)}`;
     document.getElementById(`${nodeKey}UnpaidTaxes`).textContent = `€${stats.unpaidTaxes.toFixed(2)}`;
 }
