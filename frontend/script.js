@@ -270,13 +270,13 @@ function updateTransactionTable(nodeKey) {
         <table class="table">
             <thead>
                 <tr>
-                    <th>Date</th>
+                    <th>Date, Time</th>
                     <th>ETH Rewards</th>
-                    <th>ETH Price (EUR)</th>
+                    <th>ETH Price in EUR</th>
                     <th>Rewards in EUR</th>
                     <th>Tax Rate</th>
-                    <th>ETH for Taxes</th>
-                    <th>Tax Amount (EUR)</th>
+                    <th>Taxes in ETH</th>
+                    <th>Taxes in EUR</th>
                     <th>Transaction Hash</th>
                     <th>Status</th>
                     <th></th>
