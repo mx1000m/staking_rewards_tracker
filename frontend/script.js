@@ -311,14 +311,14 @@ function updateTransactionTable(nodeKey) {
                 <td class="eth-amount">${parseFloat(row['ETH for Taxes'] || 0).toFixed(6)} ETH</td>
                 <td class="eur-amount">€${taxAmountEur.toFixed(2)}</td>
                 <td class="tx-hash">
-                    ${txHash ? `<a href="https://etherscan.io/tx/${txHash}" target="_blank" class="tx-hash-link">${txHash.substring(0, 6)}...${txHash.substring(txHash.length - 4)} <i class="fas fa-external-link-alt"></i></a>` : ''}
+                    ${txHash ? `<a href="https://etherscan.io/tx/${txHash}" target="_blank">${txHash.substring(0, 10)}...</a>` : ''}
                 </td>
                 <td>
                     <span class="${statusClass}">
                         <i class="fas ${taxStatus === 'Paid' ? 'fa-check' : 'fa-clock'}"></i>
                         ${taxStatus}
                     </span>
-                    ${taxTxHash ? `<br><small>Tax TX: <a href="https://etherscan.io/tx/${taxTxHash}" target="_blank">${taxTxHash.substring(0, 10)}...</a></small>` : ''}
+                    ${taxTxHash ? `<br><small>Tax TX: <a href="https://etherscan.io/tx/${taxTxHash}" target="_blank" class="tx-hash-link">${taxTxHash.substring(0, 6)}...${taxTxHash.substring(taxTxHash.length - 4)} <i class="fas fa-external-link-alt"></i></a></small>` : ''}
                 </td>
                 <td>
                     ${!isDailyTotal && taxStatus === 'Unpaid' && taxAmountEur > 0 ? 
