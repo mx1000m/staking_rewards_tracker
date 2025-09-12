@@ -306,13 +306,13 @@ function updateTransactionTable(nodeKey) {
             <tr class="${rowClass}">
                 <td>${row.Date}</td>
                 <td><span style="color: #4b9f53;">𖢻&nbsp;${ethRewards.toFixed(6)}</span></td>
-                <td>${ethPrice > 0 ? `€${ethPrice.toFixed(2)}` : ''}</td>
-                <td><span style="color: #4b9f53;">€${rewardsEur.toFixed(2)}</td>
+                <td>${ethPrice > 0 ? `€nbsp;${ethPrice.toFixed(2)}` : ''}</td>
+                <td><span style="color: #4b9f53;">€&nbsp;${rewardsEur.toFixed(2)}</td>
                 <td>${row['Income Tax Rate'] || ''}</td>
-                <td><span style="color: #e8a23b;">${parseFloat(row['ETH for Taxes'] || 0).toFixed(6)} ETH</td>
-                 <td><span style="color: #e8a23b;">€${taxAmountEur.toFixed(2)}</td>
+                <td><span style="color: #e8a23b;">𖢻&nbsp;${parseFloat(row['ETH for Taxes'] || 0).toFixed(6)}</td>
+                 <td><span style="color: #e8a23b;">€&nbsp;${taxAmountEur.toFixed(2)}</td>
                 <td class="tx-hash">
-                    ${txHash ? `<a href="https://etherscan.io/tx/${txHash}" target="_blank" class="tx-hash-link">${txHash.substring(0, 6)}...${txHash.substring(txHash.length - 4)} <i class="fas fa-external-link-alt"></i></a>` : ''}
+                    ${txHash ? `<a href="https://etherscan.io/tx/${txHash}" target="_blank" class="tx-hash-link">${txHash.substring(0, 5)}...${txHash.substring(txHash.length - 4)}<i class="fas fa-external-link-alt"></i></a>` : ''}
                 </td>
                 <td>
                     <span class="${statusClass}">
