@@ -371,11 +371,11 @@ body {
 }
 
 .table th {
-    background: #f8f9fa;
+    background: #ffffff;
     font-weight: 600;
     color: #495057;
     font-size: 0.9em;
-    text-transform: uppercase;
+    text-transform: none;
     letter-spacing: 0.5px;
 }
 
