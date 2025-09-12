@@ -14,6 +14,7 @@ let currentData = {
     node2: []
 };
 let currentTransaction = null;
+let currentEthPrice = 0;
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -57,9 +58,28 @@ function saveToken() {
     loadData();
 }
 
+// Fetch current ETH price
+async function fetchEthPrice() {
+    try {
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=eur');
+        if (response.ok) {
+            const data = await response.json();
+            currentEthPrice = data.ethereum.eur;
+            return currentEthPrice;
+        }
+    } catch (error) {
+        console.warn('Could not fetch current ETH price:', error);
+        currentEthPrice = 0;
+    }
+    return currentEthPrice;
+}
+
 async function loadData() {
     showLoading();
     try {
+        // Fetch current ETH price first
+        await fetchEthPrice();
+        
         // Load both CSV files
         const [node1Data, node2Data] = await Promise.all([
             loadCSVData('node1'),
@@ -156,8 +176,11 @@ function updateDashboard() {
     // Calculate totals
     const totals = calculateTotals();
     
-    // Update summary cards
-    document.getElementById('totalRewards').textContent = `€${totals.totalRewards.toFixed(2)}`;
+    // Update summary cards with both EUR and ETH amounts
+    document.getElementById('totalRewards').innerHTML = `
+        €${totals.totalRewards.toFixed(2)}
+        <div class="eth-amount">${totals.totalRewardsEth.toFixed(6)} ETH</div>
+    `;
     document.getElementById('totalTaxes').textContent = `€${totals.totalTaxes.toFixed(2)}`;
     document.getElementById('unpaidTaxes').textContent = `€${totals.unpaidTaxes.toFixed(2)}`;
     
@@ -178,6 +201,7 @@ function calculateTotals() {
     
     return {
         totalRewards: node1Totals.rewards + node2Totals.rewards,
+        totalRewardsEth: node1Totals.rewardsEth + node2Totals.rewardsEth,
         totalTaxes: node1Totals.taxes + node2Totals.taxes,
         unpaidTaxes: node1Totals.unpaidTaxes + node2Totals.unpaidTaxes,
         node1: node1Totals,
@@ -187,6 +211,7 @@ function calculateTotals() {
 
 function calculateNodeTotals(data) {
     let rewards = 0;
+    let rewardsEth = 0;
     let taxes = 0;
     let unpaidTaxes = 0;
     
@@ -197,10 +222,12 @@ function calculateNodeTotals(data) {
         }
         
         const rewardAmount = parseFloat(row['ETH Rewards in EURO']) || 0;
+        const ethRewardAmount = parseFloat(row['ETH Rewards']) || 0;
         const taxAmount = parseFloat(row['Taxes in EURO']) || 0;
         const isPaid = row['Tax Status'] === 'Paid';
         
         rewards += rewardAmount;
+        rewardsEth += ethRewardAmount;
         taxes += taxAmount;
         
         if (!isPaid && taxAmount > 0) {
@@ -208,13 +235,20 @@ function calculateNodeTotals(data) {
         }
     });
     
-    return { rewards, taxes, unpaidTaxes };
+    return { rewards, rewardsEth, taxes, unpaidTaxes };
 }
 
 function updateNodeStats(nodeKey, stats) {
+    // Update EUR amounts
     document.getElementById(`${nodeKey}TotalRewards`).textContent = `€${stats.rewards.toFixed(2)}`;
     document.getElementById(`${nodeKey}TotalTaxes`).textContent = `€${stats.taxes.toFixed(2)}`;
     document.getElementById(`${nodeKey}UnpaidTaxes`).textContent = `€${stats.unpaidTaxes.toFixed(2)}`;
+    
+    // Update ETH amounts (add these elements to your HTML)
+    const ethElement = document.getElementById(`${nodeKey}TotalRewardsEth`);
+    if (ethElement) {
+        ethElement.textContent = `${stats.rewardsEth.toFixed(6)} ETH`;
+    }
 }
 
 function updateTransactionTable(nodeKey) {
@@ -234,6 +268,7 @@ function updateTransactionTable(nodeKey) {
                     <th>ETH Rewards</th>
                     <th>ETH Price (EUR)</th>
                     <th>Rewards (EUR)</th>
+                    <th>Current Value (EUR)</th>
                     <th>Tax Rate</th>
                     <th>ETH for Taxes</th>
                     <th>Tax Amount (EUR)</th>
@@ -262,8 +297,14 @@ function updateTransactionTable(nodeKey) {
         const taxStatus = row['Tax Status'] || 'Unpaid';
         const taxTxHash = row['Tax Transaction Hash'] || '';
         
+        // Calculate current value if we have current ETH price
+        const currentValueEur = currentEthPrice > 0 ? (ethRewards * currentEthPrice) : 0;
+        const priceChange = currentEthPrice > 0 && ethPrice > 0 ? 
+            ((currentEthPrice - ethPrice) / ethPrice * 100) : 0;
+        
         const rowClass = isDailyTotal ? 'daily-total-row' : '';
         const statusClass = taxStatus === 'Paid' ? 'status-paid' : 'status-unpaid';
+        const priceChangeClass = priceChange > 0 ? 'price-up' : (priceChange < 0 ? 'price-down' : '');
         
         tableHTML += `
             <tr class="${rowClass}">
