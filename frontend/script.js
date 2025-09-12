@@ -13,6 +13,10 @@ let currentData = {
     node1: [],
     node2: []
 };
+let filteredData = {
+    node1: [],
+    node2: []
+};
 let currentTransaction = null;
 
 // Initialize the application
@@ -66,8 +70,8 @@ async function loadData() {
             loadCSVData('node2')
         ]);
         
-        currentData.node1 = node1Data;
-        currentData.node2 = node2Data;
+        currentData.node1 = node1Data || [];
+        currentData.node2 = node2Data || [];
         
         updateDashboard();
         hideLoading();
@@ -86,7 +90,8 @@ async function loadCSVData(nodeKey) {
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            throw new Error(`Failed to fetch ${csvFile}: ${response.status}`);
+            console.warn(`Could not load ${csvFile}: ${response.status}`);
+            return [];
         }
         
         const csvText = await response.text();
@@ -156,14 +161,26 @@ function updateDashboard() {
     // Calculate totals
     const totals = calculateTotals();
     
-    // Update summary cards
+    // Update summary cards - simple version first
     document.getElementById('totalRewards').textContent = `€${totals.totalRewards.toFixed(2)}`;
+    document.getElementById('totalRewardsEth').textContent = `$ETH ${totals.totalRewardsEth.toFixed(6)}`;
+    
     document.getElementById('totalTaxes').textContent = `€${totals.totalTaxes.toFixed(2)}`;
-    document.getElementById('unpaidTaxes').textContent = `€${totals.unpaidTaxes.toFixed(2)}`;
+    document.getElementById('totalTaxesEth').textContent = `$ETH ${totals.totalTaxesEth.toFixed(6)}`;
+    
+    document.getElementById('afterTaxRewards').textContent = `€${totals.afterTaxRewards.toFixed(2)}`;
+    document.getElementById('afterTaxRewardsEth').textContent = `$ETH ${totals.afterTaxRewardsEth.toFixed(6)}`;
     
     // Update node stats
     updateNodeStats('node1', totals.node1);
     updateNodeStats('node2', totals.node2);
+    
+    // Initialize filtered data with all data
+    filteredData.node1 = [...currentData.node1];
+    filteredData.node2 = [...currentData.node2];
+    
+    // Populate year filters
+    populateYearFilters();
     
     // Update tables
     updateTransactionTable('node1');
@@ -180,6 +197,10 @@ function calculateTotals() {
         totalRewards: node1Totals.rewards + node2Totals.rewards,
         totalTaxes: node1Totals.taxes + node2Totals.taxes,
         unpaidTaxes: node1Totals.unpaidTaxes + node2Totals.unpaidTaxes,
+        totalRewardsEth: node1Totals.rewardsEth + node2Totals.rewardsEth,
+        totalTaxesEth: node1Totals.taxesEth + node2Totals.taxesEth,
+        afterTaxRewards: node1Totals.rewards - node1Totals.taxes + node2Totals.rewards - node2Totals.taxes,
+        afterTaxRewardsEth: node1Totals.rewardsEth - node1Totals.taxesEth + node2Totals.rewardsEth - node2Totals.taxesEth,
         node1: node1Totals,
         node2: node2Totals
     };
@@ -189,41 +210,51 @@ function calculateNodeTotals(data) {
     let rewards = 0;
     let taxes = 0;
     let unpaidTaxes = 0;
+    let rewardsEth = 0;
+    let taxesEth = 0;
+    
+    if (!data || !Array.isArray(data)) {
+        return { rewards: 0, taxes: 0, unpaidTaxes: 0, rewardsEth: 0, taxesEth: 0 };
+    }
     
     data.forEach(row => {
-        // Skip daily totals for individual calculations
-        if (row.Date && row.Date.includes('DAILY TOTAL')) {
-            return;
-        }
-        
         const rewardAmount = parseFloat(row['ETH Rewards in EURO']) || 0;
         const taxAmount = parseFloat(row['Taxes in EURO']) || 0;
+        const rewardEthAmount = parseFloat(row['ETH Rewards']) || 0;
+        const taxEthAmount = parseFloat(row['ETH for Taxes']) || 0;
         const isPaid = row['Tax Status'] === 'Paid';
         
         rewards += rewardAmount;
         taxes += taxAmount;
+        rewardsEth += rewardEthAmount;
+        taxesEth += taxEthAmount;
         
         if (!isPaid && taxAmount > 0) {
             unpaidTaxes += taxAmount;
         }
     });
     
-    return { rewards, taxes, unpaidTaxes };
+    return { rewards, taxes, unpaidTaxes, rewardsEth, taxesEth };
 }
 
 function updateNodeStats(nodeKey, stats) {
-    document.getElementById(`${nodeKey}TotalRewards`).textContent = `€${stats.rewards.toFixed(2)}`;
-    document.getElementById(`${nodeKey}TotalRewardsEth`).textContent = `$ETH ${stats.rewardsEth.toFixed(6)}`;
-    document.getElementById(`${nodeKey}TotalTaxes`).textContent = `€${stats.taxes.toFixed(2)}`;
-    document.getElementById(`${nodeKey}UnpaidTaxes`).textContent = `€${stats.unpaidTaxes.toFixed(2)}`;
+    const rewards = stats?.rewards || 0;
+    const rewardsEth = stats?.rewardsEth || 0;
+    const taxes = stats?.taxes || 0;
+    const unpaidTaxes = stats?.unpaidTaxes || 0;
+    
+    document.getElementById(`${nodeKey}TotalRewards`).textContent = `€${rewards.toFixed(2)}`;
+    document.getElementById(`${nodeKey}TotalRewardsEth`).textContent = `$ETH ${rewardsEth.toFixed(6)}`;
+    document.getElementById(`${nodeKey}TotalTaxes`).textContent = `€${taxes.toFixed(2)}`;
+    document.getElementById(`${nodeKey}UnpaidTaxes`).textContent = `€${unpaidTaxes.toFixed(2)}`;
 }
 
 function updateTransactionTable(nodeKey) {
     const tableContainer = document.getElementById(`${nodeKey}Table`);
-    const data = currentData[nodeKey];
+    const data = filteredData[nodeKey];
     
     if (!data || data.length === 0) {
-        tableContainer.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 20px;">No transactions found</p>';
+        tableContainer.innerHTML = '<p style="text-align: center; color: #7f8c8d; padding: 20px;">No transactions found for the selected period</p>';
         return;
     }
     
@@ -254,7 +285,6 @@ function updateTransactionTable(nodeKey) {
     });
     
     sortedData.forEach((row, index) => {
-        const isDailyTotal = row.Date && row.Date.includes('DAILY TOTAL');
         const ethRewards = parseFloat(row['ETH Rewards']) || 0;
         const ethPrice = parseFloat(row['ETH Price (EURO)']) || 0;
         const rewardsEur = parseFloat(row['ETH Rewards in EURO']) || 0;
@@ -263,11 +293,10 @@ function updateTransactionTable(nodeKey) {
         const taxStatus = row['Tax Status'] || 'Unpaid';
         const taxTxHash = row['Tax Transaction Hash'] || '';
         
-        const rowClass = isDailyTotal ? 'daily-total-row' : '';
         const statusClass = taxStatus === 'Paid' ? 'status-paid' : 'status-unpaid';
         
         tableHTML += `
-            <tr class="${rowClass}">
+            <tr>
                 <td>${row.Date}</td>
                 <td class="eth-amount">${ethRewards.toFixed(6)} ETH</td>
                 <td>${ethPrice > 0 ? `€${ethPrice.toFixed(2)}` : ''}</td>
@@ -286,7 +315,7 @@ function updateTransactionTable(nodeKey) {
                     ${taxTxHash ? `<br><small>Tax TX: <a href="https://etherscan.io/tx/${taxTxHash}" target="_blank">${taxTxHash.substring(0, 10)}...</a></small>` : ''}
                 </td>
                 <td>
-                    ${!isDailyTotal && taxStatus === 'Unpaid' && taxAmountEur > 0 ? 
+                    ${taxStatus === 'Unpaid' && taxAmountEur > 0 ? 
                         `<button class="mark-paid-btn" onclick="openTaxModal('${nodeKey}', ${index})">Mark as Paid</button>` : 
                         ''}
                 </td>
@@ -309,7 +338,8 @@ function showNode(nodeNumber) {
 }
 
 function openTaxModal(nodeKey, rowIndex) {
-    const data = currentData[nodeKey];
+    const data = filteredData[nodeKey];
+    
     const sortedData = [...data].sort((a, b) => {
         const dateA = new Date(a.Date.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1'));
         const dateB = new Date(b.Date.replace(/(\d{2})\/(\d{2})\/(\d{4})/, '$3-$2-$1'));
@@ -317,7 +347,7 @@ function openTaxModal(nodeKey, rowIndex) {
     });
     
     const transaction = sortedData[rowIndex];
-    currentTransaction = { nodeKey, transaction, rowIndex };
+    currentTransaction = { nodeKey, transaction, rowIndex, originalData: currentData[nodeKey] };
     
     const ethRewards = parseFloat(transaction['ETH Rewards']) || 0;
     const ethForTaxes = parseFloat(transaction['ETH for Taxes']) || 0;
@@ -409,7 +439,7 @@ function updateCSVContent(csvContent, targetTransaction, taxTxHash) {
     
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        if (line.includes(targetTxHash) && targetTxHash) { // Make sure we have a valid hash to match
+        if (line.includes(targetTxHash) && targetTxHash) {
             // Parse the line and update tax status
             const values = parseCSVLine(line);
             if (values.length >= 10) {
@@ -458,6 +488,19 @@ function showLoading() {
 
 function hideLoading() {
     document.getElementById('loading').style.display = 'none';
+}
+
+// Simplified filter functions (removed for now to focus on core functionality)
+function populateYearFilters() {
+    // Simplified - will add back once core is working
+}
+
+function applyDateFilter(nodeKey) {
+    // Simplified - will add back once core is working
+}
+
+function updateFilterInfo(nodeKey, year, month, totalCount) {
+    // Simplified - will add back once core is working
 }
 
 // Close modal when clicking outside
