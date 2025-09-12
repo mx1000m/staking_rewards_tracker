@@ -185,6 +185,7 @@ function updateDashboard() {
     document.getElementById('dashboard').style.display = 'block';
 }
 
+
 function calculateTotals() {
     const node1Totals = calculateNodeTotals(currentData.node1);
     const node2Totals = calculateNodeTotals(currentData.node2);
@@ -196,10 +197,16 @@ function calculateTotals() {
         totalTaxesEth: node1Totals.taxesEth + node2Totals.taxesEth,
         unpaidTaxes: node1Totals.unpaidTaxes + node2Totals.unpaidTaxes,
         unpaidTaxesEth: node1Totals.unpaidTaxesEth + node2Totals.unpaidTaxesEth,
+        totalSwapped: node1Totals.swapped + node2Totals.swapped,
+        totalSwappedEth: node1Totals.swappedEth + node2Totals.swappedEth,
         node1: node1Totals,
         node2: node2Totals
     };
 }
+
+
+
+
 
 function calculateNodeTotals(data) {
     let rewards = 0;
@@ -208,6 +215,8 @@ function calculateNodeTotals(data) {
     let taxesEth = 0;
     let unpaidTaxes = 0;
     let unpaidTaxesEth = 0;
+    let swapped = 0;
+    let swappedEth = 0;
     
     data.forEach(row => {
         // Skip daily totals for individual calculations
@@ -230,10 +239,20 @@ function calculateNodeTotals(data) {
             unpaidTaxes += taxAmount;
             unpaidTaxesEth += ethTaxAmount;
         }
+        
+        if (isPaid && taxAmount > 0) {
+            swapped += taxAmount;
+            swappedEth += ethTaxAmount;
+        }
     });
     
-    return { rewards, rewardsEth, taxes, taxesEth, unpaidTaxes, unpaidTaxesEth };
+    return { rewards, rewardsEth, taxes, taxesEth, unpaidTaxes, unpaidTaxesEth, swapped, swappedEth };
 }
+
+
+
+
+
 
 function updateNodeStats(nodeKey, stats) {
     // Update all amounts with both EUR and ETH
@@ -249,6 +268,11 @@ document.getElementById(`${nodeKey}TotalRewards`).innerHTML = `
         <span style="color: #dd514b;">€${stats.unpaidTaxes.toFixed(2)}</span>
         <div class="eth-amount" style="color: #dd514b; font-size: 14px;">${stats.unpaidTaxesEth.toFixed(6)} ETH</div>
     `;
+
+    document.getElementById('totalSwapped').innerHTML = `
+    <span style="color: #3498db;">€&nbsp${totals.totalSwapped.toFixed(2)}</span>
+    <div class="eth-amount" style="color: #3498db; font-size: 14px;">${totals.totalSwappedEth.toFixed(6)} ETH</div>
+`;
     
     // Update separate ETH elements if they exist
     const ethElement = document.getElementById(`${nodeKey}TotalRewardsEth`);
