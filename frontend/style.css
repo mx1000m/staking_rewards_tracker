@@ -399,6 +399,8 @@ body {
     font-size: 0.7em;
     margin-left: 4px;
     opacity: 0.7;
+    display: inline;
+    vertical-align: middle;
 }
 
 .status-paid {
