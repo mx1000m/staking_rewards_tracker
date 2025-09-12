@@ -1,7 +1,7 @@
 // Configuration
 const CONFIG = {
-    GITHUB_USERNAME: 'YOUR_GITHUB_USERNAME', // Replace with your GitHub username
-    GITHUB_REPO: 'YOUR_REPO_NAME',          // Replace with your repository name
+    GITHUB_USERNAME: 'Staking_Rewards', // Replace with your GitHub username
+    GITHUB_REPO: 'mx1000m',          // Replace with your repository name
     CSV_FILES: {
         node1: 'RewardsNode1.csv',
         node2: 'RewardsNode2.csv'
