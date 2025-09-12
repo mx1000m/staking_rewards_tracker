@@ -158,15 +158,15 @@ function updateDashboard() {
     
     // Update summary cards with both EUR and ETH amounts
     document.getElementById('totalRewards').innerHTML = `
-        €${totals.totalRewards.toFixed(2)}
-        <div class="eth-amount">${totals.totalRewardsEth.toFixed(6)} ETH</div>
+        <span style="color: #4b9f53;">€${totals.totalRewards.toFixed(2)}</span>
+        <div class="eth-amount" style="font-size: 14px;">${totals.totalRewardsEth.toFixed(6)} ETH</div>
     `;
     document.getElementById('totalTaxes').innerHTML = `
-        €${totals.totalTaxes.toFixed(2)}
+        <span style="color: #e8a23b;">€${totals.totalTaxes.toFixed(2)}</span>
         <div class="eth-amount">${totals.totalTaxesEth.toFixed(6)} ETH</div>
     `;
     document.getElementById('unpaidTaxes').innerHTML = `
-        €${totals.unpaidTaxes.toFixed(2)}
+        <span style="color: #dd514b;">€${totals.unpaidTaxes.toFixed(2)}</span>
         <div class="eth-amount">${totals.unpaidTaxesEth.toFixed(6)} ETH</div>
     `;
     
