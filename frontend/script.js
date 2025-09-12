@@ -232,8 +232,11 @@ function calculateNodeTotals(data) {
 }
 
 function updateNodeStats(nodeKey, stats) {
-    // Update EUR amounts
-    document.getElementById(`${nodeKey}TotalRewards`).textContent = `€${stats.rewards.toFixed(2)}`;
+    // Update all amounts with both EUR and ETH
+    document.getElementById(`${nodeKey}TotalRewards`).innerHTML = `
+        €${stats.rewards.toFixed(2)}
+        <div class="eth-amount">${stats.rewardsEth.toFixed(6)} ETH</div>
+    `;
     document.getElementById(`${nodeKey}TotalTaxes`).innerHTML = `
         €${stats.taxes.toFixed(2)}
         <div class="eth-amount">${stats.taxesEth.toFixed(6)} ETH</div>
@@ -243,7 +246,7 @@ function updateNodeStats(nodeKey, stats) {
         <div class="eth-amount">${stats.unpaidTaxesEth.toFixed(6)} ETH</div>
     `;
     
-    // Update ETH amounts (add these elements to your HTML)
+    // Update separate ETH elements if they exist
     const ethElement = document.getElementById(`${nodeKey}TotalRewardsEth`);
     if (ethElement) {
         ethElement.textContent = `${stats.rewardsEth.toFixed(6)} ETH`;
