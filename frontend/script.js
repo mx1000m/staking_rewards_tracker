@@ -215,7 +215,7 @@ function calculateNodeTotals(data) {
         const ethRewardAmount = parseFloat(row['ETH Rewards']) || 0;
         const taxAmount = parseFloat(row['Taxes in EURO']) || 0;
         const ethTaxAmount = parseFloat(row['ETH for Taxes']) || 0;
-        const isPaid = row['Tax Status'] === 'Paid';
+        const isPaid = row['Tax Status'] === 'Swapped';
         
         rewards += rewardAmount;
         rewardsEth += ethRewardAmount;
