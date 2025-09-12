@@ -235,15 +235,15 @@ function updateNodeStats(nodeKey, stats) {
     // Update all amounts with both EUR and ETH
 document.getElementById(`${nodeKey}TotalRewards`).innerHTML = `
     <span style="color: #4b9f53;">€${stats.rewards.toFixed(2)}</span>
-    <div class="eth-amount" style="color: #4b9f53;">${stats.rewardsEth.toFixed(6)} ETH</div>
+    <div class="eth-amount" style="color: #39793f;">${stats.rewardsEth.toFixed(6)} ETH</div>
 `;
     document.getElementById(`${nodeKey}TotalTaxes`).innerHTML = `
-        €${stats.taxes.toFixed(2)}
-        <div class="eth-amount">${stats.taxesEth.toFixed(6)} ETH</div>
-    `;
+        <span style="color: #e8a23b;">€${stats.taxes.toFixed(2)}</span>
+        <div class="eth-amount" style="color: #c18630;">${stats.taxesEth.toFixed(6)} ETH</div>
+    `;  
     document.getElementById(`${nodeKey}UnpaidTaxes`).innerHTML = `
-        €${stats.unpaidTaxes.toFixed(2)}
-        <div class="eth-amount">${stats.unpaidTaxesEth.toFixed(6)} ETH</div>
+        <span style="color: #dd514b;">€${stats.unpaidTaxes.toFixed(2)}</span>
+        <div class="eth-amount" style="color: #8d322e;">${stats.unpaidTaxesEth.toFixed(6)} ETH</div>
     `;
     
     // Update separate ETH elements if they exist
