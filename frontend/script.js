@@ -152,6 +152,9 @@ function parseCSVLine(line) {
     return result;
 }
 
+
+
+
 function updateDashboard() {
     // Calculate totals
     const totals = calculateTotals();
@@ -169,10 +172,10 @@ function updateDashboard() {
         <span style="color: #dd514b;">€&nbsp${totals.unpaidTaxes.toFixed(2)}</span>
         <div class="eth-amount" style="color: #dd514b; font-size: 14px;">${totals.unpaidTaxesEth.toFixed(6)} ETH</div>
     `;
-
-
-
-
+    document.getElementById('totalSwapped').innerHTML = `
+        <span style="color: #3498db;">€&nbsp${totals.totalSwapped.toFixed(2)}</span>
+        <div class="eth-amount" style="color: #3498db; font-size: 14px;">${totals.totalSwappedEth.toFixed(6)} ETH</div>
+    `;
     
     // Update node stats
     updateNodeStats('node1', totals.node1);
@@ -184,6 +187,7 @@ function updateDashboard() {
     
     document.getElementById('dashboard').style.display = 'block';
 }
+
 
 
 function calculateTotals() {
@@ -268,11 +272,6 @@ document.getElementById(`${nodeKey}TotalRewards`).innerHTML = `
         <span style="color: #dd514b;">€${stats.unpaidTaxes.toFixed(2)}</span>
         <div class="eth-amount" style="color: #dd514b; font-size: 14px;">${stats.unpaidTaxesEth.toFixed(6)} ETH</div>
     `;
-
-    document.getElementById('totalSwapped').innerHTML = `
-    <span style="color: #3498db;">€&nbsp${totals.totalSwapped.toFixed(2)}</span>
-    <div class="eth-amount" style="color: #3498db; font-size: 14px;">${totals.totalSwappedEth.toFixed(6)} ETH</div>
-`;
     
     // Update separate ETH elements if they exist
     const ethElement = document.getElementById(`${nodeKey}TotalRewardsEth`);
