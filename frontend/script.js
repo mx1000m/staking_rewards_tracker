@@ -215,7 +215,7 @@ function calculateNodeTotals(data) {
         const ethRewardAmount = parseFloat(row['ETH Rewards']) || 0;
         const taxAmount = parseFloat(row['Taxes in EURO']) || 0;
         const ethTaxAmount = parseFloat(row['ETH for Taxes']) || 0;
-        const isPaid = row['Tax Status'] === 'Swapped';
+        const isPaid = row['Tax Status'] === 'Paid';
         
         rewards += rewardAmount;
         rewardsEth += ethRewardAmount;
@@ -323,9 +323,9 @@ function updateTransactionTable(nodeKey) {
                 </td>
                 <td>
     ${!isDailyTotal && taxStatus === 'Unpaid' && taxAmountEur > 0 ? 
-        `<button class="mark-paid-btn" onclick="openTaxModal('${nodeKey}', ${index})">Mark as Paid</button>` : 
+        `<button class="mark-paid-btn" onclick="openTaxModal('${nodeKey}', ${index})">Mark as Swapped</button>` : 
         (taxStatus === 'Paid' ? 
-            `<button class="mark-paid-btn" disabled style="background: #6c757d; cursor: not-allowed;">Paid</button>` : 
+            `<button class="mark-paid-btn" disabled style="background: #6c757d; cursor: not-allowed;">Swapped</button>` : 
             '')}
 </td>
             </tr>
