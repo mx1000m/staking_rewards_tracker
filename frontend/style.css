@@ -617,3 +617,10 @@ body {
         font-size: 0.9em;
     }
 }
+
+
+
+.total-swapped .card-icon {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+}
