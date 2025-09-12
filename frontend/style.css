@@ -381,20 +381,31 @@ body {
     font-weight: 600;
 }
 
-.tx-hash {
+
+
+
+.tx-hash-link {
+    color: #8b5cf6 !important; /* Purple color */
+    text-decoration: none;
     font-family: 'Monaco', 'Menlo', monospace;
     font-size: 0.85em;
-    color: #6c757d;
+    transition: color 0.3s ease;
 }
 
-.tx-hash a {
-    color: #3498db;
-    text-decoration: none;
-}
-
-.tx-hash a:hover {
+.tx-hash-link:hover {
+    color: #7c3aed !important; /* Darker purple on hover */
     text-decoration: underline;
 }
+
+.tx-hash-link i {
+    font-size: 0.7em;
+    margin-left: 4px;
+    opacity: 0.7;
+}
+
+
+
+
 
 .status-paid {
     background: #d4edda;
