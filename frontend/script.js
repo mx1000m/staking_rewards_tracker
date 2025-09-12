@@ -170,10 +170,7 @@ function updateDashboard() {
         <div class="eth-amount" style="color: #dd514b; font-size: 14px;">${totals.unpaidTaxesEth.toFixed(6)} ETH</div>
     `;
 
-   document.getElementById('unpaidTaxes').innerHTML = `
-        <span style="color: #dd514b;">€&nbsp${totals.unpaidTaxes.toFixed(2)}</span>
-        <div class="eth-amount" style="color: #dd514b; font-size: 14px;">${totals.unpaidTaxesEth.toFixed(6)} ETH</div>
-    `;
+
 
 
     
