@@ -158,16 +158,16 @@ function updateDashboard() {
     
     // Update summary cards with both EUR and ETH amounts
     document.getElementById('totalRewards').innerHTML = `
-        <span style="color: #4b9f53;">€${totals.totalRewards.toFixed(2)}</span>
-        <div class="eth-amount" style="font-size: 14px;">${totals.totalRewardsEth.toFixed(6)} ETH</div>
+        <span style="color: #4b9f53;">€&nbsp${totals.totalRewards.toFixed(2)}</span>
+        <div class="eth-amount" style="color: #4b9f53; font-size: 14px;">${totals.totalRewardsEth.toFixed(6)} ETH</div>
     `;
     document.getElementById('totalTaxes').innerHTML = `
-        <span style="color: #e8a23b;">€${totals.totalTaxes.toFixed(2)}</span>
-        <div class="eth-amount">${totals.totalTaxesEth.toFixed(6)} ETH</div>
+        <span style="color: #e8a23b;">€&nbsp${totals.totalTaxes.toFixed(2)}</span>
+        <div class="eth-amount" style="color: #e8a23b; font-size: 14px;">${totals.totalTaxesEth.toFixed(6)} ETH</div>
     `;
     document.getElementById('unpaidTaxes').innerHTML = `
-        <span style="color: #dd514b;">€${totals.unpaidTaxes.toFixed(2)}</span>
-        <div class="eth-amount">${totals.unpaidTaxesEth.toFixed(6)} ETH</div>
+        <span style="color: #dd514b;">€&nbsp${totals.unpaidTaxes.toFixed(2)}</span>
+        <div class="eth-amount" style="color: #dd514b; font-size: 14px;">${totals.unpaidTaxesEth.toFixed(6)} ETH</div>
     `;
     
     // Update node stats
