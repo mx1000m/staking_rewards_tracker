@@ -305,7 +305,7 @@ function updateTransactionTable(nodeKey) {
         tableHTML += `
             <tr class="${rowClass}">
                 <td>${row.Date}</td>
-                <td><span style="color: #4b9f53;">𖢻${ethRewards.toFixed(6)}</span></td>
+                <td><span style="color: #4b9f53;">𖢻&nbsp;${ethRewards.toFixed(6)}</span></td>
                 <td>${ethPrice > 0 ? `€${ethPrice.toFixed(2)}` : ''}</td>
                 <td><span style="color: #4b9f53;">€${rewardsEur.toFixed(2)}</td>
                 <td>${row['Income Tax Rate'] || ''}</td>
