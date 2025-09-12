@@ -233,10 +233,10 @@ function calculateNodeTotals(data) {
 
 function updateNodeStats(nodeKey, stats) {
     // Update all amounts with both EUR and ETH
-    document.getElementById(`${nodeKey}TotalRewards`).innerHTML = `
-        €${stats.rewards.toFixed(2)}
-        <div class="eth-amount">${stats.rewardsEth.toFixed(6)} ETH</div>
-    `;
+document.getElementById(`${nodeKey}TotalRewards`).innerHTML = `
+    <span class="rewards">€${stats.rewards.toFixed(2)}</span>
+    <div class="eth-amount rewards">${stats.rewardsEth.toFixed(6)} ETH</div>
+`;
     document.getElementById(`${nodeKey}TotalTaxes`).innerHTML = `
         €${stats.taxes.toFixed(2)}
         <div class="eth-amount">${stats.taxesEth.toFixed(6)} ETH</div>
