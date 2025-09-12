@@ -360,12 +360,19 @@ function openTaxModal(nodeKey, rowIndex) {
     
     const transaction = sortedData[rowIndex];
     currentTransaction = { nodeKey, transaction, rowIndex };
+
+
     
-    const ethRewards = parseFloat(transaction['ETH Rewards']) || 0;
-    const ethForTaxes = parseFloat(transaction['ETH for Taxes']) || 0;
+const ethRewards = parseFloat(transaction['ETH Rewards']) || 0;
+const ethForTaxes = parseFloat(transaction['ETH for Taxes']) || 0;
+const rewardsEur = parseFloat(transaction['ETH Rewards in EURO']) || 0;
+const taxAmountEur = parseFloat(transaction['Taxes in EURO']) || 0;
+
+document.getElementById('modalReward').textContent = `${ethRewards.toFixed(6)} ETH`;
+document.getElementById('modalRewardEur').textContent = `(€${rewardsEur.toFixed(2)})`;
+document.getElementById('modalTaxAmount').textContent = `${ethForTaxes.toFixed(6)} ETH`;
+document.getElementById('modalTaxAmountEur').textContent = `(€${taxAmountEur.toFixed(2)})`;
     
-    document.getElementById('modalReward').textContent = `${ethRewards.toFixed(6)} ETH`;
-    document.getElementById('modalTaxAmount').textContent = `${ethForTaxes.toFixed(6)} ETH`;
     document.getElementById('taxTxHash').value = '';
     
     document.getElementById('taxModal').style.display = 'block';
