@@ -1,18 +1,86 @@
-import React from "react";
+import React, { useState } from "react";
+import { useAuth } from "../hooks/useAuth";
 
 export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-	// Placeholder buttons; wire to Firebase or wallet connect later
+	const { user, loading, signInWithGoogle, signInWithGitHub, logout } = useAuth();
+	const [error, setError] = useState<string | null>(null);
+	const [signingIn, setSigningIn] = useState(false);
+
+	const handleGoogleSignIn = async () => {
+		setSigningIn(true);
+		setError(null);
+		try {
+			await signInWithGoogle();
+		} catch (err: any) {
+			setError(err.message || "Failed to sign in with Google");
+		} finally {
+			setSigningIn(false);
+		}
+	};
+
+	const handleGitHubSignIn = async () => {
+		setSigningIn(true);
+		setError(null);
+		try {
+			await signInWithGitHub();
+		} catch (err: any) {
+			setError(err.message || "Failed to sign in with GitHub");
+		} finally {
+			setSigningIn(false);
+		}
+	};
+
+	const handleWalletConnect = () => {
+		// TODO: Implement wallet connect
+		alert("Wallet connect (to be wired)");
+	};
+
+	if (loading) {
+		return (
+			<div className="card">
+				<p>Loading...</p>
+			</div>
+		);
+	}
+
+	if (user) {
+		// User is signed in, show the wizard
+		return (
+			<>
+				<div className="card" style={{ marginBottom: 16 }}>
+					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+						<div>
+							<p style={{ margin: 0, fontSize: "0.9rem", color: "#9aa0b4" }}>Signed in as</p>
+							<p style={{ margin: 0, fontWeight: 600 }}>{user.displayName || user.email}</p>
+						</div>
+						<button onClick={logout} style={{ background: "#2a2a44" }}>Sign out</button>
+					</div>
+				</div>
+				{children}
+			</>
+		);
+	}
+
+	// User is not signed in, show sign-in options only
 	return (
-		<div className="card" style={{ marginBottom: 16 }}>
+		<div className="card">
 			<h2>Sign in</h2>
 			<p className="muted">Choose a method to continue.</p>
+			{error && (
+				<div style={{ padding: "12px", background: "#2a1a1a", border: "1px solid #ff4444", borderRadius: "8px", marginBottom: "16px", color: "#ff8888" }}>
+					{error}
+				</div>
+			)}
 			<div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-				<button onClick={() => alert("Connect with Google (to be wired)")}>Google</button>
-				<button onClick={() => alert("Connect with GitHub (to be wired)")}>GitHub</button>
-				<button onClick={() => alert("Connect wallet (to be wired)")}>Connect Wallet</button>
-			</div>
-			<div style={{ marginTop: 16 }}>
-				{children}
+				<button onClick={handleGoogleSignIn} disabled={signingIn}>
+					{signingIn ? "Signing in..." : "Google"}
+				</button>
+				<button onClick={handleGitHubSignIn} disabled={signingIn}>
+					{signingIn ? "Signing in..." : "GitHub"}
+				</button>
+				<button onClick={handleWalletConnect} disabled={signingIn}>
+					Connect Wallet
+				</button>
 			</div>
 		</div>
 	);

@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/vite-env.d.ts","./src/config/firebase.ts","./src/hooks/useauth.ts","./src/ui/app.tsx","./src/ui/authshell.tsx","./src/ui/onboardingwizard.tsx"],"version":"5.9.3"}
