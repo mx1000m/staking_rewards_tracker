@@ -55,12 +55,15 @@ export const OnboardingWizard: React.FC = () => {
       {step === 0 && (
         <div>
           <h2>Wallet receiving staking rewards</h2>
-          <input
-            className="input"
-            placeholder="0x..."
-            value={walletAddress}
-            onChange={(e) => setWalletAddress(e.target.value.trim())}
-          />
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <input
+              className="input"
+              style={{ maxWidth: "none", width: "auto", minWidth: "300px" }}
+              placeholder="0x..."
+              value={walletAddress}
+              onChange={(e) => setWalletAddress(e.target.value.trim())}
+            />
+          </div>
         </div>
       )}
       {step === 1 && (
@@ -98,12 +101,15 @@ export const OnboardingWizard: React.FC = () => {
         <div>
           <h2>Your Etherscan API key</h2>
           <p className="muted">Each user should bring their own Etherscan API key.</p>
-          <input
-            className="input"
-            placeholder="ETHERSCAN_API_KEY"
-            value={etherscanKey}
-            onChange={(e) => setEtherscanKey(e.target.value)}
-          />
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <input
+              className="input"
+              style={{ maxWidth: "none", width: "auto", minWidth: "300px" }}
+              placeholder="ETHERSCAN_API_KEY"
+              value={etherscanKey}
+              onChange={(e) => setEtherscanKey(e.target.value)}
+            />
+          </div>
         </div>
       )}
       <div className="actions">
