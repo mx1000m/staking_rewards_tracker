@@ -9,8 +9,11 @@ body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI
 .input { width: calc(100% - 24px); padding: 12px 14px; background: #0e0e1a; border: 1px solid #1a1a2e; border-radius: 10px; color: #e8e8f0; transition: border-color 0.2s; }
 .input:focus { outline: none; border-color: #6b6bff; background: #0f0f1f; }
 .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
-button { background: #6b6bff; color: white; padding: 10px 16px; border: 0; border-radius: 10px; cursor: pointer; }
+button { background: #6b6bff; color: white; padding: 10px 16px; border: 0; border-radius: 10px; cursor: pointer; transition: background-color 0.2s, transform 0.1s; }
+button:hover:not([disabled]) { background: #7c7cff; }
+button:active:not([disabled]) { transform: scale(0.95); }
 button[disabled] { opacity: 0.5; cursor: not-allowed; }
+button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54 !important; }
 .muted { color: #9aa0b4; font-size: 0.9rem; }
 
 
