@@ -9,16 +9,25 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const handleGoogleSignIn = async () => {
 		setSigningIn(true);
 		setError(null);
+		
+		// Safety timeout: reset state after 5 seconds max (in case Firebase is slow to detect popup closure)
+		const timeout = setTimeout(() => {
+			setSigningIn(false);
+		}, 5000);
+		
 		try {
 			await signInWithGoogle();
+			clearTimeout(timeout);
+			setSigningIn(false);
 		} catch (err: any) {
+			clearTimeout(timeout);
 			// Don't show error if user closed the popup
 			if (err.code === "auth/popup-closed-by-user") {
-				// User closed popup, silently return to sign-in screen
+				// User closed popup, reset state immediately
+				setSigningIn(false);
 				return;
 			}
 			setError(err.message || "Failed to sign in with Google");
-		} finally {
 			setSigningIn(false);
 		}
 	};
@@ -26,16 +35,25 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const handleGitHubSignIn = async () => {
 		setSigningIn(true);
 		setError(null);
+		
+		// Safety timeout: reset state after 5 seconds max (in case Firebase is slow to detect popup closure)
+		const timeout = setTimeout(() => {
+			setSigningIn(false);
+		}, 5000);
+		
 		try {
 			await signInWithGitHub();
+			clearTimeout(timeout);
+			setSigningIn(false);
 		} catch (err: any) {
+			clearTimeout(timeout);
 			// Don't show error if user closed the popup
 			if (err.code === "auth/popup-closed-by-user") {
-				// User closed popup, silently return to sign-in screen
+				// User closed popup, reset state immediately
+				setSigningIn(false);
 				return;
 			}
 			setError(err.message || "Failed to sign in with GitHub");
-		} finally {
 			setSigningIn(false);
 		}
 	};
