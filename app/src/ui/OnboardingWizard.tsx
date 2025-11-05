@@ -50,6 +50,7 @@ export const OnboardingWizard: React.FC = () => {
 
   return (
     <section className="card">
+      <h1 style={{ margin: "0 0 8px 0", fontSize: "1.5rem", fontWeight: 600 }}>Set up your first Node Tracker</h1>
       <div className="steps">Step {step + 1} of 4</div>
       {step === 0 && (
         <div>

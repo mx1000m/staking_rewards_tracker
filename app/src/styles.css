@@ -6,7 +6,8 @@ body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI
 .card { width: 720px; max-width: 92vw; background: #141428; border: 1px solid #232342; border-radius: 14px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); }
 .steps { font-size: 12px; color: #9aa0b4; margin-bottom: 12px; }
 .row { display: flex; gap: 12px; align-items: center; }
-.input { width: 100%; padding: 12px 14px; background: #0e0e1a; border: 1px solid #2a2a44; border-radius: 10px; color: #e8e8f0; }
+.input { width: 100%; padding: 12px 14px; background: #13132a; border: 1px solid #232342; border-radius: 10px; color: #e8e8f0; transition: border-color 0.2s; }
+.input:focus { outline: none; border-color: #6b6bff; background: #15152e; }
 .actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
 button { background: #6b6bff; color: white; padding: 10px 16px; border: 0; border-radius: 10px; cursor: pointer; }
 button[disabled] { opacity: 0.5; cursor: not-allowed; }
