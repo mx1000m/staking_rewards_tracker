@@ -1,0 +1,116 @@
+import React, { useMemo, useState } from "react";
+
+type Currency = "EUR" | "USD";
+
+const COUNTRY_DEFAULT_TAX: Record<string, number> = {
+  Croatia: 24,
+  Germany: 25,
+  France: 30,
+  USA: 22
+};
+
+export const OnboardingWizard: React.FC = () => {
+  const [step, setStep] = useState(0);
+  const [walletAddress, setWalletAddress] = useState("");
+  const [currency, setCurrency] = useState<Currency>("EUR");
+  const [country, setCountry] = useState("Croatia");
+  const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
+  const [etherscanKey, setEtherscanKey] = useState("");
+
+  const canNext = useMemo(() => {
+    if (step === 0) return /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
+    if (step === 1) return currency === "EUR" || currency === "USD";
+    if (step === 2) return taxRate >= 0 && taxRate <= 100;
+    if (step === 3) return etherscanKey.trim().length > 0;
+    return true;
+  }, [step, walletAddress, currency, taxRate, etherscanKey]);
+
+  const next = () => canNext && setStep((s) => s + 1);
+  const back = () => setStep((s) => Math.max(0, s - 1));
+
+  const onChangeCountry = (val: string) => {
+    setCountry(val);
+    const def = COUNTRY_DEFAULT_TAX[val];
+    if (typeof def === "number") setTaxRate(def);
+  };
+
+  if (step > 3) {
+    return (
+      <section className="card">
+        <h2>Tracker created</h2>
+        <p>Wallet: {walletAddress}</p>
+        <p>Currency: {currency}</p>
+        <p>Country: {country}</p>
+        <p>Tax rate: {taxRate}%</p>
+        <p>Etherscan key: ••••••••</p>
+        <button onClick={() => setStep(0)}>Create another</button>
+      </section>
+    );
+  }
+
+  return (
+    <section className="card">
+      <div className="steps">Step {step + 1} of 4</div>
+      {step === 0 && (
+        <div>
+          <h2>Wallet receiving staking rewards</h2>
+          <input
+            className="input"
+            placeholder="0x..."
+            value={walletAddress}
+            onChange={(e) => setWalletAddress(e.target.value.trim())}
+          />
+        </div>
+      )}
+      {step === 1 && (
+        <div>
+          <h2>Currency preference</h2>
+          <div className="row">
+            <label><input type="radio" checked={currency === "EUR"} onChange={() => setCurrency("EUR")} /> Euro</label>
+            <label><input type="radio" checked={currency === "USD"} onChange={() => setCurrency("USD")} /> Dollar</label>
+          </div>
+        </div>
+      )}
+      {step === 2 && (
+        <div>
+          <h2>Country and tax rate</h2>
+          <div className="row">
+            <select value={country} onChange={(e) => onChangeCountry(e.target.value)}>
+              {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <input
+              className="input"
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              value={taxRate}
+              onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+            />
+            <span>%</span>
+          </div>
+        </div>
+      )}
+      {step === 3 && (
+        <div>
+          <h2>Your Etherscan API key</h2>
+          <p className="muted">Each user should bring their own Etherscan API key.</p>
+          <input
+            className="input"
+            placeholder="ETHERSCAN_API_KEY"
+            value={etherscanKey}
+            onChange={(e) => setEtherscanKey(e.target.value)}
+          />
+        </div>
+      )}
+      <div className="actions">
+        {step > 0 && <button onClick={back}>Back</button>}
+        <button disabled={!canNext} onClick={next}>{step === 3 ? "Finish" : "Next"}</button>
+      </div>
+    </section>
+  );
+};
+
+
