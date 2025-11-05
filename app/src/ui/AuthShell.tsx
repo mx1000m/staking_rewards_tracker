@@ -12,6 +12,11 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		try {
 			await signInWithGoogle();
 		} catch (err: any) {
+			// Don't show error if user closed the popup
+			if (err.code === "auth/popup-closed-by-user") {
+				// User closed popup, silently return to sign-in screen
+				return;
+			}
 			setError(err.message || "Failed to sign in with Google");
 		} finally {
 			setSigningIn(false);
@@ -24,6 +29,11 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		try {
 			await signInWithGitHub();
 		} catch (err: any) {
+			// Don't show error if user closed the popup
+			if (err.code === "auth/popup-closed-by-user") {
+				// User closed popup, silently return to sign-in screen
+				return;
+			}
 			setError(err.message || "Failed to sign in with GitHub");
 		} finally {
 			setSigningIn(false);
