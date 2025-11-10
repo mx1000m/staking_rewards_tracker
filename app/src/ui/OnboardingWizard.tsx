@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from "react";
+import { useTrackerStore, Currency } from "../store/trackerStore";
 
-type Currency = "EUR" | "USD";
+type OnboardingWizardProps = {
+  onComplete?: () => void;
+};
 
 const COUNTRY_DEFAULT_TAX: Record<string, number> = {
   Croatia: 24,
@@ -9,7 +12,8 @@ const COUNTRY_DEFAULT_TAX: Record<string, number> = {
   USA: 22
 };
 
-export const OnboardingWizard: React.FC = () => {
+export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
+  const { addTracker } = useTrackerStore();
   const [step, setStep] = useState(0);
   const [walletAddress, setWalletAddress] = useState("");
   const [currency, setCurrency] = useState<Currency>("EUR");
@@ -25,7 +29,23 @@ export const OnboardingWizard: React.FC = () => {
     return true;
   }, [step, walletAddress, currency, taxRate, etherscanKey]);
 
-  const next = () => canNext && setStep((s) => s + 1);
+  const next = () => {
+    if (!canNext) return;
+    if (step === 3) {
+      // Save tracker and complete
+      addTracker({
+        walletAddress,
+        currency,
+        country,
+        taxRate,
+        etherscanKey,
+        name: `Node ${walletAddress.slice(0, 6)}...`,
+      });
+      onComplete?.();
+    } else {
+      setStep((s) => s + 1);
+    }
+  };
   const back = () => setStep((s) => Math.max(0, s - 1));
 
   const onChangeCountry = (val: string) => {
@@ -34,19 +54,6 @@ export const OnboardingWizard: React.FC = () => {
     if (typeof def === "number") setTaxRate(def);
   };
 
-  if (step > 3) {
-    return (
-      <section className="card">
-        <h2>Tracker created</h2>
-        <p>Wallet: {walletAddress}</p>
-        <p>Currency: {currency}</p>
-        <p>Country: {country}</p>
-        <p>Tax rate: {taxRate}%</p>
-        <p>Etherscan key: ••••••••</p>
-        <button onClick={() => setStep(0)}>Create another</button>
-      </section>
-    );
-  }
 
   return (
     <section className="card">
@@ -108,7 +115,7 @@ export const OnboardingWizard: React.FC = () => {
       )}
       <div className="actions">
         {step > 0 && <button onClick={back}>Back</button>}
-        <button disabled={!canNext} onClick={next}>{step === 3 ? "Finish" : "Next"}</button>
+        <button disabled={!canNext} onClick={next}>Next</button>
       </div>
     </section>
   );
