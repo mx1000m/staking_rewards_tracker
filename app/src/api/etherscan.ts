@@ -17,8 +17,14 @@ export async function getTransactions(
   const regularRes = await fetch(regularUrl);
   const regularData = await regularRes.json();
   
-  if (!regularData.result || regularData.status === "0") {
-    throw new Error(`Etherscan API error: ${regularData.message || "Unknown error"}`);
+  // Handle API errors
+  if (regularData.status === "0" && regularData.message) {
+    // "No transactions found" is not an error, it's just empty
+    if (regularData.message.includes("No transactions found") || regularData.message.includes("No record")) {
+      console.log("No regular transactions found");
+    } else {
+      throw new Error(`Etherscan API error: ${regularData.message}`);
+    }
   }
 
   // Get internal transactions
@@ -27,16 +33,32 @@ export async function getTransactions(
   const internalRes = await fetch(internalUrl);
   const internalData = await internalRes.json();
   
-  const internalTxs = internalData.result || [];
+  // Handle internal transaction errors (empty is OK)
+  let internalTxs: EtherscanTransaction[] = [];
+  if (internalData.status === "0" && internalData.message) {
+    if (!internalData.message.includes("No transactions found") && !internalData.message.includes("No record")) {
+      console.warn("Internal transactions API error:", internalData.message);
+    }
+  } else {
+    internalTxs = internalData.result || [];
+  }
 
-  // Filter for incoming transactions only
-  const allTxs = [...(regularData.result || []), ...internalTxs];
+  // Combine all transactions
+  const regularTxs = Array.isArray(regularData.result) ? regularData.result : [];
+  const allTxs = [...regularTxs, ...internalTxs];
   
-  return allTxs.filter(
+  console.log(`Total transactions found: ${allTxs.length} (${regularTxs.length} regular, ${internalTxs.length} internal)`);
+  
+  // Filter for incoming transactions only
+  const incomingTxs = allTxs.filter(
     (tx: EtherscanTransaction) =>
       tx.to.toLowerCase() === address.toLowerCase() &&
       parseFloat(tx.value) > 0 &&
       tx.isError === "0"
   );
+  
+  console.log(`Incoming transactions: ${incomingTxs.length}`);
+  
+  return incomingTxs;
 }
 

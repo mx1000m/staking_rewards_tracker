@@ -20,6 +20,7 @@ export const Dashboard: React.FC = () => {
   const { trackers, activeTrackerId, setActiveTracker } = useTrackerStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
 
@@ -32,13 +33,24 @@ export const Dashboard: React.FC = () => {
 
   const fetchTransactions = async (tracker: Tracker) => {
     setLoading(true);
+    setError(null);
     try {
+      console.log("Fetching transactions for:", tracker.walletAddress);
       const etherscanTxs = await getTransactions(tracker.walletAddress, tracker.etherscanKey);
+      console.log("Found transactions:", etherscanTxs.length);
+      
+      if (etherscanTxs.length === 0) {
+        setError("No incoming transactions found for this wallet address.");
+        setTransactions([]);
+        setLoading(false);
+        return;
+      }
       
       // Process each transaction
       const processedTxs: Transaction[] = [];
       
-      for (const tx of etherscanTxs) {
+      for (let i = 0; i < etherscanTxs.length; i++) {
+        const tx = etherscanTxs[i];
         const timestamp = parseInt(tx.timeStamp) * 1000;
         const date = new Date(timestamp);
         const ethAmount = parseFloat(tx.value) / 1e18;
@@ -47,10 +59,14 @@ export const Dashboard: React.FC = () => {
         let ethPrice = 0;
         try {
           ethPrice = await getEthPriceAtTimestamp(parseInt(tx.timeStamp), tracker.currency);
-          // Small delay to avoid rate limiting
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        } catch (error) {
-          console.error("Failed to fetch price for transaction:", error);
+          console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Price fetched: ${ethPrice}`);
+          // Small delay to avoid rate limiting (only if not last transaction)
+          if (i < etherscanTxs.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+        } catch (error: any) {
+          console.error(`Failed to fetch price for transaction ${i + 1}:`, error);
+          setError(`Warning: Could not fetch price for some transactions. ${error.message || ""}`);
           // Continue with 0 price if fetch fails
         }
         
@@ -82,9 +98,11 @@ export const Dashboard: React.FC = () => {
         return dateB.getTime() - dateA.getTime();
       });
       
+      console.log("Processed transactions:", processedTxs.length);
       setTransactions(processedTxs);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch transactions:", error);
+      setError(`Failed to fetch transactions: ${error.message || "Unknown error"}. Please check your Etherscan API key and wallet address.`);
       setTransactions([]);
     } finally {
       setLoading(false);
@@ -206,12 +224,26 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div style={{ 
+              padding: "12px", 
+              background: "#2a1a1a", 
+              border: "1px solid #ff4444", 
+              borderRadius: "8px", 
+              marginBottom: "16px", 
+              color: "#ff8888" 
+            }}>
+              {error}
+            </div>
+          )}
+
           {/* Transaction Table */}
           {loading ? (
             <p>Loading transactions...</p>
-          ) : transactions.length === 0 ? (
+          ) : transactions.length === 0 && !error ? (
             <p>No transactions found.</p>
-          ) : (
+          ) : transactions.length > 0 ? (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
