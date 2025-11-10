@@ -9,10 +9,16 @@ export interface EtherscanTransaction {
 
 export async function getTransactions(
   address: string,
-  apiKey: string
+  apiKey: string,
+  startTimestamp?: number // Unix timestamp to start from (e.g., Jan 1 of current year)
 ): Promise<EtherscanTransaction[]> {
-  // Get regular transactions
-  const regularUrl = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${apiKey}`;
+  // Calculate start block from timestamp (approximate: 1 block per 12 seconds)
+  // If no timestamp provided, default to Jan 1 of current year
+  const startTime = startTimestamp || new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
+  const startBlock = Math.floor((startTime - 1438269988) / 12); // Ethereum genesis was at timestamp 1438269988
+  
+  // Get regular transactions from start of year (or provided timestamp)
+  const regularUrl = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
   
   const regularRes = await fetch(regularUrl);
   const regularData = await regularRes.json();
@@ -39,8 +45,8 @@ export async function getTransactions(
     }
   }
 
-  // Get internal transactions
-  const internalUrl = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&page=1&offset=100&sort=asc&apikey=${apiKey}`;
+  // Get internal transactions from same start point
+  const internalUrl = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
   
   const internalRes = await fetch(internalUrl);
   const internalData = await internalRes.json();
@@ -68,15 +74,18 @@ export async function getTransactions(
   
   console.log(`Total transactions found: ${allTxs.length} (${regularTxs.length} regular, ${internalTxs.length} internal)`);
   
-  // Filter for incoming transactions only
+  // Filter for incoming transactions only, and also filter by timestamp
   const incomingTxs = allTxs.filter(
-    (tx: EtherscanTransaction) =>
-      tx.to.toLowerCase() === address.toLowerCase() &&
-      parseFloat(tx.value) > 0 &&
-      tx.isError === "0"
+    (tx: EtherscanTransaction) => {
+      const txTimestamp = parseInt(tx.timeStamp);
+      return tx.to.toLowerCase() === address.toLowerCase() &&
+        parseFloat(tx.value) > 0 &&
+        tx.isError === "0" &&
+        txTimestamp >= startTime; // Ensure transaction is after our start time
+    }
   );
   
-  console.log(`Incoming transactions: ${incomingTxs.length}`);
+  console.log(`Incoming transactions (from ${new Date(startTime * 1000).toLocaleDateString()}): ${incomingTxs.length}`);
   
   return incomingTxs;
 }

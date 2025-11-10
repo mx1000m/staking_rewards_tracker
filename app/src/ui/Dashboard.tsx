@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
 import { getTransactions } from "../api/etherscan";
 import { getEthPriceAtTimestamp } from "../api/coingecko";
+import { getCachedPrice, setCachedPrice, getDateKey } from "../utils/priceCache";
 
 interface Transaction {
   date: string;
@@ -31,12 +32,17 @@ export const Dashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrackerId]);
 
-  const fetchTransactions = async (tracker: Tracker) => {
+  const fetchTransactions = async (tracker: Tracker, forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      console.log("Fetching transactions for:", tracker.walletAddress);
-      const etherscanTxs = await getTransactions(tracker.walletAddress, tracker.etherscanKey);
+      // Use tracker creation date or Jan 1 of current year, whichever is later
+      const currentYearStart = new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
+      const trackerStart = tracker.createdAt ? Math.floor(tracker.createdAt / 1000) : currentYearStart;
+      const startTimestamp = Math.max(currentYearStart, trackerStart);
+      
+      console.log("Fetching transactions for:", tracker.walletAddress, "from", new Date(startTimestamp * 1000).toLocaleDateString());
+      const etherscanTxs = await getTransactions(tracker.walletAddress, tracker.etherscanKey, startTimestamp);
       console.log("Found transactions:", etherscanTxs.length);
       
       if (etherscanTxs.length === 0) {
@@ -55,19 +61,28 @@ export const Dashboard: React.FC = () => {
         const date = new Date(timestamp);
         const ethAmount = parseFloat(tx.value) / 1e18;
         
-        // Get ETH price at transaction time
+        // Get ETH price at transaction time (use cache to avoid duplicate API calls)
         let ethPrice = 0;
-        try {
-          ethPrice = await getEthPriceAtTimestamp(parseInt(tx.timeStamp), tracker.currency);
-          console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Price fetched: ${ethPrice}`);
-          // Small delay to avoid rate limiting (only if not last transaction)
-          if (i < etherscanTxs.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+        const dateKey = getDateKey(parseInt(tx.timeStamp));
+        const cachedPrice = getCachedPrice(`${dateKey}-${tracker.currency}`);
+        
+        if (cachedPrice !== null) {
+          ethPrice = cachedPrice;
+          console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Using cached price: ${ethPrice}`);
+        } else {
+          try {
+            ethPrice = await getEthPriceAtTimestamp(parseInt(tx.timeStamp), tracker.currency);
+            setCachedPrice(`${dateKey}-${tracker.currency}`, ethPrice);
+            console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Price fetched: ${ethPrice}`);
+            // Small delay to avoid rate limiting (only if not last transaction)
+            if (i < etherscanTxs.length - 1) {
+              await new Promise((resolve) => setTimeout(resolve, 1200)); // 1.2s to stay under 5/sec
+            }
+          } catch (error: any) {
+            console.error(`Failed to fetch price for transaction ${i + 1}:`, error);
+            setError(`Warning: Could not fetch price for some transactions. ${error.message || ""}`);
+            // Continue with 0 price if fetch fails
           }
-        } catch (error: any) {
-          console.error(`Failed to fetch price for transaction ${i + 1}:`, error);
-          setError(`Warning: Could not fetch price for some transactions. ${error.message || ""}`);
-          // Continue with 0 price if fetch fails
         }
         
         const rewardsInCurrency = ethAmount * ethPrice;
@@ -191,7 +206,24 @@ export const Dashboard: React.FC = () => {
       {/* Selected Node Details */}
       {activeTracker && (
         <div className="card" style={{ width: "auto", maxWidth: "none" }}>
-          <h2 style={{ margin: "0 0 16px 0" }}>Node: {activeTracker.name || activeTracker.walletAddress.slice(0, 10)}...</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <div>
+              <h2 style={{ margin: "0 0 4px 0" }}>Node: {activeTracker.name || activeTracker.walletAddress.slice(0, 10)}...</h2>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4" }}>
+                Showing transactions from {new Date(Math.max(
+                  new Date(new Date().getFullYear(), 0, 1).getTime(),
+                  activeTracker.createdAt || new Date(new Date().getFullYear(), 0, 1).getTime()
+                )).toLocaleDateString()} to today
+              </p>
+            </div>
+            <button 
+              onClick={() => fetchTransactions(activeTracker, true)}
+              disabled={loading}
+              style={{ background: "#2a2a44" }}
+            >
+              {loading ? "Loading..." : "🔄 Refresh"}
+            </button>
+          </div>
           
           {/* Node Summary */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px", marginBottom: "24px" }}>
@@ -295,7 +327,7 @@ export const Dashboard: React.FC = () => {
                 </tbody>
               </table>
             </div>
-          )}
+          ) : null}
         </div>
       )}
     </div>

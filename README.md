@@ -52,6 +52,21 @@ npm run dev
    - Set Authorization callback URL to: `https://YOUR-PROJECT-ID.firebaseapp.com/__/auth/handler`
    - Add Client ID and Client Secret to Firebase → Authentication → GitHub provider
 
+## Transaction Fetching Strategy
+
+**Optimized for rate limits:**
+- **Date range**: Fetches transactions from January 1 of the current year (or from tracker creation date, whichever is later)
+- **Price caching**: ETH prices are cached by date to avoid duplicate CoinGecko API calls
+- **Rate limiting**: 1.2 second delay between CoinGecko calls (stays under 5 calls/second limit)
+- **Manual refresh**: Users can click "🔄 Refresh" to manually update transactions
+- **Etherscan limits**: Free tier allows 5 calls/second, 100,000 calls/day
+
+**Why this approach:**
+- Only fetches current year's data (not entire history) - saves API calls
+- Price caching means if 10 transactions happened on the same day, only 1 CoinGecko call is made
+- Manual refresh gives users control over when to check for new transactions
+- Future: Could add daily auto-check via browser extension or backend service
+
 ## Deploy v2 (manual)
 A manual Pages workflow can be added to build `app/` and deploy `dist/`. For now, v1 remains live. When ready, switch Pages to the React build workflow.
 
