@@ -3,6 +3,7 @@ import { useTrackerStore, Tracker } from "../store/trackerStore";
 import { getTransactions } from "../api/etherscan";
 import { getEthPriceAtTimestamp } from "../api/coingecko";
 import { getCachedPrice, setCachedPrice, getDateKey } from "../utils/priceCache";
+import { TrackerSettingsModal } from "./TrackerSettingsModal";
 
 interface Transaction {
   date: string;
@@ -22,6 +23,7 @@ export const Dashboard: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
 
@@ -216,13 +218,22 @@ export const Dashboard: React.FC = () => {
                 )).toLocaleDateString()} to today
               </p>
             </div>
-            <button 
-              onClick={() => fetchTransactions(activeTracker, true)}
-              disabled={loading}
-              style={{ background: "#2a2a44" }}
-            >
-              {loading ? "Loading..." : "🔄 Refresh"}
-            </button>
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() => setShowSettings(true)}
+                style={{ background: "#2a2a44", padding: "10px 12px" }}
+                title="Settings"
+              >
+                ⚙️
+              </button>
+              <button 
+                onClick={() => fetchTransactions(activeTracker, true)}
+                disabled={loading}
+                style={{ background: "#2a2a44" }}
+              >
+                {loading ? "Loading..." : "🔄 Refresh"}
+              </button>
+            </div>
           </div>
           
           {/* Node Summary */}
@@ -329,6 +340,14 @@ export const Dashboard: React.FC = () => {
             </div>
           ) : null}
         </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && activeTracker && (
+        <TrackerSettingsModal
+          tracker={activeTracker}
+          onClose={() => setShowSettings(false)}
+        />
       )}
     </div>
   );
