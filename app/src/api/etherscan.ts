@@ -17,13 +17,25 @@ export async function getTransactions(
   const regularRes = await fetch(regularUrl);
   const regularData = await regularRes.json();
   
+  console.log("Etherscan API response:", regularData);
+  
   // Handle API errors
-  if (regularData.status === "0" && regularData.message) {
+  if (regularData.status === "0") {
+    // Etherscan returns errors in the result field when status is "0"
+    const errorMsg = typeof regularData.result === "string" 
+      ? regularData.result 
+      : regularData.message || "Unknown error";
+    
     // "No transactions found" is not an error, it's just empty
-    if (regularData.message.includes("No transactions found") || regularData.message.includes("No record")) {
+    if (errorMsg.includes("No transactions found") || 
+        errorMsg.includes("No record") ||
+        errorMsg === "0" ||
+        errorMsg === "") {
       console.log("No regular transactions found");
+      // Return empty array, continue to check internal transactions
     } else {
-      throw new Error(`Etherscan API error: ${regularData.message}`);
+      // This is a real error (invalid API key, rate limit, etc.)
+      throw new Error(`Etherscan API error: ${errorMsg}. Please check your API key and try again.`);
     }
   }
 
@@ -44,7 +56,14 @@ export async function getTransactions(
   }
 
   // Combine all transactions
-  const regularTxs = Array.isArray(regularData.result) ? regularData.result : [];
+  // Only include regularTxs if status was "1" (success) or if we got an array
+  let regularTxs: EtherscanTransaction[] = [];
+  if (regularData.status === "1" && Array.isArray(regularData.result)) {
+    regularTxs = regularData.result;
+  } else if (Array.isArray(regularData.result)) {
+    regularTxs = regularData.result;
+  }
+  
   const allTxs = [...regularTxs, ...internalTxs];
   
   console.log(`Total transactions found: ${allTxs.length} (${regularTxs.length} regular, ${internalTxs.length} internal)`);
