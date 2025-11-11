@@ -15,6 +15,7 @@ export interface CachedTransaction {
   transactionHash: string;
   status: string;
   timestamp: number; // Unix timestamp for sorting
+  swapHash?: string; // Optional: transaction hash of the swap
 }
 
 interface CacheMetadata {
