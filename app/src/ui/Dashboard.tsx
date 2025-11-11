@@ -36,6 +36,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [markPaidHash, setMarkPaidHash] = useState<string | null>(null);
+  const [swapHashInput, setSwapHashInput] = useState<string>("");
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
 
@@ -471,15 +473,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         </a>
                       </td>
                       <td style={{ padding: "12px" }}>
-                        <span style={{ 
-                          background: tx.status === "✓ Swapped" ? "#10b981" : "#ef4444", 
-                          color: "white", 
-                          padding: "4px 8px", 
-                          borderRadius: "6px", 
-                          fontSize: "0.85rem" 
-                        }}>
-                          {tx.status}
-                        </span>
+                        {tx.status === "Paid" ? (
+                          <span style={{ 
+                            background: "#10b981", 
+                            color: "white", 
+                            padding: "4px 8px", 
+                            borderRadius: "6px", 
+                            fontSize: "0.85rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}>
+                            ✓ Paid
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => { setMarkPaidHash(tx.transactionHash); setSwapHashInput(""); }}
+                            style={{ background: "#2a2a44", color: "white", padding: "6px 10px", border: 0, borderRadius: 8, cursor: "pointer" }}
+                          >
+                            Mark as Paid
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -497,6 +511,51 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           onClose={() => setShowSettings(false)}
           onSaved={() => loadTransactions(activeTracker)}
         />
+      )}
+
+      {/* Mark as Paid Modal */}
+      {markPaidHash && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1200,
+            padding: 20,
+          }}
+          onClick={() => setMarkPaidHash(null)}
+        >
+          <div className="card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>Mark as Paid</h3>
+            <p className="muted" style={{ marginTop: 0 }}>Enter the transaction hash of the swap you performed for this reward.</p>
+            <input
+              className="input"
+              placeholder="Swap transaction hash (0x...)"
+              value={swapHashInput}
+              onChange={(e) => setSwapHashInput(e.target.value.trim())}
+            />
+            <div className="actions" style={{ marginTop: 16 }}>
+              <button style={{ background: "#2a2a44" }} onClick={() => setMarkPaidHash(null)}>Cancel</button>
+              <button
+                onClick={async () => {
+                  if (!activeTracker || !markPaidHash) return;
+                  // Persist status in cache
+                  const { updateTransactionStatus } = await import("../utils/transactionCache");
+                  await updateTransactionStatus(activeTracker.id, markPaidHash, "Paid", swapHashInput || undefined);
+                  // Update local state
+                  setTransactions((prev) => prev.map((t) => t.transactionHash === markPaidHash ? { ...t, status: "Paid" } : t));
+                  setMarkPaidHash(null);
+                }}
+                disabled={!/^0x[a-fA-F0-9]{6,}$/.test(swapHashInput)}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

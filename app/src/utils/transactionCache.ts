@@ -156,3 +156,60 @@ export async function clearCache(trackerId: string): Promise<void> {
   });
 }
 
+export async function updateTransactionStatus(
+  trackerId: string,
+  transactionHash: string,
+  status: string,
+  swapHash?: string
+): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_TRANSACTIONS], "readwrite");
+    const store = tx.objectStore(STORE_TRANSACTIONS);
+    const key = [trackerId, transactionHash] as unknown as IDBValidKey;
+    const getReq = store.get(key);
+    getReq.onsuccess = () => {
+      const record = getReq.result as (CachedTransaction & { trackerId: string; swapHash?: string }) | undefined;
+      if (!record) {
+        // If not found, create minimal record so UI persists it
+        const now = Math.floor(Date.now() / 1000);
+        const newRecord: any = {
+          trackerId,
+          transactionHash,
+          date: "",
+          time: "",
+          ethAmount: 0,
+          ethPrice: 0,
+          rewardsInCurrency: 0,
+          taxRate: 0,
+          taxesInEth: 0,
+          taxesInCurrency: 0,
+          status,
+          timestamp: now,
+          swapHash,
+        };
+        store.put(newRecord).onsuccess = () => resolve();
+        return;
+      }
+      const updated = { ...record, status, swapHash };
+      store.put(updated).onsuccess = () => resolve();
+    };
+    getReq.onerror = () => reject(getReq.error);
+  });
+}
+
+export async function getTransaction(
+  trackerId: string,
+  transactionHash: string
+): Promise<CachedTransaction | null> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction([STORE_TRANSACTIONS], "readonly");
+    const store = tx.objectStore(STORE_TRANSACTIONS);
+    const key = [trackerId, transactionHash] as unknown as IDBValidKey;
+    const req = store.get(key);
+    req.onsuccess = () => resolve((req.result as CachedTransaction) || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
