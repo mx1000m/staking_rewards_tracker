@@ -48,6 +48,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [swapHashInput, setSwapHashInput] = useState<string>("");
   const [editPaidHash, setEditPaidHash] = useState<string | null>(null);
   const [editSwapHashInput, setEditSwapHashInput] = useState<string>("");
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportYear, setExportYear] = useState<number>(new Date().getFullYear());
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
 
@@ -264,17 +267,73 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     );
   }
 
-  const totalRewards = transactions.reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
-  const totalTaxes = transactions.reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
-  const totalEthRewards = transactions.reduce((sum, tx) => sum + tx.ethAmount, 0);
-  const totalEthTaxes = transactions.reduce((sum, tx) => sum + tx.taxesInEth, 0);
+  // Get available years from transactions
+  const availableYears = React.useMemo(() => {
+    const years = new Set<number>();
+    transactions.forEach((tx) => {
+      const year = new Date(tx.timestamp * 1000).getFullYear();
+      years.add(year);
+    });
+    return Array.from(years).sort((a, b) => b - a); // Sort descending
+  }, [transactions]);
+
+  // Filter transactions by selected year
+  const filteredTransactions = React.useMemo(() => {
+    return transactions.filter((tx) => {
+      const txYear = new Date(tx.timestamp * 1000).getFullYear();
+      return txYear === selectedYear;
+    });
+  }, [transactions, selectedYear]);
+
+  // Calculate totals based on filtered transactions
+  const totalRewards = filteredTransactions.reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
+  const totalTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
+  const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + tx.ethAmount, 0);
+  const totalEthTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInEth, 0);
+  
+  // Calculate total swapped (paid transactions)
+  const totalSwapped = filteredTransactions
+    .filter((tx) => tx.status === "✓ Paid")
+    .reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
+  const totalEthSwapped = filteredTransactions
+    .filter((tx) => tx.status === "✓ Paid")
+    .reduce((sum, tx) => sum + tx.ethAmount, 0);
+  
+  // Calculate total left to swap (unpaid transactions)
+  const totalLeftToSwap = filteredTransactions
+    .filter((tx) => tx.status !== "✓ Paid")
+    .reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
+  const totalEthLeftToSwap = filteredTransactions
+    .filter((tx) => tx.status !== "✓ Paid")
+    .reduce((sum, tx) => sum + tx.ethAmount, 0);
 
   const currencySymbol = activeTracker?.currency === "EUR" ? "€" : "$";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
 
-  // CSV Export
-  const exportToCSV = () => {
-    if (!activeTracker || transactions.length === 0) return;
+  // Copy to clipboard function
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // You could add a toast notification here
+      console.log(`${label} copied to clipboard`);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  // CSV Export with year filter
+  const exportToCSV = (year: number) => {
+    if (!activeTracker) return;
+    const yearTransactions = transactions.filter((tx) => {
+      const txYear = new Date(tx.timestamp * 1000).getFullYear();
+      return txYear === year;
+    });
+    
+    if (yearTransactions.length === 0) {
+      alert(`No transactions found for year ${year}`);
+      return;
+    }
+    
     const currency = activeTracker.currency === "EUR" ? "€" : "$";
     const headers = [
       "Date",
@@ -287,8 +346,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       `Taxes (${currency})`,
       "Transaction Hash",
       "Status",
+      "Swap Hash",
     ];
-    const rows = transactions.map((tx) => [
+    const rows = yearTransactions.map((tx) => [
       tx.date,
       tx.time,
       tx.ethAmount.toFixed(6),
@@ -299,6 +359,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       tx.taxesInCurrency.toFixed(2),
       tx.transactionHash,
       tx.status,
+      tx.swapHash || "",
     ]);
     const csv = [headers, ...rows]
       .map((r) => r.map((c) => `"${c}"`).join(","))
@@ -307,11 +368,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${(activeTracker.name || "node").replace(/\s+/g, "_")}_transactions.csv`;
+    a.download = `${(activeTracker.name || "node").replace(/\s+/g, "_")}_transactions_${year}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    setShowExportModal(false);
   };
 
   return (
@@ -339,19 +401,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         <div className="card" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", width: "auto", maxWidth: "none" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL LEFT TO SWAP</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {currencySymbol} 0.00
+            {currencySymbol} {totalLeftToSwap.toFixed(2)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            0.000000 ETH
+            {totalEthLeftToSwap.toFixed(6)} ETH
           </p>
         </div>
         <div className="card" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", width: "auto", maxWidth: "none" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL SWAPPED</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {currencySymbol} 0.00
+            {currencySymbol} {totalSwapped.toFixed(2)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            0.000000 ETH
+            {totalEthSwapped.toFixed(6)} ETH
           </p>
         </div>
       </div>
@@ -404,34 +466,161 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <h2 style={{ margin: "2px 0 4px 0" }}>
                 {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
               </h2>
-              <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4" }}>{activeTracker.walletAddress}</p>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4" }}>{activeTracker.walletAddress}</p>
+                <button
+                  onClick={() => copyToClipboard(activeTracker.walletAddress, "Wallet address")}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid #9aa0b4",
+                    color: "#9aa0b4",
+                    padding: "4px 8px",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontSize: "0.85rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    transition: "all 0.2s",
+                  }}
+                  title="Copy wallet address"
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#2a2a44";
+                    e.currentTarget.style.borderColor = "#6b6bff";
+                    e.currentTarget.style.color = "#6b6bff";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.borderColor = "#9aa0b4";
+                    e.currentTarget.style.color = "#9aa0b4";
+                  }}
+                >
+                  📋
+                </button>
+              </div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={() => setShowSettings(true)}
-                style={{ background: "#2a2a44", padding: "10px 12px" }}
+                style={{ background: "#2a2a44", padding: "10px 12px", transition: "all 0.2s" }}
                 title="Settings"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#3a3a54";
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#2a2a44";
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = "scale(0.95)";
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
               >
                 ⚙️
               </button>
               <button
-                onClick={exportToCSV}
+                onClick={() => setShowExportModal(true)}
                 disabled={transactions.length === 0}
-                style={{ background: "#2a2a44" }}
+                style={{ background: "#2a2a44", transition: "all 0.2s" }}
                 title="Export CSV"
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.background = "#3a3a54";
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#2a2a44";
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+                onMouseDown={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.transform = "scale(0.95)";
+                  }
+                }}
+                onMouseUp={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }
+                }}
               >
                 📥 Export CSV
               </button>
               <button 
                 onClick={() => fetchTransactions(activeTracker, true)}
                 disabled={loading}
-                style={{ background: "#2a2a44" }}
+                style={{ background: "#2a2a44", transition: "all 0.2s" }}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.background = "#3a3a54";
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#2a2a44";
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+                onMouseDown={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.transform = "scale(0.95)";
+                  }
+                }}
+                onMouseUp={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }
+                }}
               >
                 {loading ? "Loading..." : "🔄 Refresh"}
               </button>
             </div>
           </div>
           
+          {/* Year Filter Pills */}
+          {availableYears.length > 0 && (
+            <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+              {availableYears.map((year) => (
+                <button
+                  key={year}
+                  onClick={() => setSelectedYear(year)}
+                  style={{
+                    background: selectedYear === year ? "#6b6bff" : "#2a2a44",
+                    color: "white",
+                    padding: "8px 16px",
+                    border: "none",
+                    borderRadius: "20px",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    fontWeight: selectedYear === year ? 600 : 400,
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedYear !== year) {
+                      e.currentTarget.style.background = "#3a3a54";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedYear !== year) {
+                      e.currentTarget.style.background = "#2a2a44";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    e.currentTarget.style.transform = "scale(0.95)";
+                  }}
+                  onMouseUp={(e) => {
+                    e.currentTarget.style.transform = selectedYear === year ? "scale(1)" : "scale(1.05)";
+                  }}
+                >
+                  {year}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Node Summary */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px", marginBottom: "24px" }}>
             <div>
@@ -482,7 +671,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             <p>Loading transactions...</p>
           ) : transactions.length === 0 && !error ? (
             <p>No transactions found.</p>
-          ) : transactions.length > 0 ? (
+          ) : filteredTransactions.length > 0 ? (
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
@@ -499,7 +688,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map((tx, idx) => (
+                  {filteredTransactions.map((tx, idx) => (
                     <tr key={idx} style={{ borderBottom: "1px solid #232342" }}>
                       <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.date}, {tx.time}</td>
                       <td style={{ padding: "12px", color: "#10b981" }}>{tx.ethAmount.toFixed(6)}</td>
@@ -509,14 +698,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       <td style={{ padding: "12px", color: "#f59e0b" }}>{tx.taxesInEth.toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#f59e0b" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
                       <td style={{ padding: "12px" }}>
-                        <a
-                          href={`https://etherscan.io/tx/${tx.transactionHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{ color: "#6b6bff", textDecoration: "none" }}
-                        >
-                          {tx.transactionHash.slice(0, 6)}...{tx.transactionHash.slice(-4)}
-                        </a>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <a
+                            href={`https://etherscan.io/tx/${tx.transactionHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#6b6bff", textDecoration: "none" }}
+                          >
+                            {tx.transactionHash.slice(0, 6)}...{tx.transactionHash.slice(-4)}
+                          </a>
+                          <a
+                            href={`https://etherscan.io/tx/${tx.transactionHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ 
+                              color: "#6b6bff", 
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              fontSize: "0.85rem",
+                            }}
+                            title="View on Etherscan"
+                          >
+                            🔗
+                          </a>
+                        </div>
                       </td>
                       <td style={{ padding: "12px" }}>
                         {tx.status === "✓ Paid" ? (
@@ -549,8 +755,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: 4,
+                                transition: "all 0.2s",
                               }}
                               title="Edit paid status"
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "#10b981";
+                                e.currentTarget.style.color = "white";
+                                e.currentTarget.style.transform = "scale(1.05)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "transparent";
+                                e.currentTarget.style.color = "#10b981";
+                                e.currentTarget.style.transform = "scale(1)";
+                              }}
+                              onMouseDown={(e) => {
+                                e.currentTarget.style.transform = "scale(0.95)";
+                              }}
+                              onMouseUp={(e) => {
+                                e.currentTarget.style.transform = "scale(1.05)";
+                              }}
                             >
                               ✏️
                             </button>
@@ -558,7 +781,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         ) : (
                           <button
                             onClick={() => { setMarkPaidHash(tx.transactionHash); setSwapHashInput(""); }}
-                            style={{ background: "#2a2a44", color: "white", padding: "6px 10px", border: 0, borderRadius: 8, cursor: "pointer" }}
+                            style={{ 
+                              background: "#2a2a44", 
+                              color: "white", 
+                              padding: "6px 10px", 
+                              border: 0, 
+                              borderRadius: 8, 
+                              cursor: "pointer",
+                              transition: "all 0.2s",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "#3a3a54";
+                              e.currentTarget.style.transform = "scale(1.05)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "#2a2a44";
+                              e.currentTarget.style.transform = "scale(1)";
+                            }}
+                            onMouseDown={(e) => {
+                              e.currentTarget.style.transform = "scale(0.95)";
+                            }}
+                            onMouseUp={(e) => {
+                              e.currentTarget.style.transform = "scale(1.05)";
+                            }}
                           >
                             Mark as Paid
                           </button>
@@ -752,6 +997,67 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 Update
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export CSV Modal */}
+      {showExportModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1200,
+            padding: 20,
+          }}
+          onClick={() => setShowExportModal(false)}
+        >
+          <div className="card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>Export CSV</h3>
+            <p className="muted" style={{ marginTop: 0 }}>Select the year to export transactions for.</p>
+            <div style={{ marginTop: 16 }}>
+              <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
+                Year
+              </label>
+              <select
+                value={exportYear}
+                onChange={(e) => setExportYear(parseInt(e.target.value))}
+                style={{
+                  width: "100%",
+                  padding: "12px 14px",
+                  background: "#0e0e1a",
+                  border: "1px solid #1a1a2e",
+                  borderRadius: "10px",
+                  color: "#e8e8f0",
+                  fontSize: "1rem",
+                }}
+              >
+                {availableYears.length > 0 ? (
+                  availableYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))
+                ) : (
+                  <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
+                )}
+              </select>
+            </div>
+            <div className="actions" style={{ marginTop: 16 }}>
+              <button style={{ background: "#2a2a44" }} onClick={() => setShowExportModal(false)}>
+                Cancel
+              </button>
+              <button
+                onClick={() => exportToCSV(exportYear)}
+                disabled={availableYears.length === 0}
+              >
+                Export
               </button>
             </div>
           </div>
