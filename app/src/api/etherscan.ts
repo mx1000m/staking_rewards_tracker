@@ -7,82 +7,71 @@ export interface EtherscanTransaction {
   isError: string;
 }
 
-/**
- * Get the block number for a specific timestamp using Etherscan API
- */
-async function getBlockNumberByTimestamp(
-  timestamp: number,
-  apiKey: string
-): Promise<number> {
-  // Get the first block on or after the timestamp
-  const url = `https://api.etherscan.io/v2/api?chainid=1&module=block&action=getblocknobytime&timestamp=${timestamp}&closest=after&apikey=${apiKey}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  
-  if (data.status === "0" || !data.result) {
-    throw new Error(`Failed to get block number: ${data.message || data.result || "Unknown error"}`);
-  }
-  
-  return parseInt(data.result);
-}
-
 export async function getTransactions(
   address: string,
   apiKey: string,
-  startTimestamp?: number, // Unix timestamp to start from (e.g., Jan 1 of current year)
-  startBlockOverride?: number // Optional: use this block number instead of calculating from timestamp
-): Promise<{ transactions: EtherscanTransaction[]; lastBlock: number }> {
-  // Default to Jan 1 of current year 00:01 UTC for initial/full loads
-  const startTime = startTimestamp ?? new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1, 0, 1, 0)).getTime() / 1000;
+  startTimestamp?: number // Unix timestamp to start from (e.g., Jan 1 of current year)
+): Promise<EtherscanTransaction[]> {
+  // Calculate start block from timestamp (approximate: 1 block per 12 seconds)
+  // If no timestamp provided, default to Jan 1 of current year
+  const startTime = startTimestamp || new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
+  const startBlock = Math.floor((startTime - 1438269988) / 12); // Ethereum genesis was at timestamp 1438269988
   
-  // Get the exact block number for the start timestamp (unless override provided)
-  let startBlock = startBlockOverride ?? 0;
-  if (!startBlockOverride) {
-    try {
-      startBlock = await getBlockNumberByTimestamp(startTime, apiKey);
-      console.log(`Block number for ${new Date(startTime * 1000).toISOString()}: ${startBlock}`);
-      // Small delay to respect rate limits
-      await new Promise((r) => setTimeout(r, 250));
-    } catch (error) {
-      console.warn("Failed to get exact block number, falling back to block 0:", error);
-      // Fallback to block 0 if API call fails
+  // Get regular transactions from start of year (or provided timestamp)
+  const regularUrl = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
+  
+  const regularRes = await fetch(regularUrl);
+  const regularData = await regularRes.json();
+  
+  console.log("Etherscan API response:", regularData);
+  
+  // Handle API errors
+  if (regularData.status === "0") {
+    // Etherscan returns errors in the result field when status is "0"
+    const errorMsg = typeof regularData.result === "string" 
+      ? regularData.result 
+      : regularData.message || "Unknown error";
+    
+    // "No transactions found" is not an error, it's just empty
+    if (errorMsg.includes("No transactions found") || 
+        errorMsg.includes("No record") ||
+        errorMsg === "0" ||
+        errorMsg === "") {
+      console.log("No regular transactions found");
+      // Return empty array, continue to check internal transactions
+    } else {
+      // This is a real error (invalid API key, rate limit, etc.)
+      throw new Error(`Etherscan API error: ${errorMsg}. Please check your API key and try again.`);
     }
   }
 
-  // Helper: fetch paginated results from Etherscan V2 with small delay to respect 5 req/sec.
-  async function fetchPaged(
-    action: "txlist" | "txlistinternal",
-    offset = 1000
-  ): Promise<EtherscanTransaction[]> {
-    let page = 1;
-    const out: EtherscanTransaction[] = [];
-    while (true) {
-      const url = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=${action}&address=${address}&startblock=${startBlock}&endblock=99999999&page=${page}&offset=${offset}&sort=asc&apikey=${apiKey}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.status === "0") {
-        const msg: string = typeof data.result === "string" ? data.result : data.message || "Unknown error";
-        if (msg.includes("No transactions found") || msg.includes("No record") || msg === "0" || msg === "") {
-          break;
-        }
-        throw new Error(`Etherscan API error (${action}): ${msg}`);
-      }
-      const items: EtherscanTransaction[] = Array.isArray(data.result) ? data.result : [];
-      out.push(...items);
-      if (items.length < offset) break;
-      page += 1;
-      await new Promise((r) => setTimeout(r, 250)); // ~4 req/sec
+  // Get internal transactions from same start point
+  const internalUrl = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
+  
+  const internalRes = await fetch(internalUrl);
+  const internalData = await internalRes.json();
+  
+  // Handle internal transaction errors (empty is OK)
+  let internalTxs: EtherscanTransaction[] = [];
+  if (internalData.status === "0" && internalData.message) {
+    if (!internalData.message.includes("No transactions found") && !internalData.message.includes("No record")) {
+      console.warn("Internal transactions API error:", internalData.message);
     }
-    return out;
+  } else {
+    internalTxs = internalData.result || [];
   }
 
-  // Fetch both regular and internal transactions with pagination
-  const [regularTxs, internalTxs] = await Promise.all([
-    fetchPaged("txlist"),
-    fetchPaged("txlistinternal"),
-  ]);
-
+  // Combine all transactions
+  // Only include regularTxs if status was "1" (success) or if we got an array
+  let regularTxs: EtherscanTransaction[] = [];
+  if (regularData.status === "1" && Array.isArray(regularData.result)) {
+    regularTxs = regularData.result;
+  } else if (Array.isArray(regularData.result)) {
+    regularTxs = regularData.result;
+  }
+  
   const allTxs = [...regularTxs, ...internalTxs];
+  
   console.log(`Total transactions found: ${allTxs.length} (${regularTxs.length} regular, ${internalTxs.length} internal)`);
   
   // Filter for incoming transactions only, and also filter by timestamp
@@ -96,16 +85,8 @@ export async function getTransactions(
     }
   );
   
-  // Find the highest block number from transactions (for cache metadata)
-  let lastBlock = startBlock;
-  if (incomingTxs.length > 0) {
-    // Note: EtherscanTransaction doesn't have blockNumber, so we'll use current block as approximation
-    // In a real scenario, we'd track the actual block number from the API response
-    lastBlock = startBlock; // We'll update this with actual block tracking if needed
-  }
-  
   console.log(`Incoming transactions (from ${new Date(startTime * 1000).toLocaleDateString()}): ${incomingTxs.length}`);
   
-  return { transactions: incomingTxs, lastBlock };
+  return incomingTxs;
 }
 

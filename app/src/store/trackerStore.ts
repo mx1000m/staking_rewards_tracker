@@ -18,7 +18,6 @@ interface TrackerStore {
   trackers: Tracker[];
   activeTrackerId: string | null;
   addTracker: (tracker: Omit<Tracker, "id" | "createdAt">) => void;
-  updateTracker: (id: string, updates: Partial<Omit<Tracker, "id" | "createdAt">>) => void;
   setActiveTracker: (id: string) => void;
   removeTracker: (id: string) => void;
 }
@@ -39,12 +38,6 @@ export const useTrackerStore = create<TrackerStore>()(
           activeTrackerId: newTracker.id,
         }));
       },
-      updateTracker: (id, updates) =>
-        set((state) => ({
-          trackers: state.trackers.map((t) =>
-            t.id === id ? { ...t, ...updates } : t
-          ),
-        })),
       setActiveTracker: (id) => set({ activeTrackerId: id }),
       removeTracker: (id) =>
         set((state) => ({
