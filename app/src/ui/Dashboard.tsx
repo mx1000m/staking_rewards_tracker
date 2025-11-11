@@ -644,10 +644,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             <div>
               <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Left To Swap</p>
               <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#ef4444" }}>
-                {currencySymbol}0.00
+                {currencySymbol}{totalLeftToSwap.toFixed(2)}
               </p>
               <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
-                0.000000 ETH
+                {totalEthLeftToSwap.toFixed(6)} ETH
+              </p>
+            </div>
+            <div>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Swapped</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#3b82f6" }}>
+                {currencySymbol}{totalSwapped.toFixed(2)}
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+                {totalEthSwapped.toFixed(6)} ETH
               </p>
             </div>
           </div>
