@@ -3,6 +3,14 @@ import { useTrackerStore, Tracker } from "../store/trackerStore";
 import { getTransactions } from "../api/etherscan";
 import { getEthPriceAtTimestamp } from "../api/coingecko";
 import { getCachedPrice, setCachedPrice, getDateKey } from "../utils/priceCache";
+import {
+  getCachedTransactions,
+  saveTransactions,
+  getCacheMetadata,
+  saveCacheMetadata,
+  CachedTransaction,
+} from "../utils/transactionCache";
+import { TrackerSettingsModal } from "./TrackerSettingsModal";
 
 interface Transaction {
   date: string;
@@ -15,6 +23,7 @@ interface Transaction {
   taxesInCurrency: number;
   transactionHash: string;
   status: string;
+  timestamp: number;
 }
 
 export const Dashboard: React.FC = () => {
@@ -22,15 +31,72 @@ export const Dashboard: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
 
   useEffect(() => {
     if (activeTracker) {
-      fetchTransactions(activeTracker);
+      loadTransactions(activeTracker);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrackerId]);
+
+  // Load transactions: first from cache, then fetch new ones if needed
+  const loadTransactions = async (tracker: Tracker) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Load cached transactions first (instant display)
+      const cached = await getCachedTransactions(tracker.id);
+      if (cached.length > 0) {
+        setTransactions(cached);
+        setLoading(false);
+        console.log(`Loaded ${cached.length} cached transactions`);
+      }
+
+      // Check if we need to fetch new transactions
+      const metadata = await getCacheMetadata(tracker.id);
+      const now = Math.floor(Date.now() / 1000);
+      const oneDayAgo = now - 24 * 60 * 60;
+
+      // Fetch if:
+      // - No cache exists
+      // - Cache is older than 1 day
+      // - It's after midnight UTC (for daily updates)
+      const shouldFetch =
+        !metadata ||
+        metadata.lastFetchedTimestamp < oneDayAgo ||
+        isAfterMidnightUTC(metadata.lastFetchedTimestamp);
+
+      if (shouldFetch) {
+        await fetchTransactions(tracker, false);
+      } else {
+        console.log("Using cached data, no fetch needed");
+      }
+    } catch (error: any) {
+      console.error("Failed to load transactions:", error);
+      setError(`Failed to load transactions: ${error.message}`);
+      setLoading(false);
+    }
+  };
+
+  const isAfterMidnightUTC = (lastTimestamp: number): boolean => {
+    const lastDate = new Date(lastTimestamp * 1000);
+    const now = new Date();
+    const lastUTC = new Date(
+      Date.UTC(
+        lastDate.getUTCFullYear(),
+        lastDate.getUTCMonth(),
+        lastDate.getUTCDate()
+      )
+    );
+    const nowUTC = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+    );
+    return nowUTC > lastUTC;
+  };
 
   const fetchTransactions = async (tracker: Tracker, forceRefresh = false) => {
     setLoading(true);
@@ -83,36 +149,51 @@ export const Dashboard: React.FC = () => {
           }
         }
         
-        const rewardsInCurrency = ethAmount * ethPrice;
-        const taxesInEth = ethAmount * (tracker.taxRate / 100);
-        const taxesInCurrency = rewardsInCurrency * (tracker.taxRate / 100);
-        
-        processedTxs.push({
-          date: date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" }),
-          time: date.toLocaleTimeString("en-GB", { timeZone: "Europe/Zagreb", hour12: false }),
-          ethAmount,
-          ethPrice,
-          rewardsInCurrency,
-          taxRate: tracker.taxRate,
-          taxesInEth,
-          taxesInCurrency,
-          transactionHash: tx.hash,
-          status: "Unpaid", // TODO: Track swap status
-        });
-      }
+      const rewardsInCurrency = ethAmount * ethPrice;
+      const taxesInEth = ethAmount * (tracker.taxRate / 100);
+      const taxesInCurrency = rewardsInCurrency * (tracker.taxRate / 100);
       
-      // Sort by timestamp (newest first)
-      processedTxs.sort((a, b) => {
-        // Parse dates in DD/MM/YYYY format
-        const [dayA, monthA, yearA] = a.date.split("/");
-        const [dayB, monthB, yearB] = b.date.split("/");
-        const dateA = new Date(`${yearA}-${monthA}-${dayA} ${a.time}`);
-        const dateB = new Date(`${yearB}-${monthB}-${dayB} ${b.time}`);
-        return dateB.getTime() - dateA.getTime();
-      });
-      
-      console.log("Processed transactions:", processedTxs.length);
-      setTransactions(processedTxs);
+      processedTxs.push({
+        date: date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" }),
+        time: date.toLocaleTimeString("en-GB", { timeZone: "Europe/Zagreb", hour12: false }),
+        ethAmount,
+        ethPrice,
+        rewardsInCurrency,
+        taxRate: tracker.taxRate,
+        taxesInEth,
+        taxesInCurrency,
+        transactionHash: tx.hash,
+        status: "Unpaid", // TODO: Track swap status
+        timestamp: parseInt(tx.timeStamp),
+      } as CachedTransaction);
+    }
+    
+    // Get existing cached transactions to merge
+    const existingCached = await getCachedTransactions(tracker.id);
+    const existingHashes = new Set(existingCached.map((t) => t.transactionHash));
+    
+    // Filter out duplicates
+    const newTxs = processedTxs.filter((tx) => !existingHashes.has(tx.transactionHash));
+    
+    // Merge with existing cache
+    const allTransactions = [...existingCached, ...newTxs];
+    
+    // Sort by timestamp (newest first)
+    allTransactions.sort((a, b) => b.timestamp - a.timestamp);
+    
+    // Save to cache
+    await saveTransactions(tracker.id, allTransactions);
+    
+    // Save metadata
+    const now = Math.floor(Date.now() / 1000);
+    await saveCacheMetadata({
+      trackerId: tracker.id,
+      lastFetchedBlock: 0, // We'll track this if needed
+      lastFetchedTimestamp: now,
+    });
+    
+    console.log("Processed transactions:", newTxs.length, "new,", allTransactions.length, "total");
+    setTransactions(allTransactions);
     } catch (error: any) {
       console.error("Failed to fetch transactions:", error);
       setError(`Failed to fetch transactions: ${error.message || "Unknown error"}. Please check your Etherscan API key and wallet address.`);
@@ -259,6 +340,13 @@ export const Dashboard: React.FC = () => {
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button
+                onClick={() => setShowSettings(true)}
+                style={{ background: "#2a2a44", padding: "10px 12px" }}
+                title="Settings"
+              >
+                ⚙️
+              </button>
+              <button
                 onClick={exportToCSV}
                 disabled={transactions.length === 0}
                 style={{ background: "#2a2a44" }}
@@ -380,6 +468,15 @@ export const Dashboard: React.FC = () => {
             </div>
           ) : null}
         </div>
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && activeTracker && (
+        <TrackerSettingsModal
+          tracker={activeTracker}
+          onClose={() => setShowSettings(false)}
+          onSaved={() => loadTransactions(activeTracker)}
+        />
       )}
     </div>
   );
