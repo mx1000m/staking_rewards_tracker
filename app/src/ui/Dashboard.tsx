@@ -141,6 +141,48 @@ export const Dashboard: React.FC = () => {
   const currencySymbol = activeTracker?.currency === "EUR" ? "€" : "$";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
 
+  // CSV Export
+  const exportToCSV = () => {
+    if (!activeTracker || transactions.length === 0) return;
+    const currency = activeTracker.currency === "EUR" ? "€" : "$";
+    const headers = [
+      "Date",
+      "Time",
+      "ETH Amount",
+      `ETH Price (${currency})`,
+      `Rewards (${currency})`,
+      "Tax Rate (%)",
+      "Taxes in ETH",
+      `Taxes (${currency})`,
+      "Transaction Hash",
+      "Status",
+    ];
+    const rows = transactions.map((tx) => [
+      tx.date,
+      tx.time,
+      tx.ethAmount.toFixed(6),
+      tx.ethPrice.toFixed(2),
+      tx.rewardsInCurrency.toFixed(2),
+      tx.taxRate.toString(),
+      tx.taxesInEth.toFixed(6),
+      tx.taxesInCurrency.toFixed(2),
+      tx.transactionHash,
+      tx.status,
+    ]);
+    const csv = [headers, ...rows]
+      .map((r) => r.map((c) => `"${c}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(activeTracker.name || "node").replace(/\s+/g, "_")}_transactions.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{ width: "100%" }}>
       {/* Global Summary Cards */}
@@ -217,13 +259,23 @@ export const Dashboard: React.FC = () => {
               </h2>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4" }}>{activeTracker.walletAddress}</p>
             </div>
-            <button 
-              onClick={() => fetchTransactions(activeTracker, true)}
-              disabled={loading}
-              style={{ background: "#2a2a44" }}
-            >
-              {loading ? "Loading..." : "🔄 Refresh"}
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={exportToCSV}
+                disabled={transactions.length === 0}
+                style={{ background: "#2a2a44" }}
+                title="Export CSV"
+              >
+                📥 Export CSV
+              </button>
+              <button 
+                onClick={() => fetchTransactions(activeTracker, true)}
+                disabled={loading}
+                style={{ background: "#2a2a44" }}
+              >
+                {loading ? "Loading..." : "🔄 Refresh"}
+              </button>
+            </div>
           </div>
           
           {/* Node Summary */}

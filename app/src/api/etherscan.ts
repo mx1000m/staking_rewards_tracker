@@ -17,8 +17,8 @@ export async function getTransactions(
   const startTime = startTimestamp || new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
   const startBlock = Math.floor((startTime - 1438269988) / 12); // Ethereum genesis was at timestamp 1438269988
   
-  // Get regular transactions from start of year (or provided timestamp)
-  const regularUrl = `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
+  // Get regular transactions from start (V2 API)
+  const regularUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
   
   const regularRes = await fetch(regularUrl);
   const regularData = await regularRes.json();
@@ -45,8 +45,8 @@ export async function getTransactions(
     }
   }
 
-  // Get internal transactions from same start point
-  const internalUrl = `https://api.etherscan.io/api?module=account&action=txlistinternal&address=${address}&startblock=${startBlock}&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
+  // Get internal transactions from start (V2 API)
+  const internalUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlistinternal&address=${address}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
   
   const internalRes = await fetch(internalUrl);
   const internalData = await internalRes.json();
