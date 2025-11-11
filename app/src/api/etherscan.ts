@@ -15,7 +15,8 @@ export async function getTransactions(
   // Calculate start block from timestamp (approximate: 1 block per 12 seconds).
   // Default to Jan 1 of current year for initial/full loads.
   const startTime = startTimestamp ?? new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
-  const startBlock = Math.floor((startTime - 1438269988) / 12);
+  // NOTE: Do NOT attempt to estimate startBlock from timestamp. Use startblock=0
+  // and filter by timestamp instead to avoid missing transactions.
 
   // Helper: fetch paginated results from Etherscan V2 with small delay to respect 5 req/sec.
   async function fetchPaged(
@@ -25,7 +26,7 @@ export async function getTransactions(
     let page = 1;
     const out: EtherscanTransaction[] = [];
     while (true) {
-      const url = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=${action}&address=${address}&startblock=${startBlock}&endblock=99999999&page=${page}&offset=${offset}&sort=asc&apikey=${apiKey}`;
+      const url = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=${action}&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=${offset}&sort=asc&apikey=${apiKey}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.status === "0") {
