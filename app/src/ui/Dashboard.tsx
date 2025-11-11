@@ -36,10 +36,8 @@ export const Dashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      // Use tracker creation date or Jan 1 of current year, whichever is later
-      const currentYearStart = new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
-      const trackerStart = tracker.createdAt ? Math.floor(tracker.createdAt / 1000) : currentYearStart;
-      const startTimestamp = Math.max(currentYearStart, trackerStart);
+      // Always start from Jan 1 of current year (00:01 UTC) to include entire-year history
+      const startTimestamp = Math.floor(Date.UTC(new Date().getUTCFullYear(), 0, 1, 0, 1, 0) / 1000);
       
       console.log("Fetching transactions for:", tracker.walletAddress, "from", new Date(startTimestamp * 1000).toLocaleDateString());
       const etherscanTxs = await getTransactions(tracker.walletAddress, tracker.etherscanKey, startTimestamp);
