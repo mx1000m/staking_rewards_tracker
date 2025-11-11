@@ -30,6 +30,7 @@ interface Transaction {
   transactionHash: string;
   status: string;
   timestamp: number;
+  swapHash?: string;
 }
 
 interface DashboardProps {
@@ -45,6 +46,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [markPaidHash, setMarkPaidHash] = useState<string | null>(null);
   const [swapHashInput, setSwapHashInput] = useState<string>("");
+  const [editPaidHash, setEditPaidHash] = useState<string | null>(null);
+  const [editSwapHashInput, setEditSwapHashInput] = useState<string>("");
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
 
@@ -517,18 +520,41 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       </td>
                       <td style={{ padding: "12px" }}>
                         {tx.status === "✓ Paid" ? (
-                          <span style={{ 
-                            background: "#10b981", 
-                            color: "white", 
-                            padding: "4px 8px", 
-                            borderRadius: "6px", 
-                            fontSize: "0.85rem",
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}>
-                            ✓ Paid
-                          </span>
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            <span style={{ 
+                              background: "#10b981", 
+                              color: "white", 
+                              padding: "4px 8px", 
+                              borderRadius: "6px", 
+                              fontSize: "0.85rem",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: 6,
+                            }}>
+                              ✓ Paid{tx.swapHash ? ` + ${tx.swapHash.slice(0, 6)}...${tx.swapHash.slice(-4)}` : ""}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setEditPaidHash(tx.transactionHash);
+                                setEditSwapHashInput(tx.swapHash || "");
+                              }}
+                              style={{
+                                background: "transparent",
+                                border: "1px solid #10b981",
+                                color: "#10b981",
+                                padding: "4px 8px",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontSize: "0.85rem",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: 4,
+                              }}
+                              title="Edit paid status"
+                            >
+                              ✏️
+                            </button>
+                          </div>
                         ) : (
                           <button
                             onClick={() => { setMarkPaidHash(tx.transactionHash); setSwapHashInput(""); }}
@@ -573,10 +599,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         >
           <div className="card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ marginTop: 0 }}>Mark as Paid</h3>
-            <p className="muted" style={{ marginTop: 0 }}>Enter the transaction hash of the swap you performed for this reward.</p>
+            <p className="muted" style={{ marginTop: 0 }}>Enter the transaction hash of the swap (optional).</p>
             <input
               className="input"
-              placeholder="Swap transaction hash (0x...)"
+              placeholder="Swap transaction hash (optional, 0x...)"
               value={swapHashInput}
               onChange={(e) => setSwapHashInput(e.target.value.trim())}
             />
@@ -586,9 +612,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 onClick={async () => {
                   if (!activeTracker || !markPaidHash || !user) return;
                   
+                  // Validate swap hash if provided
+                  const swapHash = swapHashInput.trim();
+                  if (swapHash && !/^0x[a-fA-F0-9]{6,}$/.test(swapHash)) {
+                    alert("Invalid transaction hash format. Please enter a valid Ethereum transaction hash (0x followed by hex characters).");
+                    return;
+                  }
+                  
                   // Update local cache
                   const { updateTransactionStatus } = await import("../utils/transactionCache");
-                  await updateTransactionStatus(activeTracker.id, markPaidHash, "✓ Paid", swapHashInput || undefined);
+                  await updateTransactionStatus(activeTracker.id, markPaidHash, "✓ Paid", swapHash || undefined);
                   
                   // Update Firestore
                   try {
@@ -597,7 +630,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       activeTracker.id,
                       markPaidHash,
                       "✓ Paid",
-                      swapHashInput || undefined
+                      swapHash || undefined
                     );
                   } catch (firestoreError) {
                     console.warn("Failed to update Firestore (continuing):", firestoreError);
@@ -606,14 +639,119 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   // Update local state
                   setTransactions((prev) => prev.map((t) => 
                     t.transactionHash === markPaidHash 
-                      ? { ...t, status: "✓ Paid", swapHash: swapHashInput || undefined } as Transaction
+                      ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
                       : t
                   ));
                   setMarkPaidHash(null);
+                  setSwapHashInput("");
                 }}
-                disabled={!/^0x[a-fA-F0-9]{6,}$/.test(swapHashInput)}
               >
                 Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Paid Status Modal */}
+      {editPaidHash && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1200,
+            padding: 20,
+          }}
+          onClick={() => setEditPaidHash(null)}
+        >
+          <div className="card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ marginTop: 0 }}>Edit Paid Status</h3>
+            <p className="muted" style={{ marginTop: 0 }}>Update the swap transaction hash or mark as unpaid.</p>
+            <input
+              className="input"
+              placeholder="Swap transaction hash (optional, 0x...)"
+              value={editSwapHashInput}
+              onChange={(e) => setEditSwapHashInput(e.target.value.trim())}
+            />
+            <div className="actions" style={{ marginTop: 16 }}>
+              <button style={{ background: "#2a2a44" }} onClick={() => setEditPaidHash(null)}>Cancel</button>
+              <button
+                style={{ background: "#ef4444" }}
+                onClick={async () => {
+                  if (!activeTracker || !editPaidHash || !user) return;
+                  
+                  // Mark as unpaid
+                  const { updateTransactionStatus } = await import("../utils/transactionCache");
+                  await updateTransactionStatus(activeTracker.id, editPaidHash, "Unpaid", undefined);
+                  
+                  // Update Firestore
+                  try {
+                    await updateFirestoreTransactionStatus(
+                      user.uid,
+                      activeTracker.id,
+                      editPaidHash,
+                      "Unpaid",
+                      undefined
+                    );
+                  } catch (firestoreError) {
+                    console.warn("Failed to update Firestore (continuing):", firestoreError);
+                  }
+                  
+                  // Update local state
+                  setTransactions((prev) => prev.map((t) => 
+                    t.transactionHash === editPaidHash 
+                      ? { ...t, status: "Unpaid", swapHash: undefined } as Transaction
+                      : t
+                  ));
+                  setEditPaidHash(null);
+                  setEditSwapHashInput("");
+                }}
+              >
+                Mark as Unpaid
+              </button>
+              <button
+                onClick={async () => {
+                  if (!activeTracker || !editPaidHash || !user) return;
+                  
+                  // Validate swap hash if provided
+                  const swapHash = editSwapHashInput.trim();
+                  if (swapHash && !/^0x[a-fA-F0-9]{6,}$/.test(swapHash)) {
+                    alert("Invalid transaction hash format. Please enter a valid Ethereum transaction hash (0x followed by hex characters).");
+                    return;
+                  }
+                  
+                  // Update local cache
+                  const { updateTransactionStatus } = await import("../utils/transactionCache");
+                  await updateTransactionStatus(activeTracker.id, editPaidHash, "✓ Paid", swapHash || undefined);
+                  
+                  // Update Firestore
+                  try {
+                    await updateFirestoreTransactionStatus(
+                      user.uid,
+                      activeTracker.id,
+                      editPaidHash,
+                      "✓ Paid",
+                      swapHash || undefined
+                    );
+                  } catch (firestoreError) {
+                    console.warn("Failed to update Firestore (continuing):", firestoreError);
+                  }
+                  
+                  // Update local state
+                  setTransactions((prev) => prev.map((t) => 
+                    t.transactionHash === editPaidHash 
+                      ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
+                      : t
+                  ));
+                  setEditPaidHash(null);
+                  setEditSwapHashInput("");
+                }}
+              >
+                Update
               </button>
             </div>
           </div>
