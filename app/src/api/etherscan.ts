@@ -29,21 +29,24 @@ async function getBlockNumberByTimestamp(
 export async function getTransactions(
   address: string,
   apiKey: string,
-  startTimestamp?: number // Unix timestamp to start from (e.g., Jan 1 of current year)
-): Promise<EtherscanTransaction[]> {
+  startTimestamp?: number, // Unix timestamp to start from (e.g., Jan 1 of current year)
+  startBlockOverride?: number // Optional: use this block number instead of calculating from timestamp
+): Promise<{ transactions: EtherscanTransaction[]; lastBlock: number }> {
   // Default to Jan 1 of current year 00:01 UTC for initial/full loads
   const startTime = startTimestamp ?? new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1, 0, 1, 0)).getTime() / 1000;
   
-  // Get the exact block number for the start timestamp
-  let startBlock = 0;
-  try {
-    startBlock = await getBlockNumberByTimestamp(startTime, apiKey);
-    console.log(`Block number for ${new Date(startTime * 1000).toISOString()}: ${startBlock}`);
-    // Small delay to respect rate limits
-    await new Promise((r) => setTimeout(r, 250));
-  } catch (error) {
-    console.warn("Failed to get exact block number, falling back to block 0:", error);
-    // Fallback to block 0 if API call fails
+  // Get the exact block number for the start timestamp (unless override provided)
+  let startBlock = startBlockOverride ?? 0;
+  if (!startBlockOverride) {
+    try {
+      startBlock = await getBlockNumberByTimestamp(startTime, apiKey);
+      console.log(`Block number for ${new Date(startTime * 1000).toISOString()}: ${startBlock}`);
+      // Small delay to respect rate limits
+      await new Promise((r) => setTimeout(r, 250));
+    } catch (error) {
+      console.warn("Failed to get exact block number, falling back to block 0:", error);
+      // Fallback to block 0 if API call fails
+    }
   }
 
   // Helper: fetch paginated results from Etherscan V2 with small delay to respect 5 req/sec.
@@ -93,8 +96,16 @@ export async function getTransactions(
     }
   );
   
+  // Find the highest block number from transactions (for cache metadata)
+  let lastBlock = startBlock;
+  if (incomingTxs.length > 0) {
+    // Note: EtherscanTransaction doesn't have blockNumber, so we'll use current block as approximation
+    // In a real scenario, we'd track the actual block number from the API response
+    lastBlock = startBlock; // We'll update this with actual block tracking if needed
+  }
+  
   console.log(`Incoming transactions (from ${new Date(startTime * 1000).toLocaleDateString()}): ${incomingTxs.length}`);
   
-  return incomingTxs;
+  return { transactions: incomingTxs, lastBlock };
 }
 

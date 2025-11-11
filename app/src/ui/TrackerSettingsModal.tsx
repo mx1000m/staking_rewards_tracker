@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTrackerStore, Tracker, Currency } from "../store/trackerStore";
+import { clearCache } from "../utils/transactionCache";
 
 const COUNTRY_DEFAULT_TAX: Record<string, number> = {
   Croatia: 24,
@@ -32,7 +33,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     };
   }, []);
 
-  const doSave = () => {
+  const doSave = async () => {
     // Validate inputs
     if (!name.trim()) {
       alert("Please enter a name for the tracker.");
@@ -49,6 +50,13 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     if (!etherscanKey.trim()) {
       alert("Please enter an Etherscan API key.");
       return;
+    }
+
+    const walletChanged = walletAddress.toLowerCase() !== tracker.walletAddress.toLowerCase();
+    
+    // Clear cache if wallet changed
+    if (walletChanged) {
+      await clearCache(tracker.id);
     }
 
     updateTracker(tracker.id, {
