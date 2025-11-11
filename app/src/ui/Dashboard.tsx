@@ -11,6 +11,12 @@ import {
   CachedTransaction,
 } from "../utils/transactionCache";
 import { TrackerSettingsModal } from "./TrackerSettingsModal";
+import { useAuth } from "../hooks/useAuth";
+import {
+  getFirestoreTransactions,
+  saveFirestoreTransactionsBatch,
+  updateFirestoreTransactionStatus,
+} from "../utils/firestoreAdapter";
 
 interface Transaction {
   date: string;
@@ -32,6 +38,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const { trackers, activeTrackerId, setActiveTracker } = useTrackerStore();
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +55,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrackerId]);
 
-  // Load transactions: first from cache, then fetch new ones if needed
+  // Load transactions: first from cache, then sync with Firestore, then fetch new ones if needed
   const loadTransactions = async (tracker: Tracker) => {
     setLoading(true);
     setError(null);
@@ -62,7 +69,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         console.log(`Loaded ${cached.length} cached transactions`);
       }
 
-      // Check if we need to fetch new transactions
+      // Sync with Firestore if user is authenticated
+      if (user) {
+        try {
+          const metadata = await getCacheMetadata(tracker.id);
+          const firestoreTxs = await getFirestoreTransactions(
+            user.uid,
+            tracker.id,
+            metadata?.lastFetchedTimestamp
+          );
+          
+          if (firestoreTxs.length > 0) {
+            console.log(`Synced ${firestoreTxs.length} transactions from Firestore`);
+            // Merge Firestore data with cached data (Firestore takes precedence for status)
+            const cachedMap = new Map(cached.map((t) => [t.transactionHash, t]));
+            firestoreTxs.forEach((ftx) => {
+              cachedMap.set(ftx.transactionHash, ftx);
+            });
+            const merged = Array.from(cachedMap.values()).sort((a, b) => b.timestamp - a.timestamp);
+            setTransactions(merged);
+            await saveTransactions(tracker.id, merged);
+          }
+        } catch (firestoreError) {
+          console.warn("Firestore sync failed (continuing with cache):", firestoreError);
+        }
+      }
+
+      // Check if we need to fetch new transactions from Etherscan
       const metadata = await getCacheMetadata(tracker.id);
       const now = Math.floor(Date.now() / 1000);
       const oneDayAgo = now - 24 * 60 * 60;
@@ -189,6 +222,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     
     // Save to cache
     await saveTransactions(tracker.id, allTransactions);
+    
+    // Save to Firestore if user is authenticated
+    if (user && newTxs.length > 0) {
+      try {
+        await saveFirestoreTransactionsBatch(user.uid, tracker.id, newTxs);
+        console.log(`Saved ${newTxs.length} new transactions to Firestore`);
+      } catch (firestoreError) {
+        console.warn("Failed to save to Firestore (continuing):", firestoreError);
+      }
+    }
     
     // Save metadata
     const now = Math.floor(Date.now() / 1000);
@@ -473,7 +516,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         </a>
                       </td>
                       <td style={{ padding: "12px" }}>
-                        {tx.status === "Paid" ? (
+                        {tx.status === "✓ Paid" ? (
                           <span style={{ 
                             background: "#10b981", 
                             color: "white", 
@@ -541,12 +584,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <button style={{ background: "#2a2a44" }} onClick={() => setMarkPaidHash(null)}>Cancel</button>
               <button
                 onClick={async () => {
-                  if (!activeTracker || !markPaidHash) return;
-                  // Persist status in cache
+                  if (!activeTracker || !markPaidHash || !user) return;
+                  
+                  // Update local cache
                   const { updateTransactionStatus } = await import("../utils/transactionCache");
-                  await updateTransactionStatus(activeTracker.id, markPaidHash, "Paid", swapHashInput || undefined);
+                  await updateTransactionStatus(activeTracker.id, markPaidHash, "✓ Paid", swapHashInput || undefined);
+                  
+                  // Update Firestore
+                  try {
+                    await updateFirestoreTransactionStatus(
+                      user.uid,
+                      activeTracker.id,
+                      markPaidHash,
+                      "✓ Paid",
+                      swapHashInput || undefined
+                    );
+                  } catch (firestoreError) {
+                    console.warn("Failed to update Firestore (continuing):", firestoreError);
+                  }
+                  
                   // Update local state
-                  setTransactions((prev) => prev.map((t) => t.transactionHash === markPaidHash ? { ...t, status: "Paid" } : t));
+                  setTransactions((prev) => prev.map((t) => 
+                    t.transactionHash === markPaidHash 
+                      ? { ...t, status: "✓ Paid", swapHash: swapHashInput || undefined } as Transaction
+                      : t
+                  ));
                   setMarkPaidHash(null);
                 }}
                 disabled={!/^0x[a-fA-F0-9]{6,}$/.test(swapHashInput)}

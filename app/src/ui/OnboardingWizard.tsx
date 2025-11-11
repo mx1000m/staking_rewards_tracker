@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useTrackerStore, Currency } from "../store/trackerStore";
+import { useAuth } from "../hooks/useAuth";
 
 type OnboardingWizardProps = {
   onComplete?: () => void;
@@ -13,7 +14,8 @@ const COUNTRY_DEFAULT_TAX: Record<string, number> = {
 };
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
-  const { addTracker } = useTrackerStore();
+  const { addTracker, syncTrackerToFirestore } = useTrackerStore();
+  const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [walletAddress, setWalletAddress] = useState("");
   const [currency, setCurrency] = useState<Currency>("EUR");
@@ -29,7 +31,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     return true;
   }, [step, walletAddress, currency, taxRate, etherscanKey]);
 
-  const next = () => {
+  const next = async () => {
     if (!canNext) return;
     if (step === 3) {
       // Save tracker and complete
@@ -41,6 +43,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         etherscanKey,
         name: `Node ${walletAddress.slice(0, 6)}...`,
       });
+      
+      // Sync to Firestore if authenticated
+      if (user) {
+        const { trackers } = useTrackerStore.getState();
+        const newTracker = trackers[trackers.length - 1];
+        if (newTracker) {
+          await syncTrackerToFirestore(user.uid, newTracker);
+        }
+      }
+      
       onComplete?.();
     } else {
       setStep((s) => s + 1);

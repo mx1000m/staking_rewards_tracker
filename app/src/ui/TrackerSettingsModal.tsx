@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTrackerStore, Tracker, Currency } from "../store/trackerStore";
 import { clearCache } from "../utils/transactionCache";
+import { useAuth } from "../hooks/useAuth";
 
 const COUNTRY_DEFAULT_TAX: Record<string, number> = {
   Croatia: 24,
@@ -16,7 +17,8 @@ interface TrackerSettingsModalProps {
 }
 
 export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ tracker, onClose, onSaved }) => {
-  const { updateTracker } = useTrackerStore();
+  const { updateTracker, syncTrackerToFirestore } = useTrackerStore();
+  const { user } = useAuth();
   const [name, setName] = useState(tracker.name);
   const [walletAddress, setWalletAddress] = useState(tracker.walletAddress);
   const [currency, setCurrency] = useState<Currency>(tracker.currency);
@@ -67,6 +69,16 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       taxRate,
       etherscanKey,
     });
+    
+    // Sync to Firestore if authenticated
+    if (user) {
+      const { trackers } = useTrackerStore.getState();
+      const updatedTracker = trackers.find((t) => t.id === tracker.id);
+      if (updatedTracker) {
+        await syncTrackerToFirestore(user.uid, updatedTracker);
+      }
+    }
+    
     onSaved?.();
     onClose();
   };
