@@ -26,7 +26,11 @@ interface Transaction {
   timestamp: number;
 }
 
-export const Dashboard: React.FC = () => {
+interface DashboardProps {
+  onAddTracker?: () => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const { trackers, activeTrackerId, setActiveTracker } = useTrackerStore();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -305,7 +309,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Node Selection */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
         {trackers.map((tracker) => (
           <button
             key={tracker.id}
@@ -323,6 +327,22 @@ export const Dashboard: React.FC = () => {
             {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
           </button>
         ))}
+        {onAddTracker && (
+          <button
+            onClick={onAddTracker}
+            style={{
+              background: "#6b6bff",
+              padding: "12px 20px",
+              border: "none",
+              borderRadius: "10px",
+              color: "white",
+              cursor: "pointer",
+              fontWeight: 400,
+            }}
+          >
+            + Add Node Tracker
+          </button>
+        )}
       </div>
 
       {/* Selected Node Details */}

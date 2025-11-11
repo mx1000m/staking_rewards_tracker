@@ -19,10 +19,7 @@ export const App: React.FC = () => {
             />
           ) : (
             <div style={{ width: "100%", maxWidth: "1400px" }}>
-              <div style={{ marginBottom: "16px", display: "flex", justifyContent: "flex-end" }}>
-                <button onClick={() => setShowWizard(true)}>+ Add Node Tracker</button>
-              </div>
-              <Dashboard />
+              <Dashboard onAddTracker={() => setShowWizard(true)} />
             </div>
           )}
         </AuthShell>
