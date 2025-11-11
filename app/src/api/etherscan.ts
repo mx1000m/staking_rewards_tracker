@@ -7,16 +7,44 @@ export interface EtherscanTransaction {
   isError: string;
 }
 
+/**
+ * Get the block number for a specific timestamp using Etherscan API
+ */
+async function getBlockNumberByTimestamp(
+  timestamp: number,
+  apiKey: string
+): Promise<number> {
+  // Get the first block on or after the timestamp
+  const url = `https://api.etherscan.io/v2/api?chainid=1&module=block&action=getblocknobytime&timestamp=${timestamp}&closest=after&apikey=${apiKey}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  
+  if (data.status === "0" || !data.result) {
+    throw new Error(`Failed to get block number: ${data.message || data.result || "Unknown error"}`);
+  }
+  
+  return parseInt(data.result);
+}
+
 export async function getTransactions(
   address: string,
   apiKey: string,
   startTimestamp?: number // Unix timestamp to start from (e.g., Jan 1 of current year)
 ): Promise<EtherscanTransaction[]> {
-  // Calculate start block from timestamp (approximate: 1 block per 12 seconds).
-  // Default to Jan 1 of current year for initial/full loads.
-  const startTime = startTimestamp ?? new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
-  // NOTE: Do NOT attempt to estimate startBlock from timestamp. Use startblock=0
-  // and filter by timestamp instead to avoid missing transactions.
+  // Default to Jan 1 of current year 00:01 UTC for initial/full loads
+  const startTime = startTimestamp ?? new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1, 0, 1, 0)).getTime() / 1000;
+  
+  // Get the exact block number for the start timestamp
+  let startBlock = 0;
+  try {
+    startBlock = await getBlockNumberByTimestamp(startTime, apiKey);
+    console.log(`Block number for ${new Date(startTime * 1000).toISOString()}: ${startBlock}`);
+    // Small delay to respect rate limits
+    await new Promise((r) => setTimeout(r, 250));
+  } catch (error) {
+    console.warn("Failed to get exact block number, falling back to block 0:", error);
+    // Fallback to block 0 if API call fails
+  }
 
   // Helper: fetch paginated results from Etherscan V2 with small delay to respect 5 req/sec.
   async function fetchPaged(
@@ -26,7 +54,7 @@ export async function getTransactions(
     let page = 1;
     const out: EtherscanTransaction[] = [];
     while (true) {
-      const url = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=${action}&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=${offset}&sort=asc&apikey=${apiKey}`;
+      const url = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=${action}&address=${address}&startblock=${startBlock}&endblock=99999999&page=${page}&offset=${offset}&sort=asc&apikey=${apiKey}`;
       const res = await fetch(url);
       const data = await res.json();
       if (data.status === "0") {
