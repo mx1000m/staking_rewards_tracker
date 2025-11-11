@@ -11,9 +11,10 @@ const COUNTRY_DEFAULT_TAX: Record<string, number> = {
 interface TrackerSettingsModalProps {
   tracker: Tracker;
   onClose: () => void;
+  onSaved?: () => void;
 }
 
-export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ tracker, onClose }) => {
+export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ tracker, onClose, onSaved }) => {
   const { updateTracker } = useTrackerStore();
   const [name, setName] = useState(tracker.name);
   const [walletAddress, setWalletAddress] = useState(tracker.walletAddress);
@@ -21,6 +22,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [country, setCountry] = useState(tracker.country);
   const [taxRate, setTaxRate] = useState<number>(tracker.taxRate);
   const [etherscanKey, setEtherscanKey] = useState(tracker.etherscanKey);
+  const [confirmChange, setConfirmChange] = useState(false);
 
   useEffect(() => {
     // Prevent body scroll when modal is open
@@ -30,7 +32,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     };
   }, []);
 
-  const handleSave = () => {
+  const doSave = () => {
     // Validate inputs
     if (!name.trim()) {
       alert("Please enter a name for the tracker.");
@@ -57,7 +59,17 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       taxRate,
       etherscanKey,
     });
+    onSaved?.();
     onClose();
+  };
+
+  const handleSave = () => {
+    const walletChanged = walletAddress.toLowerCase() !== tracker.walletAddress.toLowerCase();
+    if (walletChanged) {
+      setConfirmChange(true);
+      return;
+    }
+    doSave();
   };
 
   const onChangeCountry = (val: string) => {
@@ -225,8 +237,42 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </button>
           <button onClick={handleSave}>Confirm</button>
         </div>
+
+        {confirmChange && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1100,
+            }}
+            onClick={() => setConfirmChange(false)}
+          >
+            <div className="card" style={{ maxWidth: "520px" }} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ marginTop: 0 }}>Change wallet address?</h3>
+              <p style={{ margin: "8px 0 16px", color: "#e8e8f0" }}>
+                Are you sure you want to change the wallet address?
+              </p>
+              <p className="muted" style={{ marginTop: 0 }}>
+                This will erase all data from your previous node/wallet.
+              </p>
+              <div className="actions">
+                <button style={{ background: "#2a2a44" }} onClick={() => setConfirmChange(false)}>
+                  Cancel
+                </button>
+                <button onClick={() => { setConfirmChange(false); doSave(); }}>
+                  Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
 

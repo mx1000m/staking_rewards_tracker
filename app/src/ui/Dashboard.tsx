@@ -34,14 +34,32 @@ export const Dashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrackerId]);
 
+  // Auto-refresh at midnight UTC
+  useEffect(() => {
+    if (!activeTracker) return;
+    function msUntilNextUtcMidnight(): number {
+      const now = new Date();
+      const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+      return next.getTime() - now.getTime();
+    }
+    let timeoutId: any = null;
+    let intervalId: any = null;
+    timeoutId = setTimeout(() => {
+      fetchTransactions(activeTracker, true);
+      intervalId = setInterval(() => fetchTransactions(activeTracker, true), 24 * 60 * 60 * 1000);
+    }, msUntilNextUtcMidnight());
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [activeTrackerId]);
+
   const fetchTransactions = async (tracker: Tracker, forceRefresh = false) => {
     setLoading(true);
     setError(null);
     try {
-      // Use tracker creation date or Jan 1 of current year, whichever is later
-      const currentYearStart = new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
-      const trackerStart = tracker.createdAt ? Math.floor(tracker.createdAt / 1000) : currentYearStart;
-      const startTimestamp = Math.max(currentYearStart, trackerStart);
+      // Always load from Jan 1 of the current year
+      const startTimestamp = new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
       
       console.log("Fetching transactions for:", tracker.walletAddress, "from", new Date(startTimestamp * 1000).toLocaleDateString());
       const etherscanTxs = await getTransactions(tracker.walletAddress, tracker.etherscanKey, startTimestamp);
@@ -347,6 +365,7 @@ export const Dashboard: React.FC = () => {
         <TrackerSettingsModal
           tracker={activeTracker}
           onClose={() => setShowSettings(false)}
+          onSaved={() => fetchTransactions(activeTracker, true)}
         />
       )}
     </div>
