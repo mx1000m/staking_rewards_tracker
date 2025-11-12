@@ -378,7 +378,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
         <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>All nodes overview</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-        <div className="card" style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", width: "auto", maxWidth: "none" }}>
+        <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL REWARDS</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {currencySymbol} {totalRewards.toFixed(2)}
@@ -387,7 +387,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {totalEthRewards.toFixed(6)} ETH
           </p>
         </div>
-        <div className="card" style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", width: "auto", maxWidth: "none" }}>
+        <div style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL TAXES</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {currencySymbol} {totalTaxes.toFixed(2)}
@@ -396,7 +396,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {totalEthTaxes.toFixed(6)} ETH
           </p>
         </div>
-        <div className="card" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", width: "auto", maxWidth: "none" }}>
+        <div style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL LEFT TO SWAP</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {currencySymbol} {totalLeftToSwap.toFixed(2)}
@@ -405,7 +405,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {totalEthLeftToSwap.toFixed(6)} ETH
           </p>
         </div>
-        <div className="card" style={{ background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", width: "auto", maxWidth: "none" }}>
+        <div style={{ background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL SWAPPED</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {currencySymbol} {totalSwapped.toFixed(2)}
