@@ -784,11 +784,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 e.currentTarget.style.background = "#10b981";
                                 e.currentTarget.style.color = "white";
                                 e.currentTarget.style.transform = "scale(1.05)";
+                                const img = e.currentTarget.querySelector("img");
+                                if (img) {
+                                  img.style.filter = "brightness(0) invert(1)";
+                                }
                               }}
                               onMouseLeave={(e) => {
                                 e.currentTarget.style.background = "transparent";
                                 e.currentTarget.style.color = "#10b981";
                                 e.currentTarget.style.transform = "scale(1)";
+                                const img = e.currentTarget.querySelector("img");
+                                if (img) {
+                                  img.style.filter = "brightness(0) saturate(100%) invert(60%) sepia(95%) saturate(500%) hue-rotate(120deg) brightness(95%) contrast(90%)";
+                                }
                               }}
                               onMouseDown={(e) => {
                                 e.currentTarget.style.transform = "scale(0.95)";
@@ -800,7 +808,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               <img 
                                 src="/icons/edit_icon.svg" 
                                 alt="Edit" 
-                                style={{ width: "14px", height: "14px" }}
+                                style={{ width: "14px", height: "14px", filter: "brightness(0) saturate(100%) invert(60%) sepia(95%) saturate(500%) hue-rotate(120deg) brightness(95%) contrast(90%)" }}
                               />
                               Edit
                             </button>
