@@ -467,40 +467,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <h2 style={{ margin: "0 0 4px 0" }}>
                 {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
               </h2>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4" }}>{activeTracker.walletAddress}</p>
-                <button
-                  onClick={() => copyToClipboard(activeTracker.walletAddress, "Wallet address")}
-                  style={{
-                    background: "transparent",
-                    border: "1px solid #9aa0b4",
-                    color: "#9aa0b4",
-                    padding: "4px 8px",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    fontSize: "0.85rem",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    transition: "all 0.2s",
-                  }}
-                  title="Copy wallet address"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#2a2a44";
-                    e.currentTarget.style.borderColor = "#6b6bff";
-                    e.currentTarget.style.color = "#6b6bff";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.borderColor = "#9aa0b4";
-                    e.currentTarget.style.color = "#9aa0b4";
-                  }}
-                >
-                  <img 
-                    src="/staking_rewards_tracker/icons/copy_icon.svg" 
-                    alt="Copy" 
-                    style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
-                  />
-                </button>
+              <div 
+                style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+                onMouseEnter={(e) => {
+                  const p = e.currentTarget.querySelector("p");
+                  const img = e.currentTarget.querySelector("img");
+                  if (p) p.style.color = "#6a6bf6";
+                  if (img) img.style.filter = "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)";
+                }}
+                onMouseLeave={(e) => {
+                  const p = e.currentTarget.querySelector("p");
+                  const img = e.currentTarget.querySelector("img");
+                  if (p) p.style.color = "#9aa0b4";
+                  if (img) img.style.filter = "brightness(0) invert(1)";
+                }}
+                onClick={() => copyToClipboard(activeTracker.walletAddress, "Wallet address")}
+              >
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4", transition: "color 0.2s" }}>{activeTracker.walletAddress}</p>
+                <img 
+                  src="/staking_rewards_tracker/icons/copy_icon.svg" 
+                  alt="Copy" 
+                  style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)", transition: "filter 0.2s" }}
+                />
               </div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -528,6 +516,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   alt="Settings" 
                   style={{ width: "18px", height: "18px", filter: "brightness(0) invert(1)" }}
                 />
+                Edit
               </button>
               <button
                 onClick={() => setShowExportModal(true)}
@@ -721,11 +710,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <tr style={{ borderBottom: "1px solid #232342" }}>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Date, Time</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>ETH Rewards</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>ETH Price</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Rewards in {activeTracker.currency}</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Tax Rate</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Taxes in ETH</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Taxes in {activeTracker.currency}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Taxes in {activeTracker.currency}</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Transaction Hash</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Status</th>
                   </tr>
@@ -735,18 +724,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <tr key={idx} style={{ borderBottom: "1px solid #232342" }}>
                       <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.date}, {tx.time}</td>
                       <td style={{ padding: "12px", color: "#10b981" }}>{tx.ethAmount.toFixed(6)}</td>
-                      <td style={{ padding: "12px", color: "#e8e8f0" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
+                      <td style={{ padding: "12px", color: "#e8e8f0", whiteSpace: "nowrap" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
                       <td style={{ padding: "12px", color: "#10b981" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
                       <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.taxRate}%</td>
                       <td style={{ padding: "12px", color: "#f59e0b" }}>{tx.taxesInEth.toFixed(6)}</td>
-                      <td style={{ padding: "12px", color: "#f59e0b" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
+                      <td style={{ padding: "12px", color: "#f59e0b", whiteSpace: "nowrap" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
                       <td style={{ padding: "12px" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div 
+                          style={{ display: "flex", alignItems: "center", gap: 6 }}
+                          onMouseEnter={(e) => {
+                            const links = e.currentTarget.querySelectorAll("a");
+                            links.forEach(link => {
+                              link.style.color = "#8a8eff";
+                              link.style.textDecoration = "underline";
+                            });
+                            const img = e.currentTarget.querySelector("img");
+                            if (img) img.style.filter = "brightness(0) saturate(100%) invert(60%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(120%) contrast(101%)";
+                          }}
+                          onMouseLeave={(e) => {
+                            const links = e.currentTarget.querySelectorAll("a");
+                            links.forEach(link => {
+                              link.style.color = "#6b6bff";
+                              link.style.textDecoration = "none";
+                            });
+                            const img = e.currentTarget.querySelector("img");
+                            if (img) img.style.filter = "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)";
+                          }}
+                        >
                           <a
                             href={`https://etherscan.io/tx/${tx.transactionHash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: "#6b6bff", textDecoration: "none" }}
+                            style={{ color: "#6b6bff", textDecoration: "none", transition: "all 0.2s" }}
                           >
                             {tx.transactionHash.slice(0, 6)}...{tx.transactionHash.slice(-4)}
                           </a>
@@ -760,13 +769,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               display: "inline-flex",
                               alignItems: "center",
                               fontSize: "0.85rem",
+                              transition: "all 0.2s",
                             }}
                             title="View on Etherscan"
                           >
                             <img 
                               src="/staking_rewards_tracker/icons/link_icon.svg" 
                               alt="View on Etherscan" 
-                              style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)" }}
+                              style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)", transition: "filter 0.2s" }}
                             />
                           </a>
                         </div>
