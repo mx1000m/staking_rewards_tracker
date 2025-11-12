@@ -75,7 +75,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		// User is signed in, show the wizard
 		return (
 			<>
-				<div className="card" style={{ marginBottom: 16, width: "100%", maxWidth: "1400px" }}>
+				<div className="card" style={{ marginBottom: 16, width: "auto", maxWidth: "none" }}>
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 						<div>
 							<p style={{ margin: 0, fontSize: "0.9rem", color: "#9aa0b4" }}>Signed in as</p>
