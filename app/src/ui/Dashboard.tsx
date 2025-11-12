@@ -414,6 +414,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {totalEthSwapped.toFixed(6)} ETH
           </p>
         </div>
+        </div>
       </div>
 
       {/* Your Nodes */}
