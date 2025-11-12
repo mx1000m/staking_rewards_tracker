@@ -375,8 +375,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   return (
     <div style={{ width: "100%" }}>
       {/* All Nodes Overview */}
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>All nodes overview</h3>
       <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-        <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>All nodes overview</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
         <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL REWARDS</h3>
@@ -418,8 +418,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       </div>
 
       {/* Your Nodes */}
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Your nodes</h3>
       <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-        <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Your nodes</h3>
         <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
         {trackers.map((tracker) => (
           <button
@@ -459,9 +459,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
       {/* Node Selected */}
       {activeTracker && (
-        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-          <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Node selected</h3>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Node selected</h3>
+          <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h2 style={{ margin: "0 0 4px 0" }}>
                 {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
@@ -590,14 +591,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </button>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {/* Fiscal Year */}
       {activeTracker && availableYears.length > 0 && (
-        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-          <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Fiscal year</h3>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+        <>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Fiscal year</h3>
+          <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {availableYears.map((year) => (
                 <button
                   key={year}
@@ -635,15 +638,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 {year}
               </button>
             ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Node Overview */}
       {activeTracker && (
-        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-          <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Node overview</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
+        <>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Node overview</h3>
+          <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
             <div>
               <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Rewards</p>
               <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#10b981" }}>
@@ -681,7 +686,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </p>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       )}
 
       {/* Error Message */}
@@ -701,8 +707,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
       {/* Incoming Rewards */}
       {activeTracker && (
-        <div className="card" style={{ width: "auto", maxWidth: "none" }}>
-          <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Incoming rewards</h3>
+        <>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Incoming rewards</h3>
+          <div className="card" style={{ width: "auto", maxWidth: "none" }}>
           {loading ? (
             <p>Loading transactions...</p>
           ) : transactions.length === 0 && !error ? (
@@ -868,7 +875,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </table>
             </div>
           ) : null}
-        </div>
+          </div>
+        </>
       )}
 
       {/* Settings Modal */}
