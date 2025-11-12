@@ -291,21 +291,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + tx.ethAmount, 0);
   const totalEthTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInEth, 0);
   
-  // Calculate total swapped (paid transactions)
+  // Calculate total swapped (paid transactions) - in taxes amount
   const totalSwapped = filteredTransactions
     .filter((tx) => tx.status === "✓ Paid")
-    .reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
+    .reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
   const totalEthSwapped = filteredTransactions
     .filter((tx) => tx.status === "✓ Paid")
-    .reduce((sum, tx) => sum + tx.ethAmount, 0);
+    .reduce((sum, tx) => sum + tx.taxesInEth, 0);
   
-  // Calculate total left to swap (unpaid transactions)
-  const totalLeftToSwap = filteredTransactions
-    .filter((tx) => tx.status !== "✓ Paid")
-    .reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
-  const totalEthLeftToSwap = filteredTransactions
-    .filter((tx) => tx.status !== "✓ Paid")
-    .reduce((sum, tx) => sum + tx.ethAmount, 0);
+  // Calculate total left to swap (total taxes - total swapped)
+  const totalLeftToSwap = totalTaxes - totalSwapped;
+  const totalEthLeftToSwap = totalEthTaxes - totalEthSwapped;
 
   const currencySymbol = activeTracker?.currency === "EUR" ? "€" : "$";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
@@ -494,14 +490,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     e.currentTarget.style.color = "#9aa0b4";
                   }}
                 >
-                  📋
+                  <img 
+                    src="/icons/copy_icon.svg" 
+                    alt="Copy" 
+                    style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
+                  />
                 </button>
               </div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={() => setShowSettings(true)}
-                style={{ background: "#2a2a44", padding: "10px 12px", transition: "all 0.2s" }}
+                style={{ background: "#2a2a44", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6 }}
                 title="Settings"
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = "#3a3a54";
@@ -518,12 +518,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   e.currentTarget.style.transform = "scale(1.05)";
                 }}
               >
-                ⚙️
+                <img 
+                  src="/icons/gear_icon.svg" 
+                  alt="Settings" 
+                  style={{ width: "18px", height: "18px", filter: "brightness(0) invert(1)" }}
+                />
               </button>
               <button
                 onClick={() => setShowExportModal(true)}
                 disabled={transactions.length === 0}
-                style={{ background: "#2a2a44", transition: "all 0.2s" }}
+                style={{ background: "#2a2a44", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6 }}
                 title="Export CSV"
                 onMouseEnter={(e) => {
                   if (!e.currentTarget.disabled) {
@@ -546,7 +550,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   }
                 }}
               >
-                📥 Export CSV
+                <img 
+                  src="/icons/export_icon.svg" 
+                  alt="Export" 
+                  style={{ width: "18px", height: "18px", filter: "brightness(0) invert(1)" }}
+                />
+                Export CSV
               </button>
               <button 
                 onClick={() => fetchTransactions(activeTracker, true)}
@@ -729,7 +738,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             }}
                             title="View on Etherscan"
                           >
-                            🔗
+                            <img 
+                              src="/icons/link_icon.svg" 
+                              alt="View on Etherscan" 
+                              style={{ width: "16px", height: "16px" }}
+                            />
                           </a>
                         </div>
                       </td>
@@ -784,7 +797,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 e.currentTarget.style.transform = "scale(1.05)";
                               }}
                             >
-                              ✏️
+                              <img 
+                                src="/icons/edit_icon.svg" 
+                                alt="Edit" 
+                                style={{ width: "14px", height: "14px" }}
+                              />
+                              Edit
                             </button>
                           </div>
                         ) : (
