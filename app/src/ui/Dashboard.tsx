@@ -741,7 +741,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             <img 
                               src="/icons/link_icon.svg" 
                               alt="View on Etherscan" 
-                              style={{ width: "16px", height: "16px" }}
+                              style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)" }}
                             />
                           </a>
                         </div>
