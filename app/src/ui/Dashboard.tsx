@@ -374,8 +374,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   return (
     <div style={{ width: "100%" }}>
-      {/* Global Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+      {/* All Nodes Overview */}
+      <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+        <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>All nodes overview</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
         <div className="card" style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", width: "auto", maxWidth: "none" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL REWARDS</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
@@ -414,8 +416,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         </div>
       </div>
 
-      {/* Node Selection */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
+      {/* Your Nodes */}
+      <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+        <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Your nodes</h3>
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
         {trackers.map((tracker) => (
           <button
             key={tracker.id}
@@ -449,17 +453,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             + Add Node Tracker
           </button>
         )}
+        </div>
       </div>
 
-      {/* Selected Node Details */}
+      {/* Node Selected */}
       {activeTracker && (
-        <div className="card" style={{ width: "auto", maxWidth: "none" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+          <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Node selected</h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4" }}>
-                {activeIndex >= 0 ? `Node ${activeIndex + 1}:` : "Node"}
-              </p>
-              <h2 style={{ margin: "2px 0 4px 0" }}>
+              <h2 style={{ margin: "0 0 4px 0" }}>
                 {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
               </h2>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -586,10 +589,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </button>
             </div>
           </div>
-          
-          {/* Year Filter Pills */}
-          {availableYears.length > 0 && (
-            <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap" }}>
+        </div>
+      )}
+
+      {/* Fiscal Year */}
+      {activeTracker && availableYears.length > 0 && (
+        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+          <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Fiscal year</h3>
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
               {availableYears.map((year) => (
                 <button
                   key={year}
@@ -624,14 +631,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     e.currentTarget.style.transform = selectedYear === year ? "scale(1)" : "scale(1.05)";
                   }}
                 >
-                  {year}
-                </button>
-              ))}
-            </div>
-          )}
+                {year}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
-          {/* Node Summary */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+      {/* Node Overview */}
+      {activeTracker && (
+        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+          <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Node overview</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
             <div>
               <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Rewards</p>
               <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#10b981" }}>
@@ -669,22 +680,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </p>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Error Message */}
-          {error && (
-            <div style={{ 
-              padding: "12px", 
-              background: "#2a1a1a", 
-              border: "1px solid #ff4444", 
-              borderRadius: "8px", 
-              marginBottom: "16px", 
-              color: "#ff8888" 
-            }}>
-              {error}
-            </div>
-          )}
+      {/* Error Message */}
+      {activeTracker && error && (
+        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+          <div style={{ 
+            padding: "12px", 
+            background: "#2a1a1a", 
+            border: "1px solid #ff4444", 
+            borderRadius: "8px", 
+            color: "#ff8888" 
+          }}>
+            {error}
+          </div>
+        </div>
+      )}
 
-          {/* Transaction Table */}
+      {/* Incoming Rewards */}
+      {activeTracker && (
+        <div className="card" style={{ width: "auto", maxWidth: "none" }}>
+          <h3 style={{ margin: "0 0 16px 0", fontSize: "1.1rem", fontWeight: 600 }}>Incoming rewards</h3>
           {loading ? (
             <p>Loading transactions...</p>
           ) : transactions.length === 0 && !error ? (
