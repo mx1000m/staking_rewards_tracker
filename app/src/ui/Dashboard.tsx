@@ -479,15 +479,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   const p = e.currentTarget.querySelector("p");
                   const img = e.currentTarget.querySelector("img");
                   if (p) p.style.color = "#9aa0b4";
-                  if (img) img.style.filter = "brightness(0) invert(1)";
+                  if (img) img.style.filter = "brightness(0) saturate(1) invert(60%)";
                 }}
                 onClick={() => copyToClipboard(activeTracker.walletAddress, "Wallet address")}
               >
-                <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4", transition: "color 0.2s" }}>{activeTracker.walletAddress}</p>
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4", transition: "color 0.2s" }}>
+                  {activeTracker.walletAddress.slice(0, 7)}...{activeTracker.walletAddress.slice(-5)}
+                </p>
                 <img 
                   src="/staking_rewards_tracker/icons/copy_icon.svg" 
                   alt="Copy" 
-                  style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)", transition: "filter 0.2s", border: "none" }}
+                  style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(1) invert(60%)", transition: "filter 0.2s", border: "none" }}
                 />
               </div>
             </div>
@@ -580,16 +582,76 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </button>
             </div>
           </div>
+          
+          {/* Line separator */}
+          <div style={{ borderTop: "1px solid #232342", margin: "16px 0" }}></div>
+          
+          {/* Node totals */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
+            <div>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Rewards</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#10b981" }}>
+                {currencySymbol}{totalRewards.toFixed(2)}
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+                {totalEthRewards.toFixed(6)} ETH
+              </p>
+            </div>
+            <div>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Taxes</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#f59e0b" }}>
+                {currencySymbol}{totalTaxes.toFixed(2)}
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+                {totalEthTaxes.toFixed(6)} ETH
+              </p>
+            </div>
+            <div>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Left To Swap</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#ef4444" }}>
+                {currencySymbol}{totalLeftToSwap.toFixed(2)}
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+                {totalEthLeftToSwap.toFixed(6)} ETH
+              </p>
+            </div>
+            <div>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Swapped</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#3b82f6" }}>
+                {currencySymbol}{totalSwapped.toFixed(2)}
+              </p>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+                {totalEthSwapped.toFixed(6)} ETH
+              </p>
+            </div>
           </div>
+        </div>
         </>
       )}
 
-      {/* Fiscal Year */}
-      {activeTracker && availableYears.length > 0 && (
+      {/* Error Message */}
+      {activeTracker && error && (
+        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+          <div style={{ 
+            padding: "12px", 
+            background: "#2a1a1a", 
+            border: "1px solid #ff4444", 
+            borderRadius: "8px", 
+            color: "#ff8888" 
+          }}>
+            {error}
+          </div>
+        </div>
+      )}
+
+      {/* Incoming Rewards */}
+      {activeTracker && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Fiscal year</h3>
-          <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Incoming rewards</h3>
+          <div className="card" style={{ width: "auto", maxWidth: "none" }}>
+          {/* Year Filter */}
+          {availableYears.length > 0 && (
+            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
               {availableYears.map((year) => (
                 <button
                   key={year}
@@ -624,81 +686,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     e.currentTarget.style.transform = selectedYear === year ? "scale(1)" : "scale(1.05)";
                   }}
                 >
-                {year}
-              </button>
-            ))}
+                  {year}
+                </button>
+              ))}
             </div>
-          </div>
-        </>
-      )}
-
-      {/* Node Overview */}
-      {activeTracker && (
-        <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Node overview</h3>
-          <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
-            <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Rewards</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#10b981" }}>
-                {currencySymbol}{totalRewards.toFixed(2)}
-              </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
-                {totalEthRewards.toFixed(6)} ETH
-              </p>
-            </div>
-            <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Taxes</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#f59e0b" }}>
-                {currencySymbol}{totalTaxes.toFixed(2)}
-              </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
-                {totalEthTaxes.toFixed(6)} ETH
-              </p>
-            </div>
-            <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Left To Swap</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#ef4444" }}>
-                {currencySymbol}{totalLeftToSwap.toFixed(2)}
-              </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
-                {totalEthLeftToSwap.toFixed(6)} ETH
-              </p>
-            </div>
-            <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Swapped</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#3b82f6" }}>
-                {currencySymbol}{totalSwapped.toFixed(2)}
-              </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
-                {totalEthSwapped.toFixed(6)} ETH
-              </p>
-            </div>
-          </div>
-          </div>
-        </>
-      )}
-
-      {/* Error Message */}
-      {activeTracker && error && (
-        <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-          <div style={{ 
-            padding: "12px", 
-            background: "#2a1a1a", 
-            border: "1px solid #ff4444", 
-            borderRadius: "8px", 
-            color: "#ff8888" 
-          }}>
-            {error}
-          </div>
-        </div>
-      )}
-
-      {/* Incoming Rewards */}
-      {activeTracker && (
-        <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Incoming rewards</h3>
-          <div className="card" style={{ width: "auto", maxWidth: "none" }}>
+          )}
           {loading ? (
             <p>Loading transactions...</p>
           ) : transactions.length === 0 && !error ? (
