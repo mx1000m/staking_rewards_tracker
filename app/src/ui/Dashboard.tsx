@@ -487,7 +487,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 <img 
                   src="/staking_rewards_tracker/icons/copy_icon.svg" 
                   alt="Copy" 
-                  style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)", transition: "filter 0.2s" }}
+                  style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)", transition: "filter 0.2s", border: "none" }}
                 />
               </div>
             </div>
