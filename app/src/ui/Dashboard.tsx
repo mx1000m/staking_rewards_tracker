@@ -599,28 +599,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             </div>
             <div>
               <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Taxes</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#f59e0b" }}>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#f59e0b", paddingLeft: "20px" }}>
                 {currencySymbol}{totalTaxes.toFixed(2)}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
                 {totalEthTaxes.toFixed(6)} ETH
               </p>
             </div>
             <div>
               <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Left To Swap</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#ef4444" }}>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#ef4444", paddingLeft: "20px" }}>
                 {currencySymbol}{totalLeftToSwap.toFixed(2)}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
                 {totalEthLeftToSwap.toFixed(6)} ETH
               </p>
             </div>
             <div>
               <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Swapped</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#3b82f6" }}>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#3b82f6", paddingLeft: "20px" }}>
                 {currencySymbol}{totalSwapped.toFixed(2)}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
                 {totalEthSwapped.toFixed(6)} ETH
               </p>
             </div>
