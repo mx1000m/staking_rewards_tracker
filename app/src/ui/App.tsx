@@ -31,7 +31,7 @@ export const App: React.FC = () => {
               onComplete={() => setShowWizard(false)}
             />
           ) : (
-            <div style={{ width: "100%", maxWidth: "1400px" }}>
+            <div style={{ width: "100%" }}>
               <Dashboard onAddTracker={() => setShowWizard(true)} />
             </div>
           )}
