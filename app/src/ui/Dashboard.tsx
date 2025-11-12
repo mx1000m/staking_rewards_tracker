@@ -491,7 +491,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   }}
                 >
                   <img 
-                    src="/icons/copy_icon.svg" 
+                    src="/staking_rewards_tracker/icons/copy_icon.svg" 
                     alt="Copy" 
                     style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
                   />
@@ -519,7 +519,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <img 
-                  src="/icons/gear_icon.svg" 
+                  src="/staking_rewards_tracker/icons/gear_icon.svg" 
                   alt="Settings" 
                   style={{ width: "18px", height: "18px", filter: "brightness(0) invert(1)" }}
                 />
@@ -551,7 +551,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <img 
-                  src="/icons/export_icon.svg" 
+                  src="/staking_rewards_tracker/icons/export_icon.svg" 
                   alt="Export" 
                   style={{ width: "18px", height: "18px", filter: "brightness(0) invert(1)" }}
                 />
@@ -739,7 +739,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             title="View on Etherscan"
                           >
                             <img 
-                              src="/icons/link_icon.svg" 
+                              src="/staking_rewards_tracker/icons/link_icon.svg" 
                               alt="View on Etherscan" 
                               style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)" }}
                             />
@@ -806,7 +806,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               }}
                             >
                               <img 
-                                src="/icons/edit_icon.svg" 
+                                src="/staking_rewards_tracker/icons/edit_icon.svg" 
                                 alt="Edit" 
                                 style={{ width: "14px", height: "14px", filter: "brightness(0) saturate(100%) invert(60%) sepia(95%) saturate(500%) hue-rotate(120deg) brightness(95%) contrast(90%)" }}
                               />
