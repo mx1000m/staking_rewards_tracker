@@ -271,7 +271,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						)}
 					</div>
 				</header>
-				<main className="app-main" style={!showWizard ? { placeItems: "stretch" } : {}}>
+				<main className="app-main" style={{ placeItems: "stretch" }}>
 					{children}
 				</main>
 			</>
