@@ -313,7 +313,60 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       });
   }, [filteredTransactions]);
 
-  // Calculate totals based on filtered transactions
+  // Calculate totals for ALL trackers (for All nodes overview)
+  const [allTrackersTotals, setAllTrackersTotals] = React.useState({
+    totalRewards: 0,
+    totalTaxes: 0,
+    totalEthRewards: 0,
+    totalEthTaxes: 0,
+    totalSwapped: 0,
+    totalEthSwapped: 0,
+    totalLeftToSwap: 0,
+    totalEthLeftToSwap: 0,
+  });
+
+  // Load and calculate totals for all trackers
+  React.useEffect(() => {
+    const calculateAllTotals = async () => {
+      let allRewards = 0;
+      let allTaxes = 0;
+      let allEthRewards = 0;
+      let allEthTaxes = 0;
+      let allSwapped = 0;
+      let allEthSwapped = 0;
+
+      for (const tracker of trackers) {
+        const cached = await getCachedTransactions(tracker.id);
+        allRewards += cached.reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
+        allTaxes += cached.reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
+        allEthRewards += cached.reduce((sum, tx) => sum + tx.ethAmount, 0);
+        allEthTaxes += cached.reduce((sum, tx) => sum + tx.taxesInEth, 0);
+        allSwapped += cached
+          .filter((tx) => tx.status === "✓ Paid")
+          .reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
+        allEthSwapped += cached
+          .filter((tx) => tx.status === "✓ Paid")
+          .reduce((sum, tx) => sum + tx.taxesInEth, 0);
+      }
+
+      setAllTrackersTotals({
+        totalRewards: allRewards,
+        totalTaxes: allTaxes,
+        totalEthRewards: allEthRewards,
+        totalEthTaxes: allEthTaxes,
+        totalSwapped: allSwapped,
+        totalEthSwapped: allEthSwapped,
+        totalLeftToSwap: allTaxes - allSwapped,
+        totalEthLeftToSwap: allEthTaxes - allEthSwapped,
+      });
+    };
+
+    if (trackers.length > 0) {
+      calculateAllTotals();
+    }
+  }, [trackers, transactions]); // Recalculate when trackers or transactions change
+
+  // Calculate totals based on filtered transactions (for selected node)
   const totalRewards = filteredTransactions.reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
   const totalTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
   const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + tx.ethAmount, 0);
@@ -331,7 +384,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const totalLeftToSwap = totalTaxes - totalSwapped;
   const totalEthLeftToSwap = totalEthTaxes - totalEthSwapped;
 
+  // Use active tracker's currency, or default to EUR for All nodes overview
   const currencySymbol = activeTracker?.currency === "EUR" ? "€" : "$";
+  const allNodesCurrencySymbol = trackers.length > 0 && trackers[0].currency === "USD" ? "$" : "€";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
 
   // Copy to clipboard function
@@ -409,37 +464,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL REWARDS</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {currencySymbol} {totalRewards.toFixed(2)}
+            {allNodesCurrencySymbol} {allTrackersTotals.totalRewards.toFixed(2)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {totalEthRewards.toFixed(6)} ETH
+            {allTrackersTotals.totalEthRewards.toFixed(6)} ETH
           </p>
         </div>
         <div style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL TAXES</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {currencySymbol} {totalTaxes.toFixed(2)}
+            {allNodesCurrencySymbol} {allTrackersTotals.totalTaxes.toFixed(2)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {totalEthTaxes.toFixed(6)} ETH
+            {allTrackersTotals.totalEthTaxes.toFixed(6)} ETH
           </p>
         </div>
         <div style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL LEFT TO SWAP</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {currencySymbol} {totalLeftToSwap.toFixed(2)}
+            {allNodesCurrencySymbol} {allTrackersTotals.totalLeftToSwap.toFixed(2)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {totalEthLeftToSwap.toFixed(6)} ETH
+            {allTrackersTotals.totalEthLeftToSwap.toFixed(6)} ETH
           </p>
         </div>
         <div style={{ background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL SWAPPED</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {currencySymbol} {totalSwapped.toFixed(2)}
+            {allNodesCurrencySymbol} {allTrackersTotals.totalSwapped.toFixed(2)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {totalEthSwapped.toFixed(6)} ETH
+            {allTrackersTotals.totalEthSwapped.toFixed(6)} ETH
           </p>
         </div>
         </div>
@@ -470,13 +525,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           <button
             onClick={onAddTracker}
             style={{
-              background: "#6b6bff",
+              background: "transparent",
               padding: "12px 20px",
-              border: "none",
+              border: "1px solid #6b6bff",
               borderRadius: "10px",
-              color: "white",
+              color: "#6b6bff",
               cursor: "pointer",
               fontWeight: 400,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#6b6bff";
+              e.currentTarget.style.color = "white";
+              e.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#6b6bff";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = "scale(0.95)";
+            }}
+            onMouseUp={(e) => {
+              e.currentTarget.style.transform = "scale(1.05)";
             }}
           >
             + Add Node Tracker

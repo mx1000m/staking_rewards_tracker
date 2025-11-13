@@ -14,26 +14,30 @@ const COUNTRY_DEFAULT_TAX: Record<string, number> = {
 };
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
-  const { addTracker, syncTrackerToFirestore } = useTrackerStore();
+  const { addTracker, syncTrackerToFirestore, trackers } = useTrackerStore();
   const { user } = useAuth();
   const [step, setStep] = useState(0);
+  const [name, setName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [currency, setCurrency] = useState<Currency>("EUR");
   const [country, setCountry] = useState("Croatia");
   const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
   const [etherscanKey, setEtherscanKey] = useState("");
 
+  const isFirstTracker = trackers.length === 0;
+
   const canNext = useMemo(() => {
-    if (step === 0) return /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
-    if (step === 1) return currency === "EUR" || currency === "USD";
-    if (step === 2) return taxRate >= 0 && taxRate <= 100;
-    if (step === 3) return etherscanKey.trim().length > 0;
+    if (step === 0) return name.trim().length > 0;
+    if (step === 1) return /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
+    if (step === 2) return currency === "EUR" || currency === "USD";
+    if (step === 3) return taxRate >= 0 && taxRate <= 100;
+    if (step === 4) return etherscanKey.trim().length > 0;
     return true;
-  }, [step, walletAddress, currency, taxRate, etherscanKey]);
+  }, [step, name, walletAddress, currency, taxRate, etherscanKey]);
 
   const next = async () => {
     if (!canNext) return;
-    if (step === 3) {
+    if (step === 4) {
       // Save tracker and complete
       addTracker({
         walletAddress,
@@ -41,7 +45,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         country,
         taxRate,
         etherscanKey,
-        name: `Node ${walletAddress.slice(0, 6)}...`,
+        name: name.trim() || `Node ${walletAddress.slice(0, 6)}...`,
       });
       
       // Sync to Firestore if authenticated
@@ -59,6 +63,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     }
   };
   const back = () => setStep((s) => Math.max(0, s - 1));
+  
+  const handleCancel = () => {
+    onComplete?.();
+  };
 
   const onChangeCountry = (val: string) => {
     setCountry(val);
@@ -68,10 +76,50 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
 
   return (
-    <section className="card">
-      <h1 style={{ margin: "0 0 8px 0", fontSize: "1.5rem", fontWeight: 600 }}>Set up your first Node Tracker</h1>
-      <div className="steps">Step {step + 1} of 4</div>
+    <section className="card" style={{ position: "relative" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>
+          {isFirstTracker ? "Set up your first Node Tracker" : "Set up your next Node Tracker"}
+        </h1>
+        <button
+          onClick={handleCancel}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "#9aa0b4",
+            fontSize: "24px",
+            cursor: "pointer",
+            padding: "0",
+            width: "32px",
+            height: "32px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "color 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "#e8e8f0";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "#9aa0b4";
+          }}
+        >
+          ×
+        </button>
+      </div>
+      <div className="steps">Step {step + 1} of 5</div>
       {step === 0 && (
+        <div>
+          <h2>Name</h2>
+          <input
+            className="input"
+            placeholder="Node Tracker 1"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+      )}
+      {step === 1 && (
         <div>
           <h2>Wallet receiving staking rewards</h2>
           <input
@@ -82,7 +130,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           />
         </div>
       )}
-      {step === 1 && (
+      {step === 2 && (
         <div>
           <h2>Currency preference</h2>
           <div className="row">
@@ -91,7 +139,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           </div>
         </div>
       )}
-      {step === 2 && (
+      {step === 3 && (
         <div>
           <h2>Country and tax rate</h2>
           <div className="row">
@@ -113,7 +161,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           </div>
         </div>
       )}
-      {step === 3 && (
+      {step === 4 && (
         <div>
           <h2>Your Etherscan API key</h2>
           <p className="muted">Each user should bring their own Etherscan API key.</p>
