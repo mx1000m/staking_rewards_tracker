@@ -30,7 +30,6 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNameInput, setDeleteNameInput] = useState("");
   const [deleteNameError, setDeleteNameError] = useState(false);
-  const [isPlaceholderVisible, setIsPlaceholderVisible] = useState(true);
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveButtonText, setSaveButtonText] = useState("Save");
 
@@ -110,13 +109,11 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   };
 
   const handleDelete = async () => {
-    // Check if input is empty (placeholder still showing) or doesn't match
+    // Check if input is empty or doesn't match
     const inputValue = deleteNameInput.trim();
-    const isPlaceholder = !inputValue || (isPlaceholderVisible && inputValue === tracker.name);
     
-    if (isPlaceholder || inputValue !== tracker.name.trim()) {
+    if (!inputValue || inputValue !== tracker.name.trim()) {
       setDeleteNameError(true);
-      setIsPlaceholderVisible(false);
       setDeleteNameInput("");
       // Shake animation
       const input = document.getElementById("delete-name-input");
@@ -381,7 +378,6 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           <button
             onClick={() => {
               setShowDeleteConfirm(true);
-              setIsPlaceholderVisible(true);
               setDeleteNameInput("");
               setDeleteNameError(false);
             }}
@@ -404,7 +400,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               e.currentTarget.style.transform = "scale(1)";
             }}
           >
-            Delete node tracker
+            Delete
           </button>
           <div className="actions" style={{ margin: 0 }}>
             <button
@@ -480,38 +476,29 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               setShowDeleteConfirm(false);
               setDeleteNameInput("");
               setDeleteNameError(false);
-              setIsPlaceholderVisible(true);
             }}
           >
             <div className="card" style={{ maxWidth: "520px" }} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{ marginTop: 0 }}>Delete Node?</h3>
+              <h3 style={{ marginTop: 0 }}>Delete {tracker.name}?</h3>
               <p style={{ margin: "8px 0 16px", color: "#e8e8f0" }}>
-                Are you sure you want to delete "{tracker.name}". This action cannot be undone.
+                Are you sure you want to delete "{tracker.name}"? This action cannot be undone.
               </p>
               <p style={{ margin: "8px 0 8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-                Type the exact name of your node:
+                Type the exact name of your node to confirm deletion:
               </p>
               <input
                 id="delete-name-input"
                 className="input"
-                value={isPlaceholderVisible && !deleteNameInput ? tracker.name : deleteNameInput}
+                value={deleteNameInput}
+                placeholder="Enter node name"
                 onChange={(e) => {
-                  setIsPlaceholderVisible(false);
                   setDeleteNameInput(e.target.value);
                   setDeleteNameError(false);
-                }}
-                onFocus={(e) => {
-                  // Clear placeholder when focused
-                  if (isPlaceholderVisible) {
-                    setIsPlaceholderVisible(false);
-                    setDeleteNameInput("");
-                    e.target.value = "";
-                  }
                 }}
                 style={{
                   marginBottom: "16px",
                   borderColor: deleteNameError ? "#ef4444" : undefined,
-                  color: deleteNameError ? "#ef4444" : (isPlaceholderVisible && !deleteNameInput) ? "#9aa0b4" : "#e8e8f0",
+                  color: deleteNameError ? "#ef4444" : "#e8e8f0",
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -526,7 +513,6 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                     setShowDeleteConfirm(false);
                     setDeleteNameInput("");
                     setDeleteNameError(false);
-                    setIsPlaceholderVisible(true);
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = "#3a3a54";
