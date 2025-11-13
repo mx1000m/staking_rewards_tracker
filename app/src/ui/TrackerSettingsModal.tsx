@@ -496,6 +496,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                   setDeleteNameError(false);
                 }}
                 style={{
+                  width: "calc(100% - 24px)",
                   marginBottom: "16px",
                   borderColor: deleteNameError ? "#ef4444" : undefined,
                   color: deleteNameError ? "#ef4444" : "#e8e8f0",
