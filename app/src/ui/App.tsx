@@ -23,20 +23,17 @@ export const App: React.FC = () => {
 
   return (
     <div className="app-root">
-      <header className="app-header">Staking Rewards Tracker</header>
-      <main className="app-main" style={!showWizard ? { placeItems: "stretch" } : {}}>
-        <AuthShell>
-          {showWizard ? (
-            <OnboardingWizard
-              onComplete={() => setShowWizard(false)}
-            />
-          ) : (
-            <div style={{ width: "100%" }}>
-              <Dashboard onAddTracker={() => setShowWizard(true)} />
-            </div>
-          )}
-        </AuthShell>
-      </main>
+      <AuthShell>
+        {showWizard ? (
+          <OnboardingWizard
+            onComplete={() => setShowWizard(false)}
+          />
+        ) : (
+          <div style={{ width: "100%" }}>
+            <Dashboard onAddTracker={() => setShowWizard(true)} />
+          </div>
+        )}
+      </AuthShell>
     </div>
   );
 };

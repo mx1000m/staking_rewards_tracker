@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 
 export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const { user, loading, signInWithGoogle, signInWithGitHub, logout } = useAuth();
 	const [error, setError] = useState<string | null>(null);
 	const [signingIn, setSigningIn] = useState(false);
+	const [showUserMenu, setShowUserMenu] = useState(false);
+	const menuRef = useRef<HTMLDivElement>(null);
 
 	const handleGoogleSignIn = async () => {
 		setSigningIn(true);
@@ -63,6 +65,23 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		alert("Wallet connect (to be wired)");
 	};
 
+	// Close user menu when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+				setShowUserMenu(false);
+			}
+		};
+
+		if (showUserMenu) {
+			document.addEventListener("mousedown", handleClickOutside);
+		}
+
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [showUserMenu]);
+
 	if (loading) {
 		return (
 			<div className="card">
@@ -72,19 +91,189 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	}
 
 	if (user) {
-		// User is signed in, show the wizard
+		// User is signed in, show header with user menu
+		const userName = user.displayName || user.email?.split("@")[0] || "User";
+		const userEmail = user.email || "";
+		const userPhoto = user.photoURL || "";
+
 		return (
 			<>
-				<div className="card" style={{ marginBottom: 16, width: "auto", maxWidth: "none" }}>
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-						<div>
-							<p style={{ margin: 0, fontSize: "0.9rem", color: "#9aa0b4" }}>Signed in as</p>
-							<p style={{ margin: 0, fontWeight: 600 }}>{user.displayName || user.email}</p>
-						</div>
-						<button onClick={logout} style={{ background: "#2a2a44" }}>Sign out</button>
+				<header className="app-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px" }}>
+					<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+						{/* Logo placeholder - will be replaced with actual logo later */}
+						<div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#e8e8f0" }}>Solobeam</div>
 					</div>
-				</div>
-				{children}
+					<div style={{ position: "relative" }} ref={menuRef}>
+						<div
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: "12px",
+								cursor: "pointer",
+								padding: "4px 8px",
+								borderRadius: "8px",
+								transition: "background 0.2s",
+							}}
+							onClick={() => setShowUserMenu(!showUserMenu)}
+							onMouseEnter={(e) => {
+								e.currentTarget.style.background = "#1a1a2e";
+							}}
+							onMouseLeave={(e) => {
+								if (!showUserMenu) {
+									e.currentTarget.style.background = "transparent";
+								}
+							}}
+						>
+							<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#e8e8f0" }}>
+								{userName}
+							</span>
+							{userPhoto ? (
+								<img
+									src={userPhoto}
+									alt={userName}
+									style={{
+										width: "32px",
+										height: "32px",
+										borderRadius: "50%",
+										objectFit: "cover",
+									}}
+								/>
+							) : (
+								<div
+									style={{
+										width: "32px",
+										height: "32px",
+										borderRadius: "50%",
+										background: "#6b6bff",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										color: "white",
+										fontWeight: 600,
+										fontSize: "0.9rem",
+									}}
+								>
+									{userName.charAt(0).toUpperCase()}
+								</div>
+							)}
+						</div>
+
+						{/* User Menu Popup */}
+						{showUserMenu && (
+							<div
+								style={{
+									position: "absolute",
+									top: "calc(100% + 8px)",
+									right: 0,
+									background: "#141428",
+									border: "1px solid #232342",
+									borderRadius: "14px",
+									padding: "20px",
+									minWidth: "280px",
+									boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+									zIndex: 1000,
+								}}
+							>
+								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
+									<div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+										{userPhoto ? (
+											<img
+												src={userPhoto}
+												alt={userName}
+												style={{
+													width: "48px",
+													height: "48px",
+													borderRadius: "50%",
+													objectFit: "cover",
+												}}
+											/>
+										) : (
+											<div
+												style={{
+													width: "48px",
+													height: "48px",
+													borderRadius: "50%",
+													background: "#6b6bff",
+													display: "flex",
+													alignItems: "center",
+													justifyContent: "center",
+													color: "white",
+													fontWeight: 600,
+													fontSize: "1.2rem",
+												}}
+											>
+												{userName.charAt(0).toUpperCase()}
+											</div>
+										)}
+										<div>
+											<p style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "#e8e8f0" }}>
+												GM {userName}!
+											</p>
+											{userEmail && (
+												<p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+													{userEmail}
+												</p>
+											)}
+										</div>
+									</div>
+									<button
+										onClick={() => setShowUserMenu(false)}
+										style={{
+											background: "transparent",
+											border: "none",
+											color: "#9aa0b4",
+											fontSize: "20px",
+											cursor: "pointer",
+											padding: "0",
+											width: "24px",
+											height: "24px",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											transition: "color 0.2s",
+										}}
+										onMouseEnter={(e) => {
+											e.currentTarget.style.color = "#e8e8f0";
+										}}
+										onMouseLeave={(e) => {
+											e.currentTarget.style.color = "#9aa0b4";
+										}}
+									>
+										×
+									</button>
+								</div>
+								<button
+									onClick={() => {
+										logout();
+										setShowUserMenu(false);
+									}}
+									style={{
+										width: "100%",
+										background: "#2a2a44",
+										color: "white",
+										padding: "10px 16px",
+										border: "none",
+										borderRadius: "10px",
+										cursor: "pointer",
+										fontWeight: 500,
+										transition: "background 0.2s",
+									}}
+									onMouseEnter={(e) => {
+										e.currentTarget.style.background = "#3a3a54";
+									}}
+									onMouseLeave={(e) => {
+										e.currentTarget.style.background = "#2a2a44";
+									}}
+								>
+									Sign out
+								</button>
+							</div>
+						)}
+					</div>
+				</header>
+				<main className="app-main" style={!showWizard ? { placeItems: "stretch" } : {}}>
+					{children}
+				</main>
 			</>
 		);
 	}
