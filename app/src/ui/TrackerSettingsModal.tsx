@@ -30,6 +30,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteNameInput, setDeleteNameInput] = useState("");
   const [deleteNameError, setDeleteNameError] = useState(false);
+  const [isPlaceholderVisible, setIsPlaceholderVisible] = useState(true);
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveButtonText, setSaveButtonText] = useState("Save");
 
@@ -109,8 +110,14 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   };
 
   const handleDelete = async () => {
-    if (deleteNameInput.trim() !== tracker.name.trim()) {
+    // Check if input is empty (placeholder still showing) or doesn't match
+    const inputValue = deleteNameInput.trim();
+    const isPlaceholder = !inputValue || (isPlaceholderVisible && inputValue === tracker.name);
+    
+    if (isPlaceholder || inputValue !== tracker.name.trim()) {
       setDeleteNameError(true);
+      setIsPlaceholderVisible(false);
+      setDeleteNameInput("");
       // Shake animation
       const input = document.getElementById("delete-name-input");
       if (input) {
@@ -162,9 +169,10 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
         className="card"
         style={{
           width: "100%",
-          maxWidth: "600px",
+          maxWidth: "650px",
           maxHeight: "90vh",
           overflowY: "auto",
+          overflowX: "hidden",
           position: "relative",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -369,7 +377,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
         </div>
 
-        <div style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ marginTop: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button
             onClick={() => setShowDeleteConfirm(true)}
             style={{
@@ -394,7 +402,16 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             Delete node tracker
           </button>
           <div className="actions" style={{ margin: 0 }}>
-            <button onClick={onClose} style={{ background: "#2a2a44" }}>
+            <button
+              onClick={onClose}
+              style={{ background: "#2a2a44" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#3a3a54";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#2a2a44";
+              }}
+            >
               Cancel
             </button>
             <button onClick={handleSave}>{saveButtonText}</button>
@@ -423,7 +440,16 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 This will erase all data from your previous node/wallet.
               </p>
               <div className="actions">
-                <button style={{ background: "#2a2a44" }} onClick={() => setConfirmChange(false)}>
+                <button
+                  style={{ background: "#2a2a44" }}
+                  onClick={() => setConfirmChange(false)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#3a3a54";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#2a2a44";
+                  }}
+                >
                   Cancel
                 </button>
                 <button onClick={() => { setConfirmChange(false); doSave(); }}>
@@ -449,6 +475,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               setShowDeleteConfirm(false);
               setDeleteNameInput("");
               setDeleteNameError(false);
+              setIsPlaceholderVisible(true);
             }}
           >
             <div className="card" style={{ maxWidth: "520px" }} onClick={(e) => e.stopPropagation()}>
@@ -462,15 +489,24 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               <input
                 id="delete-name-input"
                 className="input"
-                value={deleteNameInput}
+                value={isPlaceholderVisible && !deleteNameInput ? tracker.name : deleteNameInput}
                 onChange={(e) => {
+                  setIsPlaceholderVisible(false);
                   setDeleteNameInput(e.target.value);
                   setDeleteNameError(false);
+                }}
+                onFocus={(e) => {
+                  // Clear placeholder when focused
+                  if (isPlaceholderVisible) {
+                    setIsPlaceholderVisible(false);
+                    setDeleteNameInput("");
+                    e.target.value = "";
+                  }
                 }}
                 style={{
                   marginBottom: "16px",
                   borderColor: deleteNameError ? "#ef4444" : undefined,
-                  color: deleteNameError ? "#ef4444" : undefined,
+                  color: deleteNameError ? "#ef4444" : (isPlaceholderVisible && !deleteNameInput) ? "#9aa0b4" : "#e8e8f0",
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
@@ -485,6 +521,13 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                     setShowDeleteConfirm(false);
                     setDeleteNameInput("");
                     setDeleteNameError(false);
+                    setIsPlaceholderVisible(true);
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#3a3a54";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#2a2a44";
                   }}
                 >
                   Cancel
