@@ -290,15 +290,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const groups: { [key: string]: Transaction[] } = {};
     filteredTransactions.forEach((tx) => {
       const date = new Date(tx.timestamp * 1000);
-      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth()).padStart(2, '0')}`;
       if (!groups[monthKey]) {
         groups[monthKey] = [];
       }
       groups[monthKey].push(tx);
     });
-    // Sort months by date (newest first)
+    // Sort months by date (newest first) - compare by timestamp of first transaction
     return Object.entries(groups)
-      .sort(([a], [b]) => b.localeCompare(a))
+      .sort(([, txsA], [, txsB]) => {
+        const timestampA = Math.max(...txsA.map(tx => tx.timestamp));
+        const timestampB = Math.max(...txsB.map(tx => tx.timestamp));
+        return timestampB - timestampA; // Newest first
+      })
       .map(([key, txs]) => {
         const date = new Date(txs[0].timestamp * 1000);
         return {
@@ -747,7 +751,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             color: "#9aa0b4", 
                             fontSize: "0.9rem", 
                             fontWeight: 600,
-                            background: "#1a1a2e"
+                            background: "#232340"
                           }}
                         >
                           {monthGroup.monthName}
