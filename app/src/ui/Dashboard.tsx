@@ -589,11 +589,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           {/* Node totals */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4" }}>Total Rewards</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#10b981" }}>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Rewards</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#10b981", paddingLeft: "20px" }}>
                 {currencySymbol}{totalRewards.toFixed(2)}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
                 {totalEthRewards.toFixed(6)} ETH
               </p>
             </div>
