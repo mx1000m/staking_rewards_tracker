@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useTrackerStore, Tracker, Currency } from "../store/trackerStore";
 import { clearCache } from "../utils/transactionCache";
 import { useAuth } from "../hooks/useAuth";
+import { deleteFirestoreTracker } from "../utils/firestoreAdapter";
 
 const COUNTRY_DEFAULT_TAX: Record<string, number> = {
   Croatia: 24,
@@ -17,7 +18,7 @@ interface TrackerSettingsModalProps {
 }
 
 export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ tracker, onClose, onSaved }) => {
-  const { updateTracker, syncTrackerToFirestore } = useTrackerStore();
+  const { updateTracker, syncTrackerToFirestore, removeTracker } = useTrackerStore();
   const { user } = useAuth();
   const [name, setName] = useState(tracker.name);
   const [walletAddress, setWalletAddress] = useState(tracker.walletAddress);
@@ -26,6 +27,11 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [taxRate, setTaxRate] = useState<number>(tracker.taxRate);
   const [etherscanKey, setEtherscanKey] = useState(tracker.etherscanKey);
   const [confirmChange, setConfirmChange] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteNameInput, setDeleteNameInput] = useState("");
+  const [deleteNameError, setDeleteNameError] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [saveButtonText, setSaveButtonText] = useState("Save");
 
   useEffect(() => {
     // Prevent body scroll when modal is open
@@ -79,6 +85,10 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       }
     }
     
+    // Show "Saved!" animation
+    setSaveButtonText("Saved!");
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
     onSaved?.();
     onClose();
   };
@@ -96,6 +106,39 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     setCountry(val);
     const def = COUNTRY_DEFAULT_TAX[val];
     if (typeof def === "number") setTaxRate(def);
+  };
+
+  const handleDelete = async () => {
+    if (deleteNameInput.trim() !== tracker.name.trim()) {
+      setDeleteNameError(true);
+      // Shake animation
+      const input = document.getElementById("delete-name-input");
+      if (input) {
+        input.style.animation = "shake 0.5s";
+        setTimeout(() => {
+          input.style.animation = "";
+        }, 500);
+      }
+      return;
+    }
+
+    // Delete from Firestore if authenticated
+    if (user) {
+      try {
+        await deleteFirestoreTracker(user.uid, tracker.id);
+      } catch (error) {
+        console.error("Failed to delete tracker from Firestore:", error);
+      }
+    }
+
+    // Clear cache
+    await clearCache(tracker.id);
+    
+    // Remove from store
+    removeTracker(tracker.id);
+    
+    onSaved?.();
+    onClose();
   };
 
   return (
@@ -127,7 +170,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
         onClick={(e) => e.stopPropagation()}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <h2 style={{ margin: 0 }}>Edit Node Tracker</h2>
+          <h2 style={{ margin: 0 }}>Edit node tracker</h2>
           <button
             onClick={onClose}
             style={{
@@ -177,23 +220,61 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
               Currency Preference
             </label>
-            <div className="row">
-              <label>
-                <input
-                  type="radio"
-                  checked={currency === "EUR"}
-                  onChange={() => setCurrency("EUR")}
-                />{" "}
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                type="button"
+                onClick={() => setCurrency("EUR")}
+                style={{
+                  flex: 1,
+                  padding: "12px 20px",
+                  background: currency === "EUR" ? "#6b6bff" : "#2a2a44",
+                  border: currency === "EUR" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
+                  borderRadius: "10px",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: currency === "EUR" ? 600 : 400,
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  if (currency !== "EUR") {
+                    e.currentTarget.style.background = "#3a3a54";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currency !== "EUR") {
+                    e.currentTarget.style.background = "#2a2a44";
+                  }
+                }}
+              >
                 Euro
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  checked={currency === "USD"}
-                  onChange={() => setCurrency("USD")}
-                />{" "}
+              </button>
+              <button
+                type="button"
+                onClick={() => setCurrency("USD")}
+                style={{
+                  flex: 1,
+                  padding: "12px 20px",
+                  background: currency === "USD" ? "#6b6bff" : "#2a2a44",
+                  border: currency === "USD" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
+                  borderRadius: "10px",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: currency === "USD" ? 600 : 400,
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  if (currency !== "USD") {
+                    e.currentTarget.style.background = "#3a3a54";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (currency !== "USD") {
+                    e.currentTarget.style.background = "#2a2a44";
+                  }
+                }}
+              >
                 Dollar
-              </label>
+              </button>
             </div>
           </div>
 
@@ -232,30 +313,92 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               />
               <span style={{ color: "#9aa0b4" }}>%</span>
             </div>
+            <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem" }}>
+              Disclaimer: The country tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
+            </p>
           </div>
 
           <div>
             <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
               Etherscan API Key
             </label>
-            <input
-              className="input"
-              placeholder="ETHERSCAN_API_KEY"
-              type="password"
-              value={etherscanKey}
-              onChange={(e) => setEtherscanKey(e.target.value)}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                className="input"
+                placeholder="ETHERSCAN_API_KEY"
+                type={showApiKey ? "text" : "password"}
+                value={etherscanKey}
+                onChange={(e) => setEtherscanKey(e.target.value)}
+                style={{ paddingRight: "40px" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(!showApiKey)}
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#9aa0b4",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#e8e8f0";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#9aa0b4";
+                }}
+              >
+                <img
+                  src={showApiKey ? "/staking_rewards_tracker/icons/eye_off_icon.svg" : "/staking_rewards_tracker/icons/eye_icon.svg"}
+                  alt={showApiKey ? "Hide" : "Show"}
+                  style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+                />
+              </button>
+            </div>
             <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem" }}>
               Each user should bring their own Etherscan API key.
             </p>
           </div>
         </div>
 
-        <div className="actions" style={{ marginTop: "24px" }}>
-          <button onClick={onClose} style={{ background: "#2a2a44" }}>
-            Cancel
+        <div style={{ marginTop: "24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            style={{
+              background: "#ef4444",
+              color: "white",
+              padding: "10px 20px",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontWeight: 500,
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#dc2626";
+              e.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#ef4444";
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+          >
+            Delete node tracker
           </button>
-          <button onClick={handleSave}>Confirm</button>
+          <div className="actions" style={{ margin: 0 }}>
+            <button onClick={onClose} style={{ background: "#2a2a44" }}>
+              Cancel
+            </button>
+            <button onClick={handleSave}>{saveButtonText}</button>
+          </div>
         </div>
 
         {confirmChange && (
@@ -285,6 +428,81 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 </button>
                 <button onClick={() => { setConfirmChange(false); doSave(); }}>
                   Confirm
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showDeleteConfirm && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.6)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1100,
+            }}
+            onClick={() => {
+              setShowDeleteConfirm(false);
+              setDeleteNameInput("");
+              setDeleteNameError(false);
+            }}
+          >
+            <div className="card" style={{ maxWidth: "520px" }} onClick={(e) => e.stopPropagation()}>
+              <h3 style={{ marginTop: 0 }}>Delete Node?</h3>
+              <p style={{ margin: "8px 0 16px", color: "#e8e8f0" }}>
+                Are you sure you want to delete "{tracker.name}". This action cannot be undone.
+              </p>
+              <p style={{ margin: "8px 0 8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
+                Type the exact name of your node:
+              </p>
+              <input
+                id="delete-name-input"
+                className="input"
+                value={deleteNameInput}
+                onChange={(e) => {
+                  setDeleteNameInput(e.target.value);
+                  setDeleteNameError(false);
+                }}
+                style={{
+                  marginBottom: "16px",
+                  borderColor: deleteNameError ? "#ef4444" : undefined,
+                  color: deleteNameError ? "#ef4444" : undefined,
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleDelete();
+                  }
+                }}
+              />
+              <div className="actions">
+                <button
+                  style={{ background: "#2a2a44" }}
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    setDeleteNameInput("");
+                    setDeleteNameError(false);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  style={{
+                    background: "#ef4444",
+                    color: "white",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#dc2626";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#ef4444";
+                  }}
+                >
+                  Delete
                 </button>
               </div>
             </div>

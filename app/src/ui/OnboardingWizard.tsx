@@ -79,7 +79,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     <section className="card" style={{ position: "relative" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>
-          {isFirstTracker ? "Set up your first Node Tracker" : "Set up your next Node Tracker"}
+          {isFirstTracker ? "Set up your first node tracker" : "Set up your next node tracker"}
         </h1>
         <button
           onClick={handleCancel}
@@ -133,9 +133,61 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 2 && (
         <div>
           <h2>Currency preference</h2>
-          <div className="row">
-            <label><input type="radio" checked={currency === "EUR"} onChange={() => setCurrency("EUR")} /> Euro</label>
-            <label><input type="radio" checked={currency === "USD"} onChange={() => setCurrency("USD")} /> Dollar</label>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              type="button"
+              onClick={() => setCurrency("EUR")}
+              style={{
+                flex: 1,
+                padding: "12px 20px",
+                background: currency === "EUR" ? "#6b6bff" : "#2a2a44",
+                border: currency === "EUR" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
+                borderRadius: "10px",
+                color: "white",
+                cursor: "pointer",
+                fontWeight: currency === "EUR" ? 600 : 400,
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (currency !== "EUR") {
+                  e.currentTarget.style.background = "#3a3a54";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currency !== "EUR") {
+                  e.currentTarget.style.background = "#2a2a44";
+                }
+              }}
+            >
+              Euro
+            </button>
+            <button
+              type="button"
+              onClick={() => setCurrency("USD")}
+              style={{
+                flex: 1,
+                padding: "12px 20px",
+                background: currency === "USD" ? "#6b6bff" : "#2a2a44",
+                border: currency === "USD" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
+                borderRadius: "10px",
+                color: "white",
+                cursor: "pointer",
+                fontWeight: currency === "USD" ? 600 : 400,
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (currency !== "USD") {
+                  e.currentTarget.style.background = "#3a3a54";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currency !== "USD") {
+                  e.currentTarget.style.background = "#2a2a44";
+                }
+              }}
+            >
+              Dollar
+            </button>
           </div>
         </div>
       )}
