@@ -379,7 +379,12 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
         <div style={{ marginTop: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button
-            onClick={() => setShowDeleteConfirm(true)}
+            onClick={() => {
+              setShowDeleteConfirm(true);
+              setIsPlaceholderVisible(true);
+              setDeleteNameInput("");
+              setDeleteNameError(false);
+            }}
             style={{
               background: "#ef4444",
               color: "white",
