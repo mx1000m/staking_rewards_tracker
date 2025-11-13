@@ -285,6 +285,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     });
   }, [transactions, selectedYear]);
 
+  // Group transactions by month for display
+  const transactionsByMonth = React.useMemo(() => {
+    const groups: { [key: string]: Transaction[] } = {};
+    filteredTransactions.forEach((tx) => {
+      const date = new Date(tx.timestamp * 1000);
+      const monthKey = `${date.getFullYear()}-${date.getMonth()}`;
+      if (!groups[monthKey]) {
+        groups[monthKey] = [];
+      }
+      groups[monthKey].push(tx);
+    });
+    // Sort months by date (newest first)
+    return Object.entries(groups)
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([key, txs]) => {
+        const date = new Date(txs[0].timestamp * 1000);
+        return {
+          monthKey: key,
+          monthName: date.toLocaleDateString("en-US", { month: "long" }),
+          transactions: txs,
+        };
+      });
+  }, [filteredTransactions]);
+
   // Calculate totals based on filtered transactions
   const totalRewards = filteredTransactions.reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
   const totalTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
@@ -712,8 +736,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredTransactions.map((tx, idx) => (
-                    <tr key={idx} style={{ borderBottom: "1px solid #232342" }}>
+                  {transactionsByMonth.map((monthGroup) => (
+                    <React.Fragment key={monthGroup.monthKey}>
+                      {/* Month separator row */}
+                      <tr style={{ borderBottom: "1px solid #232342" }}>
+                        <td 
+                          colSpan={9} 
+                          style={{ 
+                            padding: "12px 12px 8px 12px", 
+                            color: "#9aa0b4", 
+                            fontSize: "0.9rem", 
+                            fontWeight: 600,
+                            background: "#1a1a2e"
+                          }}
+                        >
+                          {monthGroup.monthName}
+                        </td>
+                      </tr>
+                      {/* Transactions for this month */}
+                      {monthGroup.transactions.map((tx, idx) => (
+                        <tr key={`${monthGroup.monthKey}-${idx}`} style={{ borderBottom: "1px solid #232342" }}>
                       <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.date}, {tx.time}</td>
                       <td style={{ padding: "12px", color: "#10b981" }}>{tx.ethAmount.toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#e8e8f0", whiteSpace: "nowrap" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
@@ -872,6 +914,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         )}
                       </td>
                     </tr>
+                      ))}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>
