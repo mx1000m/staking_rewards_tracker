@@ -49,6 +49,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [editPaidHash, setEditPaidHash] = useState<string | null>(null);
   const [editSwapHashInput, setEditSwapHashInput] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // null means "ALL"
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportYear, setExportYear] = useState<number>(new Date().getFullYear());
 
@@ -277,13 +278,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     return Array.from(years).sort((a, b) => b - a); // Sort descending
   }, [transactions]);
 
-  // Filter transactions by selected year
+  // Filter transactions by selected year and month
   const filteredTransactions = React.useMemo(() => {
     return transactions.filter((tx) => {
+      const txDate = new Date(tx.timestamp * 1000);
+      const txYear = txDate.getFullYear();
+      const txMonth = txDate.getMonth(); // 0-11
+      
+      if (txYear !== selectedYear) return false;
+      if (selectedMonth !== null && txMonth !== selectedMonth) return false;
+      return true;
+    });
+  }, [transactions, selectedYear, selectedMonth]);
+
+  // Get available months from filtered transactions (for the selected year)
+  const availableMonths = React.useMemo(() => {
+    const yearTransactions = transactions.filter((tx) => {
       const txYear = new Date(tx.timestamp * 1000).getFullYear();
       return txYear === selectedYear;
     });
+    
+    const months = new Set<number>();
+    yearTransactions.forEach((tx) => {
+      const month = new Date(tx.timestamp * 1000).getMonth();
+      months.add(month);
+    });
+    return Array.from(months).sort((a, b) => b - a); // Sort descending (newest first)
   }, [transactions, selectedYear]);
+
+  // Reset selected month when year changes
+  React.useEffect(() => {
+    setSelectedMonth(null); // Reset to "ALL" when year changes
+  }, [selectedYear]);
 
   // Group transactions by month for display
   const transactionsByMonth = React.useMemo(() => {
@@ -789,6 +815,86 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   {year}
                 </button>
               ))}
+            </div>
+          )}
+          
+          {/* Month Filter */}
+          {availableMonths.length > 0 && (
+            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+              <button
+                onClick={() => setSelectedMonth(null)}
+                style={{
+                  background: selectedMonth === null ? "#6b6bff" : "#2a2a44",
+                  color: "white",
+                  padding: "8px 16px",
+                  border: "none",
+                  borderRadius: "20px",
+                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  fontWeight: selectedMonth === null ? 600 : 400,
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedMonth !== null) {
+                    e.currentTarget.style.background = "#3a3a54";
+                    e.currentTarget.style.transform = "scale(1.05)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedMonth !== null) {
+                    e.currentTarget.style.background = "#2a2a44";
+                    e.currentTarget.style.transform = "scale(1)";
+                  }
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = "scale(0.95)";
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = selectedMonth === null ? "scale(1)" : "scale(1.05)";
+                }}
+              >
+                ALL
+              </button>
+              {availableMonths.map((month) => {
+                const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+                return (
+                  <button
+                    key={month}
+                    onClick={() => setSelectedMonth(month)}
+                    style={{
+                      background: selectedMonth === month ? "#6b6bff" : "#2a2a44",
+                      color: "white",
+                      padding: "8px 16px",
+                      border: "none",
+                      borderRadius: "20px",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      fontWeight: selectedMonth === month ? 600 : 400,
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedMonth !== month) {
+                        e.currentTarget.style.background = "#3a3a54";
+                        e.currentTarget.style.transform = "scale(1.05)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedMonth !== month) {
+                        e.currentTarget.style.background = "#2a2a44";
+                        e.currentTarget.style.transform = "scale(1)";
+                      }
+                    }}
+                    onMouseDown={(e) => {
+                      e.currentTarget.style.transform = "scale(0.95)";
+                    }}
+                    onMouseUp={(e) => {
+                      e.currentTarget.style.transform = selectedMonth === month ? "scale(1)" : "scale(1.05)";
+                    }}
+                  >
+                    {monthName}
+                  </button>
+                );
+              })}
             </div>
           )}
           {loading ? (
