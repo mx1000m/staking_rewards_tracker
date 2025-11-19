@@ -116,7 +116,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
 						{/* Logo with gradient */}
 						<div style={{ 
-							fontSize: "1.5rem", 
+							fontSize: "2rem", 
 							fontWeight: 700, 
 							fontFamily: "Retronoid, ui-sans-serif, system-ui",
 							background: "linear-gradient(45deg, #01e1fd, #3788fd)",
@@ -139,6 +139,12 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									transition: "all 0.2s",
 								}}
 								onClick={() => setShowUserMenu(!showUserMenu)}
+								onMouseEnter={(e) => {
+									e.currentTarget.style.background = "linear-gradient(45deg, #2a2a5f, #323277)";
+								}}
+								onMouseLeave={(e) => {
+									e.currentTarget.style.background = "linear-gradient(45deg, #232055, #292967)";
+								}}
 							>
 								<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#24a7fd" }}>
 									{userName}

@@ -485,8 +485,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     <div style={{ width: "100%" }}>
       {/* All Nodes Overview */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>All nodes overview</h3>
-      <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "24px" }}>
         <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL REWARDS</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
@@ -523,7 +522,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthSwapped.toFixed(6)} ETH
           </p>
         </div>
-        </div>
       </div>
 
       {/* Your Nodes */}
@@ -543,13 +541,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 color: activeTrackerId === tracker.id ? "white" : "#24a7fd",
                 cursor: "pointer",
                 fontWeight: activeTrackerId === tracker.id ? 600 : 400,
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (activeTrackerId !== tracker.id) {
+                  e.currentTarget.style.background = "#1a1648";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (activeTrackerId !== tracker.id) {
+                  e.currentTarget.style.background = "#110e3f";
+                }
               }}
             >
               {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
             </button>
           ))}
           {onAddTracker && (
-            <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "10px", display: "inline-block" }}>
+            <div 
+              style={{ 
+                background: "linear-gradient(45deg, #3788fd, #01e1fd)", 
+                padding: "1px", 
+                borderRadius: "10px", 
+                display: "inline-block",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
+              }}
+            >
               <button
                 onClick={onAddTracker}
                 style={{
@@ -562,18 +585,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   fontWeight: 400,
                   transition: "all 0.2s",
                   textTransform: "none",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = "scale(0.95)";
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
                 }}
               >
                 + Add node tracker
@@ -717,7 +728,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
           
           {/* Line separator */}
-          <div style={{ borderTop: "1px solid #232342", margin: "16px 0" }}></div>
+          <div style={{ 
+            height: "1px", 
+            background: "linear-gradient(90deg, #0c86ab, #2d55ac)", 
+            margin: "16px 0" 
+          }}></div>
           
           {/* Node totals */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
@@ -833,7 +848,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <button
                 onClick={() => setSelectedMonth(null)}
                 style={{
-                  background: selectedMonth === null ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#232055",
+                  background: selectedMonth === null ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
                   color: selectedMonth === null ? "white" : "#8a8ea1",
                   padding: "8px 16px",
                   border: "none",
@@ -842,16 +857,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   fontSize: "0.9rem",
                   fontWeight: selectedMonth === null ? 600 : 400,
                   transition: "all 0.2s",
+                  textTransform: "none",
                 }}
                 onMouseEnter={(e) => {
                   if (selectedMonth !== null) {
-                    e.currentTarget.style.background = "#2a2a44";
+                    e.currentTarget.style.background = "#1a1648";
                     e.currentTarget.style.transform = "scale(1.05)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (selectedMonth !== null) {
-                    e.currentTarget.style.background = "#232055";
+                    e.currentTarget.style.background = "#110e3f";
                     e.currentTarget.style.transform = "scale(1)";
                   }
                 }}
@@ -862,16 +878,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   e.currentTarget.style.transform = selectedMonth === null ? "scale(1)" : "scale(1.05)";
                 }}
               >
-                ALL
+                All
               </button>
               {availableMonths.map((month) => {
-                const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" }).toUpperCase();
+                const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
                 return (
                   <button
                     key={month}
                     onClick={() => setSelectedMonth(month)}
                     style={{
-                      background: selectedMonth === month ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#232055",
+                      background: selectedMonth === month ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
                       color: selectedMonth === month ? "white" : "#8a8ea1",
                       padding: "8px 16px",
                       border: "none",
@@ -880,16 +896,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       fontSize: "0.9rem",
                       fontWeight: selectedMonth === month ? 600 : 400,
                       transition: "all 0.2s",
+                      textTransform: "none",
                     }}
                     onMouseEnter={(e) => {
                       if (selectedMonth !== month) {
-                        e.currentTarget.style.background = "#2a2a44";
+                        e.currentTarget.style.background = "#1a1648";
                         e.currentTarget.style.transform = "scale(1.05)";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (selectedMonth !== month) {
-                        e.currentTarget.style.background = "#232055";
+                        e.currentTarget.style.background = "#110e3f";
                         e.currentTarget.style.transform = "scale(1)";
                       }
                     }}
@@ -938,7 +955,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             color: "#9aa0b4", 
                             fontSize: "0.9rem", 
                             fontWeight: 600,
-                            background: "linear-gradient(0deg, #292967, #232055)"
+                            background: "linear-gradient(90deg, #292967, #232055)"
                           }}
                         >
                           {monthGroup.monthName}
@@ -946,7 +963,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       </tr>
                       {/* Transactions for this month */}
                       {monthGroup.transactions.map((tx, idx) => (
-                        <tr key={`${monthGroup.monthKey}-${idx}`} style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
+                        <tr key={`${monthGroup.monthKey}-${idx}`}>
+                          <td colSpan={9} style={{ padding: 0, height: "1px" }}>
+                            <div style={{ height: "1px", background: "linear-gradient(90deg, #0c86ab, #2d55ac)" }}></div>
+                          </td>
+                        </tr>
+                        <tr key={`${monthGroup.monthKey}-${idx}-content`}>
                       <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.date}, {tx.time}</td>
                       <td style={{ padding: "12px", color: "#32c0ea" }}>{tx.ethAmount.toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#e8e8f0", whiteSpace: "nowrap" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
@@ -1109,6 +1131,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       ))}
                     </React.Fragment>
                   ))}
+                </tbody>
                 </tbody>
               </table>
             </div>
