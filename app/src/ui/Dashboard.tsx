@@ -546,11 +546,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               onMouseEnter={(e) => {
                 if (activeTrackerId !== tracker.id) {
                   e.currentTarget.style.background = "#1a1648";
+                  e.currentTarget.style.transform = "scale(1.05)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (activeTrackerId !== tracker.id) {
                   e.currentTarget.style.background = "#110e3f";
+                  e.currentTarget.style.transform = "scale(1)";
                 }
               }}
             >
