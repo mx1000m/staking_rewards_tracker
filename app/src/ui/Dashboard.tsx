@@ -963,12 +963,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       </tr>
                       {/* Transactions for this month */}
                       {monthGroup.transactions.map((tx, idx) => (
-                        <tr key={`${monthGroup.monthKey}-${idx}`}>
-                          <td colSpan={9} style={{ padding: 0, height: "1px" }}>
-                            <div style={{ height: "1px", background: "linear-gradient(90deg, #0c86ab, #2d55ac)" }}></div>
-                          </td>
-                        </tr>
-                        <tr key={`${monthGroup.monthKey}-${idx}-content`}>
+                        <React.Fragment key={`${monthGroup.monthKey}-${idx}`}>
+                          <tr>
+                            <td colSpan={9} style={{ padding: 0, height: "1px" }}>
+                              <div style={{ height: "1px", background: "linear-gradient(90deg, #0c86ab, #2d55ac)" }}></div>
+                            </td>
+                          </tr>
+                          <tr>
                       <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.date}, {tx.time}</td>
                       <td style={{ padding: "12px", color: "#32c0ea" }}>{tx.ethAmount.toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#e8e8f0", whiteSpace: "nowrap" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
@@ -1128,6 +1129,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         )}
                       </td>
                     </tr>
+                        </React.Fragment>
                       ))}
                     </React.Fragment>
                   ))}
