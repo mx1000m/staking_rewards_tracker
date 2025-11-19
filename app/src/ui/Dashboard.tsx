@@ -634,24 +634,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 />
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "10px", display: "inline-block" }}>
+            <div style={{ display: "flex", gap: 16 }}>
+              <div 
+                style={{ 
+                  background: "linear-gradient(45deg, #3788fd, #01e1fd)", 
+                  padding: "1px", 
+                  borderRadius: "10px", 
+                  display: "inline-block",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
                 <button
                   onClick={() => setShowSettings(true)}
                   style={{ background: "transparent", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px" }}
                   title="Settings"
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
-                  onMouseDown={(e) => {
-                    e.currentTarget.style.transform = "scale(0.95)";
-                  }}
-                  onMouseUp={(e) => {
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }}
                 >
                   <img 
                     src="/staking_rewards_tracker/icons/gear_icon.svg" 
@@ -661,30 +663,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <span style={{ color: "#24a7fd" }}>Settings</span>
                 </button>
               </div>
-              <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "10px", display: "inline-block" }}>
+              <div 
+                style={{ 
+                  background: "linear-gradient(45deg, #3788fd, #01e1fd)", 
+                  padding: "1px", 
+                  borderRadius: "10px", 
+                  display: "inline-block",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
                 <button
                   onClick={() => setShowExportModal(true)}
                   disabled={transactions.length === 0}
                   style={{ background: "transparent", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", padding: "10px 12px" }}
                   title="Export CSV"
-                  onMouseEnter={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
-                  onMouseDown={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.transform = "scale(0.95)";
-                    }
-                  }}
-                  onMouseUp={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }
-                  }}
                 >
                   <img 
                     src="/staking_rewards_tracker/icons/export_icon.svg" 
@@ -694,29 +692,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <span style={{ color: "#24a7fd" }}>Export CSV</span>
                 </button>
               </div>
-              <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "10px", display: "inline-block" }}>
+              <div 
+                style={{ 
+                  background: "linear-gradient(45deg, #3788fd, #01e1fd)", 
+                  padding: "1px", 
+                  borderRadius: "10px", 
+                  display: "inline-block",
+                  transition: "all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+              >
                 <button 
                   onClick={() => fetchTransactions(activeTracker, true)}
                   disabled={loading}
                   style={{ background: "transparent", transition: "all 0.2s", border: "none", borderRadius: "9px", padding: "10px 12px", display: "inline-flex", alignItems: "center", gap: 6 }}
-                  onMouseEnter={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "scale(1)";
-                  }}
-                  onMouseDown={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.transform = "scale(0.95)";
-                    }
-                  }}
-                  onMouseUp={(e) => {
-                    if (!e.currentTarget.disabled) {
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }
-                  }}
                 >
                   <img 
                     src="/staking_rewards_tracker/icons/refresh_icon.svg" 
