@@ -143,35 +143,36 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 								<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#24a7fd" }}>
 									{userName}
 								</span>
-							{userPhoto ? (
-								<img
-									src={userPhoto}
-									alt={userName}
-									style={{
-										width: "32px",
-										height: "32px",
-										borderRadius: "50%",
-										objectFit: "cover",
-									}}
-								/>
-							) : (
-								<div
-									style={{
-										width: "32px",
-										height: "32px",
-										borderRadius: "50%",
-										background: "#6b6bff",
-										display: "flex",
-										alignItems: "center",
-										justifyContent: "center",
-										color: "white",
-										fontWeight: 600,
-										fontSize: "0.9rem",
-									}}
-								>
-									{userName.charAt(0).toUpperCase()}
-								</div>
-							)}
+								{userPhoto ? (
+									<img
+										src={userPhoto}
+										alt={userName}
+										style={{
+											width: "32px",
+											height: "32px",
+											borderRadius: "50%",
+											objectFit: "cover",
+										}}
+									/>
+								) : (
+									<div
+										style={{
+											width: "32px",
+											height: "32px",
+											borderRadius: "50%",
+											background: "#6b6bff",
+											display: "flex",
+											alignItems: "center",
+											justifyContent: "center",
+											color: "white",
+											fontWeight: 600,
+											fontSize: "0.9rem",
+										}}
+									>
+										{userName.charAt(0).toUpperCase()}
+									</div>
+								)}
+							</div>
 						</div>
 
 						{/* User Menu Popup */}
