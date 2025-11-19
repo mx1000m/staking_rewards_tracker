@@ -8,6 +8,10 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const [showUserMenu, setShowUserMenu] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
+	const headerStroke = "linear-gradient(45deg, #3788fd, #01e1fd)";
+	const panelGradient = "linear-gradient(45deg, #232055, #292967)";
+	const accentBlue = "#24a7fd";
+
 	const handleGoogleSignIn = async () => {
 		setSigningIn(true);
 		setError(null);
@@ -98,35 +102,47 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 
 		return (
 			<>
-				<header className="app-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 24px" }}>
-					<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-						{/* Logo placeholder - will be replaced with actual logo later */}
-						<div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#e8e8f0" }}>Solobeam</div>
+				<div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px" }}>
+					<header 
+						className="app-header" 
+						style={{ 
+							display: "flex", 
+							justifyContent: "space-between", 
+							alignItems: "center", 
+							padding: "16px 24px",
+							background: "linear-gradient(45deg, #232055, #292967)",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+						{/* Logo with gradient */}
+						<div style={{ 
+							fontSize: "1.5rem", 
+							fontWeight: 700, 
+							fontFamily: "Retronoid, ui-sans-serif, system-ui",
+							background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+							WebkitBackgroundClip: "text",
+							WebkitTextFillColor: "transparent",
+							backgroundClip: "text",
+						}}>Solobeam</div>
 					</div>
 					<div style={{ position: "relative" }} ref={menuRef}>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "12px",
-								cursor: "pointer",
-								padding: "4px 8px",
-								borderRadius: "8px",
-								transition: "background 0.2s",
-							}}
-							onClick={() => setShowUserMenu(!showUserMenu)}
-							onMouseEnter={(e) => {
-								e.currentTarget.style.background = "#1a1a2e";
-							}}
-							onMouseLeave={(e) => {
-								if (!showUserMenu) {
-									e.currentTarget.style.background = "transparent";
-								}
-							}}
-						>
-							<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#e8e8f0" }}>
-								{userName}
-							</span>
+						<div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "8px", display: "inline-block" }}>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: "12px",
+									cursor: "pointer",
+									padding: "4px 8px",
+									borderRadius: "7px",
+									background: "linear-gradient(45deg, #232055, #292967)",
+									transition: "all 0.2s",
+								}}
+								onClick={() => setShowUserMenu(!showUserMenu)}
+							>
+								<span style={{ fontSize: "0.9rem", fontWeight: 500, color: "#24a7fd" }}>
+									{userName}
+								</span>
 							{userPhoto ? (
 								<img
 									src={userPhoto}
@@ -165,15 +181,15 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									position: "absolute",
 									top: "calc(100% + 8px)",
 									right: 0,
-									background: "#141428",
-									border: "1px solid #232342",
+									background: "linear-gradient(45deg, #3788fd, #01e1fd)",
 									borderRadius: "14px",
-									padding: "20px",
+									padding: "1px",
 									minWidth: "280px",
 									boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
 									zIndex: 1000,
 								}}
 							>
+								<div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "20px" }}>
 								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
 									<div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
 										{userPhoto ? (
@@ -267,10 +283,12 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 								>
 									Sign out
 								</button>
+								</div>
 							</div>
 						)}
 					</div>
-				</header>
+					</header>
+				</div>
 				<main className="app-main" style={{ placeItems: "stretch" }}>
 					{children}
 				</main>

@@ -487,7 +487,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>All nodes overview</h3>
       <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
-        <div style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL REWARDS</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalRewards.toFixed(2)}
@@ -496,7 +496,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthRewards.toFixed(6)} ETH
           </p>
         </div>
-        <div style={{ background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL TAXES</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalTaxes.toFixed(2)}
@@ -505,7 +505,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthTaxes.toFixed(6)} ETH
           </p>
         </div>
-        <div style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "linear-gradient(45deg, #b6325f, #ff887c)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL LEFT TO SWAP</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalLeftToSwap.toFixed(2)}
@@ -514,7 +514,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthLeftToSwap.toFixed(6)} ETH
           </p>
         </div>
-        <div style={{ background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL SWAPPED</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalSwapped.toFixed(2)}
@@ -528,58 +528,59 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
       {/* Your Nodes */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Your nodes</h3>
-      <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
-        {trackers.map((tracker) => (
-          <button
-            key={tracker.id}
-            onClick={() => setActiveTracker(tracker.id)}
-            style={{
-              background: activeTrackerId === tracker.id ? "#6b6bff" : "#2a2a44",
-              padding: "12px 20px",
-              border: "none",
-              borderRadius: "10px",
-              color: "white",
-              cursor: "pointer",
-              fontWeight: activeTrackerId === tracker.id ? 600 : 400,
-            }}
-          >
-            {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
-          </button>
-        ))}
-        {onAddTracker && (
-          <button
-            onClick={onAddTracker}
-            style={{
-              background: "transparent",
-              padding: "12px 20px",
-              border: "1px solid #6b6bff",
-              borderRadius: "10px",
-              color: "#6b6bff",
-              cursor: "pointer",
-              fontWeight: 400,
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#6b6bff";
-              e.currentTarget.style.color = "white";
-              e.currentTarget.style.transform = "scale(1.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "transparent";
-              e.currentTarget.style.color = "#6b6bff";
-              e.currentTarget.style.transform = "scale(1)";
-            }}
-            onMouseDown={(e) => {
-              e.currentTarget.style.transform = "scale(0.95)";
-            }}
-            onMouseUp={(e) => {
-              e.currentTarget.style.transform = "scale(1.05)";
-            }}
-          >
-            + Add Node Tracker
-          </button>
-        )}
+      <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", marginBottom: "24px" }}>
+        <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
+          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+          {trackers.map((tracker) => (
+            <button
+              key={tracker.id}
+              onClick={() => setActiveTracker(tracker.id)}
+              style={{
+                background: activeTrackerId === tracker.id ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
+                padding: "12px 20px",
+                border: "none",
+                borderRadius: "10px",
+                color: activeTrackerId === tracker.id ? "white" : "#24a7fd",
+                cursor: "pointer",
+                fontWeight: activeTrackerId === tracker.id ? 600 : 400,
+              }}
+            >
+              {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
+            </button>
+          ))}
+          {onAddTracker && (
+            <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "10px", display: "inline-block" }}>
+              <button
+                onClick={onAddTracker}
+                style={{
+                  background: "linear-gradient(45deg, #232055, #292967)",
+                  padding: "12px 20px",
+                  border: "none",
+                  borderRadius: "9px",
+                  color: "#24a7fd",
+                  cursor: "pointer",
+                  fontWeight: 400,
+                  transition: "all 0.2s",
+                  textTransform: "none",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+                onMouseDown={(e) => {
+                  e.currentTarget.style.transform = "scale(0.95)";
+                }}
+                onMouseUp={(e) => {
+                  e.currentTarget.style.transform = "scale(1.05)";
+                }}
+              >
+                + Add node tracker
+              </button>
+            </div>
+          )}
+          </div>
         </div>
       </div>
 
@@ -587,7 +588,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {activeTracker && (
         <>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Node selected</h3>
-          <div className="card" style={{ width: "auto", maxWidth: "none", marginBottom: "24px" }}>
+          <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", marginBottom: "24px" }}>
+            <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h2 style={{ margin: "0 0 4px 0" }}>
@@ -620,92 +622,97 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => setShowSettings(true)}
-                style={{ background: "#2a2a44", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6 }}
-                title="Settings"
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#3a3a54";
-                  e.currentTarget.style.transform = "scale(1.05)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#2a2a44";
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = "scale(0.95)";
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
-                }}
-              >
-                <img 
-                  src="/staking_rewards_tracker/icons/gear_icon.svg" 
-                  alt="Settings" 
-                  style={{ width: "18px", height: "18px", filter: "brightness(0) invert(1)" }}
-                />
-                Edit
-              </button>
-              <button
-                onClick={() => setShowExportModal(true)}
-                disabled={transactions.length === 0}
-                style={{ background: "#2a2a44", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6 }}
-                title="Export CSV"
-                onMouseEnter={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.background = "#3a3a54";
+              <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "10px", display: "inline-block" }}>
+                <button
+                  onClick={() => setShowSettings(true)}
+                  style={{ background: "transparent", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px" }}
+                  title="Settings"
+                  onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "scale(1.05)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#2a2a44";
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-                onMouseDown={(e) => {
-                  if (!e.currentTarget.disabled) {
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                  onMouseDown={(e) => {
                     e.currentTarget.style.transform = "scale(0.95)";
-                  }
-                }}
-                onMouseUp={(e) => {
-                  if (!e.currentTarget.disabled) {
+                  }}
+                  onMouseUp={(e) => {
                     e.currentTarget.style.transform = "scale(1.05)";
-                  }
-                }}
-              >
-                <img 
-                  src="/staking_rewards_tracker/icons/export_icon.svg" 
-                  alt="Export" 
-                  style={{ width: "18px", height: "18px", filter: "brightness(0) invert(1)" }}
-                />
-                Export CSV
-              </button>
-              <button 
-                onClick={() => fetchTransactions(activeTracker, true)}
-                disabled={loading}
-                style={{ background: "#2a2a44", transition: "all 0.2s" }}
-                onMouseEnter={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.background = "#3a3a54";
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#2a2a44";
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-                onMouseDown={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.transform = "scale(0.95)";
-                  }
-                }}
-                onMouseUp={(e) => {
-                  if (!e.currentTarget.disabled) {
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }
-                }}
-              >
-                {loading ? "Loading..." : "🔄 Refresh"}
-              </button>
+                  }}
+                >
+                  <img 
+                    src="/staking_rewards_tracker/icons/gear_icon.svg" 
+                    alt="Settings" 
+                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(60%) sepia(96%) saturate(1234%) hue-rotate(200deg) brightness(110%) contrast(101%)" }}
+                  />
+                  <span style={{ color: "#24a7fd" }}>Settings</span>
+                </button>
+              </div>
+              <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "10px", display: "inline-block" }}>
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  disabled={transactions.length === 0}
+                  style={{ background: "transparent", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", padding: "10px 12px" }}
+                  title="Export CSV"
+                  onMouseEnter={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                  onMouseDown={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.transform = "scale(0.95)";
+                    }
+                  }}
+                  onMouseUp={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }
+                  }}
+                >
+                  <img 
+                    src="/staking_rewards_tracker/icons/export_icon.svg" 
+                    alt="Export" 
+                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(60%) sepia(96%) saturate(1234%) hue-rotate(200deg) brightness(110%) contrast(101%)" }}
+                  />
+                  <span style={{ color: "#24a7fd" }}>Export CSV</span>
+                </button>
+              </div>
+              <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "10px", display: "inline-block" }}>
+                <button 
+                  onClick={() => fetchTransactions(activeTracker, true)}
+                  disabled={loading}
+                  style={{ background: "transparent", transition: "all 0.2s", border: "none", borderRadius: "9px", padding: "10px 12px", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  onMouseEnter={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                  }}
+                  onMouseDown={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.transform = "scale(0.95)";
+                    }
+                  }}
+                  onMouseUp={(e) => {
+                    if (!e.currentTarget.disabled) {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }
+                  }}
+                >
+                  <img 
+                    src="/staking_rewards_tracker/icons/refresh_icon.svg" 
+                    alt="Refresh" 
+                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(60%) sepia(96%) saturate(1234%) hue-rotate(200deg) brightness(110%) contrast(101%)" }}
+                  />
+                  <span style={{ color: "#24a7fd" }}>{loading ? "Loading..." : "Refresh"}</span>
+                </button>
+              </div>
             </div>
           </div>
           
@@ -715,8 +722,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           {/* Node totals */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Rewards</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#10b981", paddingLeft: "20px" }}>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total rewards</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", paddingLeft: "20px", textTransform: "none" }}>
                 {currencySymbol}{totalRewards.toFixed(2)}
               </p>
               <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
@@ -724,8 +731,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </p>
             </div>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Taxes</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#f59e0b", paddingLeft: "20px" }}>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total taxes</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", paddingLeft: "20px", textTransform: "none" }}>
                 {currencySymbol}{totalTaxes.toFixed(2)}
               </p>
               <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
@@ -733,8 +740,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </p>
             </div>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Left To Swap</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#ef4444", paddingLeft: "20px" }}>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total left to swap</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#d84b6a", paddingLeft: "20px", textTransform: "none" }}>
                 {currencySymbol}{totalLeftToSwap.toFixed(2)}
               </p>
               <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
@@ -742,8 +749,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </p>
             </div>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total Swapped</p>
-              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#3b82f6", paddingLeft: "20px" }}>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total swapped</p>
+              <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", paddingLeft: "20px", textTransform: "none" }}>
                 {currencySymbol}{totalSwapped.toFixed(2)}
               </p>
               <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
@@ -751,7 +758,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </p>
             </div>
           </div>
-        </div>
+            </div>
+          </div>
         </>
       )}
 
@@ -774,7 +782,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {activeTracker && (
         <>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Incoming rewards</h3>
-          <div className="card" style={{ width: "auto", maxWidth: "none" }}>
+          <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px" }}>
+            <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
           {/* Year Filter */}
           {availableYears.length > 0 && (
             <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
@@ -783,8 +792,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   key={year}
                   onClick={() => setSelectedYear(year)}
                   style={{
-                    background: selectedYear === year ? "#6b6bff" : "#2a2a44",
-                    color: "white",
+                    background: selectedYear === year ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#232055",
+                    color: selectedYear === year ? "white" : "#8a8ea1",
                     padding: "8px 16px",
                     border: "none",
                     borderRadius: "20px",
@@ -795,13 +804,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   }}
                   onMouseEnter={(e) => {
                     if (selectedYear !== year) {
-                      e.currentTarget.style.background = "#3a3a54";
+                      e.currentTarget.style.background = "#2a2a44";
                       e.currentTarget.style.transform = "scale(1.05)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (selectedYear !== year) {
-                      e.currentTarget.style.background = "#2a2a44";
+                      e.currentTarget.style.background = "#232055";
                       e.currentTarget.style.transform = "scale(1)";
                     }
                   }}
@@ -824,8 +833,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <button
                 onClick={() => setSelectedMonth(null)}
                 style={{
-                  background: selectedMonth === null ? "#6b6bff" : "#2a2a44",
-                  color: "white",
+                  background: selectedMonth === null ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#232055",
+                  color: selectedMonth === null ? "white" : "#8a8ea1",
                   padding: "8px 16px",
                   border: "none",
                   borderRadius: "20px",
@@ -836,13 +845,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
                 onMouseEnter={(e) => {
                   if (selectedMonth !== null) {
-                    e.currentTarget.style.background = "#3a3a54";
+                    e.currentTarget.style.background = "#2a2a44";
                     e.currentTarget.style.transform = "scale(1.05)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (selectedMonth !== null) {
-                    e.currentTarget.style.background = "#2a2a44";
+                    e.currentTarget.style.background = "#232055";
                     e.currentTarget.style.transform = "scale(1)";
                   }
                 }}
@@ -862,8 +871,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     key={month}
                     onClick={() => setSelectedMonth(month)}
                     style={{
-                      background: selectedMonth === month ? "#6b6bff" : "#2a2a44",
-                      color: "white",
+                      background: selectedMonth === month ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#232055",
+                      color: selectedMonth === month ? "white" : "#8a8ea1",
                       padding: "8px 16px",
                       border: "none",
                       borderRadius: "20px",
@@ -874,13 +883,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     }}
                     onMouseEnter={(e) => {
                       if (selectedMonth !== month) {
-                        e.currentTarget.style.background = "#3a3a54";
+                        e.currentTarget.style.background = "#2a2a44";
                         e.currentTarget.style.transform = "scale(1.05)";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (selectedMonth !== month) {
-                        e.currentTarget.style.background = "#2a2a44";
+                        e.currentTarget.style.background = "#232055";
                         e.currentTarget.style.transform = "scale(1)";
                       }
                     }}
@@ -905,7 +914,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid #232342" }}>
+                  <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Date, Time</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>ETH Rewards</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
@@ -921,7 +930,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   {transactionsByMonth.map((monthGroup) => (
                     <React.Fragment key={monthGroup.monthKey}>
                       {/* Month separator row */}
-                      <tr style={{ borderBottom: "1px solid #232342" }}>
+                      <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                         <td 
                           colSpan={9} 
                           style={{ 
@@ -929,7 +938,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             color: "#9aa0b4", 
                             fontSize: "0.9rem", 
                             fontWeight: 600,
-                            background: "#232340"
+                            background: "linear-gradient(0deg, #292967, #232055)"
                           }}
                         >
                           {monthGroup.monthName}
@@ -937,14 +946,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       </tr>
                       {/* Transactions for this month */}
                       {monthGroup.transactions.map((tx, idx) => (
-                        <tr key={`${monthGroup.monthKey}-${idx}`} style={{ borderBottom: "1px solid #232342" }}>
+                        <tr key={`${monthGroup.monthKey}-${idx}`} style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                       <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.date}, {tx.time}</td>
-                      <td style={{ padding: "12px", color: "#10b981" }}>{tx.ethAmount.toFixed(6)}</td>
+                      <td style={{ padding: "12px", color: "#32c0ea" }}>{tx.ethAmount.toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#e8e8f0", whiteSpace: "nowrap" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
-                      <td style={{ padding: "12px", color: "#10b981" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
+                      <td style={{ padding: "12px", color: "#32c0ea" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
                       <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.taxRate}%</td>
-                      <td style={{ padding: "12px", color: "#f59e0b" }}>{tx.taxesInEth.toFixed(6)}</td>
-                      <td style={{ padding: "12px", color: "#f59e0b", whiteSpace: "nowrap" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
+                      <td style={{ padding: "12px", color: "#e4a729" }}>{tx.taxesInEth.toFixed(6)}</td>
+                      <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
                       <td style={{ padding: "12px" }}>
                         <div 
                           style={{ display: "flex", alignItems: "center", gap: 6 }}
@@ -1068,20 +1077,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           <button
                             onClick={() => { setMarkPaidHash(tx.transactionHash); setSwapHashInput(""); }}
                             style={{ 
-                              background: "#2a2a44", 
+                              background: "#110e3f", 
                               color: "white", 
                               padding: "6px 10px", 
                               border: 0, 
                               borderRadius: 8, 
                               cursor: "pointer",
                               transition: "all 0.2s",
+                              textTransform: "none",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = "#3a3a54";
+                              e.currentTarget.style.background = "#1a1648";
                               e.currentTarget.style.transform = "scale(1.05)";
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "#2a2a44";
+                              e.currentTarget.style.background = "#110e3f";
                               e.currentTarget.style.transform = "scale(1)";
                             }}
                             onMouseDown={(e) => {
@@ -1091,7 +1101,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               e.currentTarget.style.transform = "scale(1.05)";
                             }}
                           >
-                            Mark as Paid
+                            Mark as paid
                           </button>
                         )}
                       </td>
@@ -1103,6 +1113,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </table>
             </div>
           ) : null}
+            </div>
           </div>
         </>
       )}
