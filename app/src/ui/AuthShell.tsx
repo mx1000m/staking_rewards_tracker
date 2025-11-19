@@ -102,17 +102,26 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 
 		return (
 			<>
-				<div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px" }}>
-					<header 
-						className="app-header" 
-						style={{ 
-							display: "flex", 
-							justifyContent: "space-between", 
-							alignItems: "center", 
-							padding: "16px 24px",
-							background: "linear-gradient(45deg, #232055, #292967)",
-						}}
-					>
+				<header 
+					className="app-header" 
+					style={{ 
+						display: "flex", 
+						justifyContent: "space-between", 
+						alignItems: "center", 
+						padding: "16px 24px",
+						background: "linear-gradient(45deg, #232055, #292967)",
+						position: "relative",
+					}}
+				>
+					{/* Bottom border only */}
+					<div style={{
+						position: "absolute",
+						bottom: 0,
+						left: 0,
+						right: 0,
+						height: "1px",
+						background: "linear-gradient(90deg, #3788fd, #01e1fd)",
+					}}></div>
 						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
 						{/* Logo with gradient */}
 						<div style={{ 
@@ -294,8 +303,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 							</div>
 						)}
 					</div>
-					</header>
-				</div>
+				</header>
 				<main className="app-main" style={{ placeItems: "stretch" }}>
 					{children}
 				</main>
