@@ -652,7 +652,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               >
                 <button
                   onClick={() => setShowSettings(true)}
-                  style={{ background: "transparent", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px" }}
+                  style={{ background: "linear-gradient(45deg, #232055, #292967)", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", textTransform: "none" }}
                   title="Settings"
                 >
                   <img 
@@ -681,7 +681,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 <button
                   onClick={() => setShowExportModal(true)}
                   disabled={transactions.length === 0}
-                  style={{ background: "transparent", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", padding: "10px 12px" }}
+                  style={{ background: "linear-gradient(45deg, #232055, #292967)", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", padding: "10px 12px", textTransform: "none" }}
                   title="Export CSV"
                 >
                   <img 
@@ -710,7 +710,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 <button 
                   onClick={() => fetchTransactions(activeTracker, true)}
                   disabled={loading}
-                  style={{ background: "transparent", transition: "all 0.2s", border: "none", borderRadius: "9px", padding: "10px 12px", display: "inline-flex", alignItems: "center", gap: 6 }}
+                  style={{ background: "linear-gradient(45deg, #232055, #292967)", transition: "all 0.2s", border: "none", borderRadius: "9px", padding: "10px 12px", display: "inline-flex", alignItems: "center", gap: 6, textTransform: "none" }}
                 >
                   <img 
                     src="/staking_rewards_tracker/icons/refresh_icon.svg" 
