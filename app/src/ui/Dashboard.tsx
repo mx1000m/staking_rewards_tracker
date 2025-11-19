@@ -1132,7 +1132,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     </React.Fragment>
                   ))}
                 </tbody>
-                </tbody>
               </table>
             </div>
           ) : null}
