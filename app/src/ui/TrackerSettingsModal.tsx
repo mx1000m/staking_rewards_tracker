@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useTrackerStore, Tracker, Currency } from "../store/trackerStore";
 import { clearCache } from "../utils/transactionCache";
 import { useAuth } from "../hooks/useAuth";
@@ -32,14 +32,30 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [deleteNameError, setDeleteNameError] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveButtonText, setSaveButtonText] = useState("Save");
+  const [animationState, setAnimationState] = useState<"enter" | "exit">("enter");
+  const closeTimeoutRef = useRef<number | null>(null);
+  const MODAL_ANIMATION_DURATION = 350;
 
   useEffect(() => {
     // Prevent body scroll when modal is open
     document.body.style.overflow = "hidden";
+    setAnimationState("enter");
     return () => {
       document.body.style.overflow = "unset";
+      if (closeTimeoutRef.current) {
+        window.clearTimeout(closeTimeoutRef.current);
+      }
     };
   }, []);
+
+  const requestClose = () => {
+    if (animationState === "exit") return;
+    setAnimationState("exit");
+    closeTimeoutRef.current = window.setTimeout(() => {
+      closeTimeoutRef.current = null;
+      onClose();
+    }, MODAL_ANIMATION_DURATION);
+  };
 
   const doSave = async () => {
     // Validate inputs
@@ -90,7 +106,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     await new Promise(resolve => setTimeout(resolve, 200));
     
     onSaved?.();
-    onClose();
+    requestClose();
   };
 
   const handleSave = () => {
@@ -147,6 +163,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
   return (
     <div
+      className={`modal-overlay ${animationState === "enter" ? "modal-overlay-enter" : "modal-overlay-exit"}`}
       style={{
         position: "fixed",
         top: 0,
@@ -160,24 +177,38 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
         zIndex: 1000,
         padding: "20px",
       }}
-      onClick={onClose}
+      onClick={requestClose}
     >
       <div
-        className="card"
+        className={`modal-card ${animationState === "enter" ? "modal-card-enter" : "modal-card-exit"}`}
         style={{
           width: "100%",
           maxWidth: "650px",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          overflowX: "hidden",
           position: "relative",
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        <div
+          style={{
+            background: "linear-gradient(45deg, #3788fd, #01e1fd)",
+            padding: "1px",
+            borderRadius: "18px",
+          }}
+        >
+          <div
+            style={{
+              background: "linear-gradient(45deg, #232055, #292967)",
+              borderRadius: "17px",
+              padding: "28px",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              overflowX: "hidden",
+            }}
+          >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h2 style={{ margin: 0 }}>Edit node tracker</h2>
           <button
-            onClick={onClose}
+            onClick={requestClose}
             style={{
               background: "transparent",
               border: "none",
@@ -234,20 +265,21 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                   padding: "12px 20px",
                   background: currency === "EUR" ? "#6b6bff" : "#2a2a44",
                   border: currency === "EUR" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
-                  borderRadius: "10px",
-                  color: "white",
+              borderRadius: "10px",
+              color: currency === "EUR" ? "#ffffff" : "#24a7fd",
+              textTransform: "none",
                   cursor: "pointer",
-                  fontWeight: currency === "EUR" ? 600 : 400,
+              fontWeight: currency === "EUR" ? 600 : 400,
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   if (currency !== "EUR") {
-                    e.currentTarget.style.background = "#3a3a54";
+                e.currentTarget.style.background = "#1a1648";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (currency !== "EUR") {
-                    e.currentTarget.style.background = "#2a2a44";
+                e.currentTarget.style.background = "#110e3f";
                   }
                 }}
               >
@@ -262,19 +294,20 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                   background: currency === "USD" ? "#6b6bff" : "#2a2a44",
                   border: currency === "USD" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
                   borderRadius: "10px",
-                  color: "white",
+                  color: currency === "USD" ? "#ffffff" : "#24a7fd",
+                  textTransform: "none",
                   cursor: "pointer",
                   fontWeight: currency === "USD" ? 600 : 400,
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   if (currency !== "USD") {
-                    e.currentTarget.style.background = "#3a3a54";
+                    e.currentTarget.style.background = "#1a1648";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (currency !== "USD") {
-                    e.currentTarget.style.background = "#2a2a44";
+                    e.currentTarget.style.background = "#110e3f";
                   }
                 }}
               >
@@ -404,18 +437,38 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </button>
           <div className="actions" style={{ margin: 0 }}>
             <button
-              onClick={onClose}
-              style={{ background: "#2a2a44" }}
+              onClick={requestClose}
+              style={{
+                background: "#110e3f",
+                color: "#24a7fd",
+                padding: "10px 20px",
+                borderRadius: "10px",
+                textTransform: "none",
+                border: "none",
+              }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#3a3a54";
+                e.currentTarget.style.background = "#1a1648";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#2a2a44";
+                e.currentTarget.style.background = "#110e3f";
               }}
             >
               Cancel
             </button>
-            <button onClick={handleSave}>{saveButtonText}</button>
+            <button
+              onClick={handleSave}
+              style={{
+                background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+                border: "none",
+                borderRadius: "10px",
+                padding: "10px 20px",
+                color: "#ffffff",
+                textTransform: "none",
+                fontWeight: 600,
+              }}
+            >
+              {saveButtonText}
+            </button>
           </div>
         </div>
 
@@ -543,6 +596,9 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             </div>
           </div>
         )}
+      </div>
+          </div>
+        </div>
       </div>
     </div>
   );
