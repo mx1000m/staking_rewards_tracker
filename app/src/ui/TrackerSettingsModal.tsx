@@ -596,7 +596,6 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             </div>
           </div>
         )}
-      </div>
           </div>
         </div>
       </div>
