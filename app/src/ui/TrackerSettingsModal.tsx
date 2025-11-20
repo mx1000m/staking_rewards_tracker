@@ -38,10 +38,20 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
   useEffect(() => {
     // Prevent body scroll when modal is open
+    // Calculate scrollbar width to prevent layout shift
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+    
     document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     setAnimationState("enter");
+    
     return () => {
-      document.body.style.overflow = "unset";
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
       if (closeTimeoutRef.current) {
         window.clearTimeout(closeTimeoutRef.current);
       }
