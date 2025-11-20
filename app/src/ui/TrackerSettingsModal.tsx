@@ -203,9 +203,10 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               maxHeight: "90vh",
               overflowY: "auto",
               overflowX: "hidden",
+              position: "relative",
             }}
           >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", paddingRight: "48px" }}>
           <h2 style={{ margin: 0 }}>Edit node tracker</h2>
           <button
             onClick={requestClose}
@@ -215,12 +216,15 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               color: "#9aa0b4",
               fontSize: "24px",
               cursor: "pointer",
-              padding: "0",
+              padding: 0,
               width: "32px",
               height: "32px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              position: "absolute",
+              top: "12px",
+              right: "12px",
             }}
           >
             ×
@@ -322,16 +326,10 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             </label>
             <div className="row">
               <select
+                className="gradient-select"
                 value={country}
                 onChange={(e) => onChangeCountry(e.target.value)}
-                style={{
-                  padding: "12px 14px",
-                  background: "#0e0e1a",
-                  border: "1px solid #1a1a2e",
-                  borderRadius: "10px",
-                  color: "#e8e8f0",
-                  flex: 1,
-                }}
+                style={{ flex: 1 }}
               >
                 {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => (
                   <option key={c} value={c}>
