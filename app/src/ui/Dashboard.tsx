@@ -1485,7 +1485,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     ×
                   </button>
                 </div>
-                <p className="muted" style={{ marginTop: 0, marginBottom: "16px" }}>Select the year to export transactions for.</p>
+                <p className="muted" style={{ marginTop: 0, marginBottom: "16px" }}>Select the year you wish to export transactions for.</p>
                 <div style={{ marginTop: 16 }}>
                   <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
                     Year
@@ -1496,7 +1496,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     onChange={(e) => setExportYear(parseInt(e.target.value))}
                     style={{
                       width: "100%",
-                      paddingRight: "40px",
+                      paddingRight: "48px",
                     }}
                   >
                     {availableYears.length > 0 ? (
