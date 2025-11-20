@@ -541,7 +541,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 color: activeTrackerId === tracker.id ? "white" : "#24a7fd",
                 cursor: "pointer",
                 fontWeight: activeTrackerId === tracker.id ? 600 : 400,
-                transition: "all 0.2s",
+                transition: "background 0.2s, color 0.2s, transform 0.2s",
+                transitionProperty: "background, color, transform",
+                position: "relative",
               }}
               onMouseEnter={(e) => {
                 if (activeTrackerId !== tracker.id) {
@@ -556,7 +558,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }
               }}
             >
-              {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
+              <span style={{ 
+                fontWeight: 600, 
+                visibility: "hidden",
+                position: "absolute",
+                whiteSpace: "nowrap",
+                pointerEvents: "none"
+              }}>
+                {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
+              </span>
+              <span style={{ fontWeight: activeTrackerId === tracker.id ? 600 : 400 }}>
+                {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
+              </span>
             </button>
           ))}
           {onAddTracker && (
@@ -811,7 +824,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     cursor: "pointer",
                     fontSize: "0.9rem",
                     fontWeight: selectedYear === year ? 600 : 400,
-                    transition: "all 0.2s",
+                    transition: "background 0.2s, color 0.2s, transform 0.2s",
+                    transitionProperty: "background, color, transform",
+                    position: "relative",
                   }}
                   onMouseEnter={(e) => {
                     if (selectedYear !== year) {
@@ -832,7 +847,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     e.currentTarget.style.transform = selectedYear === year ? "scale(1)" : "scale(1.05)";
                   }}
                 >
-                  {year}
+                  <span style={{ 
+                    fontWeight: 600, 
+                    visibility: "hidden",
+                    position: "absolute",
+                    whiteSpace: "nowrap",
+                    pointerEvents: "none"
+                  }}>
+                    {year}
+                  </span>
+                  <span style={{ fontWeight: selectedYear === year ? 600 : 400 }}>
+                    {year}
+                  </span>
                 </button>
               ))}
             </div>
@@ -852,8 +878,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   cursor: "pointer",
                   fontSize: "0.9rem",
                   fontWeight: selectedMonth === null ? 600 : 400,
-                  transition: "all 0.2s",
+                  transition: "background 0.2s, color 0.2s, transform 0.2s",
+                  transitionProperty: "background, color, transform",
                   textTransform: "none",
+                  position: "relative",
                 }}
                 onMouseEnter={(e) => {
                   if (selectedMonth !== null) {
@@ -874,7 +902,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   e.currentTarget.style.transform = selectedMonth === null ? "scale(1)" : "scale(1.05)";
                 }}
               >
-                All
+                <span style={{ 
+                  fontWeight: 600, 
+                  visibility: "hidden",
+                  position: "absolute",
+                  whiteSpace: "nowrap",
+                  pointerEvents: "none"
+                }}>
+                  All
+                </span>
+                <span style={{ fontWeight: selectedMonth === null ? 600 : 400 }}>
+                  All
+                </span>
               </button>
               {availableMonths.map((month) => {
                 const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
@@ -891,8 +930,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       cursor: "pointer",
                       fontSize: "0.9rem",
                       fontWeight: selectedMonth === month ? 600 : 400,
-                      transition: "all 0.2s",
+                      transition: "background 0.2s, color 0.2s, transform 0.2s",
+                      transitionProperty: "background, color, transform",
                       textTransform: "none",
+                      position: "relative",
                     }}
                     onMouseEnter={(e) => {
                       if (selectedMonth !== month) {
@@ -913,7 +954,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       e.currentTarget.style.transform = selectedMonth === month ? "scale(1)" : "scale(1.05)";
                     }}
                   >
-                    {monthName}
+                    <span style={{ 
+                      fontWeight: 600, 
+                      visibility: "hidden",
+                      position: "absolute",
+                      whiteSpace: "nowrap",
+                      pointerEvents: "none"
+                    }}>
+                      {monthName}
+                    </span>
+                    <span style={{ fontWeight: selectedMonth === month ? 600 : 400 }}>
+                      {monthName}
+                    </span>
                   </button>
                 );
               })}
