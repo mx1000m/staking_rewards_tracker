@@ -48,6 +48,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [swapHashInput, setSwapHashInput] = useState<string>("");
   const [editPaidHash, setEditPaidHash] = useState<string | null>(null);
   const [editSwapHashInput, setEditSwapHashInput] = useState<string>("");
+  const [markPaidModalAnimation, setMarkPaidModalAnimation] = useState<"enter" | "exit">("enter");
+  const [editPaidModalAnimation, setEditPaidModalAnimation] = useState<"enter" | "exit">("enter");
+  const markPaidModalCloseTimeoutRef = useRef<number | null>(null);
+  const editPaidModalCloseTimeoutRef = useRef<number | null>(null);
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // null means "ALL"
   const [showExportModal, setShowExportModal] = useState(false);
@@ -86,6 +90,72 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [showExportModal]);
 
+  // Handle mark paid modal body overflow and animation
+  useEffect(() => {
+    if (markPaidHash) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      
+      document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      setMarkPaidModalAnimation("enter");
+      
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [markPaidHash]);
+
+  // Handle edit paid modal body overflow and animation
+  useEffect(() => {
+    if (editPaidHash) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      
+      document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      setEditPaidModalAnimation("enter");
+      
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [editPaidHash]);
+
+  const requestMarkPaidModalClose = () => {
+    setMarkPaidModalAnimation("exit");
+    if (markPaidModalCloseTimeoutRef.current) {
+      clearTimeout(markPaidModalCloseTimeoutRef.current);
+    }
+    markPaidModalCloseTimeoutRef.current = window.setTimeout(() => {
+      setMarkPaidHash(null);
+      setSwapHashInput("");
+      setMarkPaidModalAnimation("enter");
+      markPaidModalCloseTimeoutRef.current = null;
+    }, EXPORT_MODAL_ANIMATION_DURATION);
+  };
+
+  const requestEditPaidModalClose = () => {
+    setEditPaidModalAnimation("exit");
+    if (editPaidModalCloseTimeoutRef.current) {
+      clearTimeout(editPaidModalCloseTimeoutRef.current);
+    }
+    editPaidModalCloseTimeoutRef.current = window.setTimeout(() => {
+      setEditPaidHash(null);
+      setEditSwapHashInput("");
+      setEditPaidModalAnimation("enter");
+      editPaidModalCloseTimeoutRef.current = null;
+    }, EXPORT_MODAL_ANIMATION_DURATION);
+  };
+
   const requestExportModalClose = () => {
     setExportModalAnimation("exit");
     if (exportModalCloseTimeoutRef.current) {
@@ -93,6 +163,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
     exportModalCloseTimeoutRef.current = window.setTimeout(() => {
       setShowExportModal(false);
+      setExportModalAnimation("enter"); // Reset animation state for next open
       exportModalCloseTimeoutRef.current = null;
     }, EXPORT_MODAL_ANIMATION_DURATION);
   };
@@ -1237,69 +1308,166 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* Mark as Paid Modal */}
       {markPaidHash && (
         <div
+          className={`modal-overlay ${markPaidModalAnimation === "enter" ? "modal-overlay-enter" : "modal-overlay-exit"}`}
           style={{
             position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.7)",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1200,
-            padding: 20,
+            padding: "20px",
           }}
-          onClick={() => setMarkPaidHash(null)}
+          onClick={requestMarkPaidModalClose}
         >
-          <div className="card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>Mark as Paid</h3>
-            <p className="muted" style={{ marginTop: 0 }}>Enter the transaction hash of the swap (optional).</p>
-            <input
-              className="input"
-              placeholder="Swap transaction hash (optional, 0x...)"
-              value={swapHashInput}
-              onChange={(e) => setSwapHashInput(e.target.value.trim())}
-            />
-            <div className="actions" style={{ marginTop: 16 }}>
-              <button style={{ background: "#2a2a44" }} onClick={() => setMarkPaidHash(null)}>Cancel</button>
-              <button
-                onClick={async () => {
-                  if (!activeTracker || !markPaidHash || !user) return;
-                  
-                  // Validate swap hash if provided
-                  const swapHash = swapHashInput.trim();
-                  if (swapHash && !/^0x[a-fA-F0-9]{6,}$/.test(swapHash)) {
-                    alert("Invalid transaction hash format. Please enter a valid Ethereum transaction hash (0x followed by hex characters).");
-                    return;
-                  }
-                  
-                  // Update local cache
-                  const { updateTransactionStatus } = await import("../utils/transactionCache");
-                  await updateTransactionStatus(activeTracker.id, markPaidHash, "✓ Paid", swapHash || undefined);
-                  
-                  // Update Firestore
-                  try {
-                    await updateFirestoreTransactionStatus(
-                      user.uid,
-                      activeTracker.id,
-                      markPaidHash,
-                      "✓ Paid",
-                      swapHash || undefined
-                    );
-                  } catch (firestoreError) {
-                    console.warn("Failed to update Firestore (continuing):", firestoreError);
-                  }
-                  
-                  // Update local state
-                  setTransactions((prev) => prev.map((t) => 
-                    t.transactionHash === markPaidHash 
-                      ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
-                      : t
-                  ));
-                  setMarkPaidHash(null);
-                  setSwapHashInput("");
+          <div
+            className={`modal-card ${markPaidModalAnimation === "enter" ? "modal-card-enter" : "modal-card-exit"}`}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: "linear-gradient(45deg, #3788fd, #01e1fd)",
+                padding: "1px",
+                borderRadius: "18px",
+              }}
+            >
+              <div
+                style={{
+                  background: "#1c1948",
+                  borderRadius: "17px",
+                  padding: "28px",
                 }}
               >
-                Confirm
-              </button>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 style={{ margin: 0 }}>Mark as Paid</h3>
+                  <button
+                    onClick={requestMarkPaidModalClose}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#9aa0b4",
+                      fontSize: "24px",
+                      cursor: "pointer",
+                      padding: "0",
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      transition: "color 0.2s, transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#e8e8f0";
+                      e.currentTarget.style.transform = "scale(1.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#9aa0b4";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="muted" style={{ marginTop: 0, marginBottom: "16px" }}>Enter the transaction hash of the swap (optional).</p>
+                <input
+                  className="input"
+                  placeholder="Swap transaction hash (optional, 0x...)"
+                  value={swapHashInput}
+                  onChange={(e) => setSwapHashInput(e.target.value.trim())}
+                />
+                <div className="actions" style={{ marginTop: "32px" }}>
+                  <button
+                    onClick={requestMarkPaidModalClose}
+                    style={{
+                      background: "#110e3f",
+                      color: "#24a7fd",
+                      padding: "10px 20px",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      border: "none",
+                      transition: "background 0.2s, transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#1a1648";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#110e3f";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!activeTracker || !markPaidHash || !user) return;
+                      
+                      // Validate swap hash if provided
+                      const swapHash = swapHashInput.trim();
+                      if (swapHash && !/^0x[a-fA-F0-9]{6,}$/.test(swapHash)) {
+                        alert("Invalid transaction hash format. Please enter a valid Ethereum transaction hash (0x followed by hex characters).");
+                        return;
+                      }
+                      
+                      // Update local cache
+                      const { updateTransactionStatus } = await import("../utils/transactionCache");
+                      await updateTransactionStatus(activeTracker.id, markPaidHash, "✓ Paid", swapHash || undefined);
+                      
+                      // Update Firestore
+                      try {
+                        await updateFirestoreTransactionStatus(
+                          user.uid,
+                          activeTracker.id,
+                          markPaidHash,
+                          "✓ Paid",
+                          swapHash || undefined
+                        );
+                      } catch (firestoreError) {
+                        console.warn("Failed to update Firestore (continuing):", firestoreError);
+                      }
+                      
+                      // Update local state
+                      setTransactions((prev) => prev.map((t) => 
+                        t.transactionHash === markPaidHash 
+                          ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
+                          : t
+                      ));
+                      requestMarkPaidModalClose();
+                      setSwapHashInput("");
+                    }}
+                    style={{
+                      background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "10px 20px",
+                      color: "#ffffff",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      transition: "transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1308,103 +1476,216 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* Edit Paid Status Modal */}
       {editPaidHash && (
         <div
+          className={`modal-overlay ${editPaidModalAnimation === "enter" ? "modal-overlay-enter" : "modal-overlay-exit"}`}
           style={{
             position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.7)",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1200,
-            padding: 20,
+            padding: "20px",
           }}
-          onClick={() => setEditPaidHash(null)}
+          onClick={requestEditPaidModalClose}
         >
-          <div className="card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>Edit Paid Status</h3>
-            <p className="muted" style={{ marginTop: 0 }}>Update the swap transaction hash or mark as unpaid.</p>
-            <input
-              className="input"
-              placeholder="Swap transaction hash (optional, 0x...)"
-              value={editSwapHashInput}
-              onChange={(e) => setEditSwapHashInput(e.target.value.trim())}
-            />
-            <div className="actions" style={{ marginTop: 16 }}>
-              <button style={{ background: "#2a2a44" }} onClick={() => setEditPaidHash(null)}>Cancel</button>
-              <button
-                style={{ background: "#ef4444" }}
-                onClick={async () => {
-                  if (!activeTracker || !editPaidHash || !user) return;
-                  
-                  // Mark as unpaid
-                  const { updateTransactionStatus } = await import("../utils/transactionCache");
-                  await updateTransactionStatus(activeTracker.id, editPaidHash, "Unpaid", undefined);
-                  
-                  // Update Firestore
-                  try {
-                    await updateFirestoreTransactionStatus(
-                      user.uid,
-                      activeTracker.id,
-                      editPaidHash,
-                      "Unpaid",
-                      undefined
-                    );
-                  } catch (firestoreError) {
-                    console.warn("Failed to update Firestore (continuing):", firestoreError);
-                  }
-                  
-                  // Update local state
-                  setTransactions((prev) => prev.map((t) => 
-                    t.transactionHash === editPaidHash 
-                      ? { ...t, status: "Unpaid", swapHash: undefined } as Transaction
-                      : t
-                  ));
-                  setEditPaidHash(null);
-                  setEditSwapHashInput("");
+          <div
+            className={`modal-card ${editPaidModalAnimation === "enter" ? "modal-card-enter" : "modal-card-exit"}`}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: "linear-gradient(45deg, #3788fd, #01e1fd)",
+                padding: "1px",
+                borderRadius: "18px",
+              }}
+            >
+              <div
+                style={{
+                  background: "#1c1948",
+                  borderRadius: "17px",
+                  padding: "28px",
                 }}
               >
-                Mark as Unpaid
-              </button>
-              <button
-                onClick={async () => {
-                  if (!activeTracker || !editPaidHash || !user) return;
-                  
-                  // Validate swap hash if provided
-                  const swapHash = editSwapHashInput.trim();
-                  if (swapHash && !/^0x[a-fA-F0-9]{6,}$/.test(swapHash)) {
-                    alert("Invalid transaction hash format. Please enter a valid Ethereum transaction hash (0x followed by hex characters).");
-                    return;
-                  }
-                  
-                  // Update local cache
-                  const { updateTransactionStatus } = await import("../utils/transactionCache");
-                  await updateTransactionStatus(activeTracker.id, editPaidHash, "✓ Paid", swapHash || undefined);
-                  
-                  // Update Firestore
-                  try {
-                    await updateFirestoreTransactionStatus(
-                      user.uid,
-                      activeTracker.id,
-                      editPaidHash,
-                      "✓ Paid",
-                      swapHash || undefined
-                    );
-                  } catch (firestoreError) {
-                    console.warn("Failed to update Firestore (continuing):", firestoreError);
-                  }
-                  
-                  // Update local state
-                  setTransactions((prev) => prev.map((t) => 
-                    t.transactionHash === editPaidHash 
-                      ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
-                      : t
-                  ));
-                  setEditPaidHash(null);
-                  setEditSwapHashInput("");
-                }}
-              >
-                Update
-              </button>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 style={{ margin: 0 }}>Edit Paid Status</h3>
+                  <button
+                    onClick={requestEditPaidModalClose}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#9aa0b4",
+                      fontSize: "24px",
+                      cursor: "pointer",
+                      padding: "0",
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      transition: "color 0.2s, transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#e8e8f0";
+                      e.currentTarget.style.transform = "scale(1.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#9aa0b4";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="muted" style={{ marginTop: 0, marginBottom: "16px" }}>Update the swap transaction hash or mark as unpaid.</p>
+                <input
+                  className="input"
+                  placeholder="Swap transaction hash (optional, 0x...)"
+                  value={editSwapHashInput}
+                  onChange={(e) => setEditSwapHashInput(e.target.value.trim())}
+                />
+                <div className="actions" style={{ marginTop: "32px" }}>
+                  <button
+                    onClick={requestEditPaidModalClose}
+                    style={{
+                      background: "#110e3f",
+                      color: "#24a7fd",
+                      padding: "10px 20px",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      border: "none",
+                      transition: "background 0.2s, transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#1a1648";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#110e3f";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    style={{
+                      background: "#ef4444",
+                      color: "white",
+                      padding: "10px 20px",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      border: "none",
+                      transition: "background 0.2s, transform 0.2s",
+                    }}
+                    onClick={async () => {
+                      if (!activeTracker || !editPaidHash || !user) return;
+                      
+                      // Mark as unpaid
+                      const { updateTransactionStatus } = await import("../utils/transactionCache");
+                      await updateTransactionStatus(activeTracker.id, editPaidHash, "Unpaid", undefined);
+                      
+                      // Update Firestore
+                      try {
+                        await updateFirestoreTransactionStatus(
+                          user.uid,
+                          activeTracker.id,
+                          editPaidHash,
+                          "Unpaid",
+                          undefined
+                        );
+                      } catch (firestoreError) {
+                        console.warn("Failed to update Firestore (continuing):", firestoreError);
+                      }
+                      
+                      // Update local state
+                      setTransactions((prev) => prev.map((t) => 
+                        t.transactionHash === editPaidHash 
+                          ? { ...t, status: "Unpaid", swapHash: undefined } as Transaction
+                          : t
+                      ));
+                      requestEditPaidModalClose();
+                      setEditSwapHashInput("");
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#dc2626";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#ef4444";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    Mark as Unpaid
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!activeTracker || !editPaidHash || !user) return;
+                      
+                      // Validate swap hash if provided
+                      const swapHash = editSwapHashInput.trim();
+                      if (swapHash && !/^0x[a-fA-F0-9]{6,}$/.test(swapHash)) {
+                        alert("Invalid transaction hash format. Please enter a valid Ethereum transaction hash (0x followed by hex characters).");
+                        return;
+                      }
+                      
+                      // Update local cache
+                      const { updateTransactionStatus } = await import("../utils/transactionCache");
+                      await updateTransactionStatus(activeTracker.id, editPaidHash, "✓ Paid", swapHash || undefined);
+                      
+                      // Update Firestore
+                      try {
+                        await updateFirestoreTransactionStatus(
+                          user.uid,
+                          activeTracker.id,
+                          editPaidHash,
+                          "✓ Paid",
+                          swapHash || undefined
+                        );
+                      } catch (firestoreError) {
+                        console.warn("Failed to update Firestore (continuing):", firestoreError);
+                      }
+                      
+                      // Update local state
+                      setTransactions((prev) => prev.map((t) => 
+                        t.transactionHash === editPaidHash 
+                          ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
+                          : t
+                      ));
+                      requestEditPaidModalClose();
+                      setEditSwapHashInput("");
+                    }}
+                    style={{
+                      background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "10px 20px",
+                      color: "#ffffff",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      transition: "transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    Update
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
