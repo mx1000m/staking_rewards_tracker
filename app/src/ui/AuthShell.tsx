@@ -135,7 +135,21 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						}}>Solobeam</div>
 					</div>
 					<div style={{ position: "relative" }} ref={menuRef}>
-						<div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "8px", display: "inline-block" }}>
+						<div
+							style={{
+								background: "linear-gradient(45deg, #3788fd, #01e1fd)",
+								padding: "1px",
+								borderRadius: "8px",
+								display: "inline-block",
+								transition: "transform 0.2s",
+							}}
+							onMouseEnter={(e) => {
+								e.currentTarget.style.transform = "scale(1.05)";
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.transform = "scale(1)";
+							}}
+						>
 							<div
 								style={{
 									display: "flex",
