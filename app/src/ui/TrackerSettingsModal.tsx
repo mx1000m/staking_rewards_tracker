@@ -197,7 +197,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
         >
           <div
             style={{
-              background: "linear-gradient(45deg, #232055, #292967)",
+              background: "#1c1948",
               borderRadius: "17px",
               padding: "28px",
               maxHeight: "90vh",
@@ -263,23 +263,23 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 style={{
                   flex: 1,
                   padding: "12px 20px",
-                  background: currency === "EUR" ? "#6b6bff" : "#2a2a44",
-                  border: currency === "EUR" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
-              borderRadius: "10px",
-              color: currency === "EUR" ? "#ffffff" : "#24a7fd",
-              textTransform: "none",
+                  background: currency === "EUR" ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
+                  border: currency === "EUR" ? "none" : "1px solid #1a1a2e",
+                  borderRadius: "10px",
+                  color: currency === "EUR" ? "#ffffff" : "#24a7fd",
+                  textTransform: "none",
                   cursor: "pointer",
-              fontWeight: currency === "EUR" ? 600 : 400,
+                  fontWeight: currency === "EUR" ? 600 : 400,
                   transition: "all 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   if (currency !== "EUR") {
-                e.currentTarget.style.background = "#1a1648";
+                    e.currentTarget.style.background = "#1a1648";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (currency !== "EUR") {
-                e.currentTarget.style.background = "#110e3f";
+                    e.currentTarget.style.background = "#110e3f";
                   }
                 }}
               >
@@ -291,8 +291,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 style={{
                   flex: 1,
                   padding: "12px 20px",
-                  background: currency === "USD" ? "#6b6bff" : "#2a2a44",
-                  border: currency === "USD" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
+                  background: currency === "USD" ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
+                  border: currency === "USD" ? "none" : "1px solid #1a1a2e",
                   borderRadius: "10px",
                   color: currency === "USD" ? "#ffffff" : "#24a7fd",
                   textTransform: "none",
@@ -402,7 +402,15 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               </button>
             </div>
             <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem" }}>
-              Each user should bring their own Etherscan API key.
+              You can find your{" "}
+              <a
+                href="https://etherscan.io/apidashboard"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#24a7fd", textDecoration: "underline" }}
+              >
+                Etherscan API key here
+              </a>.
             </p>
           </div>
         </div>
