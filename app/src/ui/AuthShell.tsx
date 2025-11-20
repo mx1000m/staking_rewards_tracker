@@ -6,6 +6,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const [error, setError] = useState<string | null>(null);
 	const [signingIn, setSigningIn] = useState(false);
 	const [showUserMenu, setShowUserMenu] = useState(false);
+	const [userCardHovered, setUserCardHovered] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 
 	const headerStroke = "linear-gradient(45deg, #3788fd, #01e1fd)";
@@ -142,13 +143,10 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 								borderRadius: "8px",
 								display: "inline-block",
 								transition: "transform 0.2s",
+								transform: userCardHovered ? "scale(1.05)" : "scale(1)",
 							}}
-							onMouseEnter={(e) => {
-								e.currentTarget.style.transform = "scale(1.05)";
-							}}
-							onMouseLeave={(e) => {
-								e.currentTarget.style.transform = "scale(1)";
-							}}
+							onMouseEnter={() => setUserCardHovered(true)}
+							onMouseLeave={() => setUserCardHovered(false)}
 						>
 							<div
 								style={{
@@ -226,12 +224,12 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 											<img
 												src={userPhoto}
 												alt={userName}
-												style={{
-													width: "48px",
-													height: "48px",
-													borderRadius: "50%",
-													objectFit: "cover",
-												}}
+											style={{
+												width: "48px",
+												height: "48px",
+												borderRadius: "50%",
+												objectFit: "cover",
+											}}
 											/>
 										) : (
 											<div
@@ -295,20 +293,23 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									}}
 									style={{
 										width: "100%",
-										background: "#2a2a44",
-										color: "white",
+										background: "#110e3f",
+										color: "#24a7fd",
 										padding: "10px 16px",
 										border: "none",
 										borderRadius: "10px",
 										cursor: "pointer",
 										fontWeight: 500,
-										transition: "background 0.2s",
+										transition: "all 0.2s",
+										transform: "scale(1)",
 									}}
 									onMouseEnter={(e) => {
-										e.currentTarget.style.background = "#3a3a54";
+										e.currentTarget.style.background = "#1a1648";
+										e.currentTarget.style.transform = "scale(1.05)";
 									}}
 									onMouseLeave={(e) => {
-										e.currentTarget.style.background = "#2a2a44";
+										e.currentTarget.style.background = "#110e3f";
+										e.currentTarget.style.transform = "scale(1)";
 									}}
 								>
 									Sign out
