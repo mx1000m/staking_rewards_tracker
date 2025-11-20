@@ -274,7 +274,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                   textTransform: "none",
                   cursor: "pointer",
                   fontWeight: currency === "EUR" ? 600 : 400,
-                  transition: "all 0.2s",
+                  transition: "background 0.2s, color 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   if (currency !== "EUR") {
@@ -302,7 +302,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                   textTransform: "none",
                   cursor: "pointer",
                   fontWeight: currency === "USD" ? 600 : 400,
-                  transition: "all 0.2s",
+                  transition: "background 0.2s, color 0.2s",
                 }}
                 onMouseEnter={(e) => {
                   if (currency !== "USD") {
@@ -451,12 +451,16 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 borderRadius: "10px",
                 textTransform: "none",
                 border: "none",
+                transform: "scale(1)",
+                transition: "background 0.2s, transform 0.2s",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "#1a1648";
+                e.currentTarget.style.transform = "scale(1.05)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "#110e3f";
+                e.currentTarget.style.transform = "scale(1)";
               }}
             >
               Cancel
@@ -471,6 +475,14 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 color: "#ffffff",
                 textTransform: "none",
                 fontWeight: 600,
+                transform: "scale(1)",
+                transition: "transform 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "scale(1.05)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "scale(1)";
               }}
             >
               {saveButtonText}
