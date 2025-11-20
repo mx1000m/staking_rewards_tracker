@@ -34,7 +34,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [saveButtonText, setSaveButtonText] = useState("Save");
   const [animationState, setAnimationState] = useState<"enter" | "exit">("enter");
   const closeTimeoutRef = useRef<number | null>(null);
-  const MODAL_ANIMATION_DURATION = 350;
+  const MODAL_ANIMATION_DURATION = 175;
 
   useEffect(() => {
     // Prevent body scroll when modal is open

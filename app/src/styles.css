@@ -84,11 +84,6 @@ button:hover:not([disabled]) { background: #7c7cff; }
 button:active:not([disabled]) { transform: scale(0.95); }
 button[disabled] { opacity: 0.5; cursor: not-allowed; }
 button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54 !important; }
-/* Prevent font-weight from causing layout shifts */
-button[style*="fontWeight"] { 
-  font-weight: inherit !important;
-  transition: background 0.2s, color 0.2s, transform 0.2s !important;
-}
 .muted { color: #9aa0b4; font-size: 0.9rem; }
 
 .user-menu-popup {
@@ -108,7 +103,7 @@ button[style*="fontWeight"] {
 }
 
 .modal-overlay {
-  animation-duration: 0.25s;
+  animation-duration: 0.125s;
   animation-fill-mode: forwards;
 }
 
@@ -121,7 +116,7 @@ button[style*="fontWeight"] {
 }
 
 .modal-card {
-  animation-duration: 0.25s;
+  animation-duration: 0.125s;
   animation-fill-mode: forwards;
   will-change: opacity;
 }
