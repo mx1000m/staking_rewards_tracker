@@ -5,9 +5,12 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const { user, loading, signInWithGoogle, signInWithGitHub, logout } = useAuth();
 	const [error, setError] = useState<string | null>(null);
 	const [signingIn, setSigningIn] = useState(false);
-	const [showUserMenu, setShowUserMenu] = useState(false);
+	const [userMenuVisible, setUserMenuVisible] = useState(false);
+	const [userMenuAnimation, setUserMenuAnimation] = useState<"enter" | "exit">("exit");
 	const [userCardHovered, setUserCardHovered] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
+	const menuAnimationTimeoutRef = useRef<number | null>(null);
+	const USER_MENU_ANIMATION_DURATION = 450;
 
 	const headerStroke = "linear-gradient(45deg, #3788fd, #01e1fd)";
 	const panelGradient = "linear-gradient(45deg, #232055, #292967)";
@@ -70,22 +73,57 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		alert("Wallet connect (to be wired)");
 	};
 
+	const openUserMenu = () => {
+		if (menuAnimationTimeoutRef.current) {
+			window.clearTimeout(menuAnimationTimeoutRef.current);
+			menuAnimationTimeoutRef.current = null;
+		}
+		setUserMenuVisible(true);
+		setUserMenuAnimation("enter");
+	};
+
+	const closeUserMenu = () => {
+		setUserMenuAnimation("exit");
+		if (menuAnimationTimeoutRef.current) {
+			window.clearTimeout(menuAnimationTimeoutRef.current);
+		}
+		menuAnimationTimeoutRef.current = window.setTimeout(() => {
+			setUserMenuVisible(false);
+			menuAnimationTimeoutRef.current = null;
+		}, USER_MENU_ANIMATION_DURATION);
+	};
+
+	const toggleUserMenu = () => {
+		if (userMenuVisible && userMenuAnimation === "enter") {
+			closeUserMenu();
+		} else {
+			openUserMenu();
+		}
+	};
+
 	// Close user menu when clicking outside
 	useEffect(() => {
+		if (!userMenuVisible) return;
+
 		const handleClickOutside = (event: MouseEvent) => {
 			if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-				setShowUserMenu(false);
+				closeUserMenu();
 			}
 		};
 
-		if (showUserMenu) {
-			document.addEventListener("mousedown", handleClickOutside);
-		}
-
+		document.addEventListener("mousedown", handleClickOutside);
 		return () => {
 			document.removeEventListener("mousedown", handleClickOutside);
 		};
-	}, [showUserMenu]);
+	}, [userMenuVisible]);
+
+	useEffect(() => {
+		return () => {
+			if (menuAnimationTimeoutRef.current) {
+				window.clearTimeout(menuAnimationTimeoutRef.current);
+			}
+		};
+	}, []);
 
 	if (loading) {
 		return (
@@ -159,7 +197,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									background: "linear-gradient(45deg, #232055, #292967)",
 									transition: "all 0.2s",
 								}}
-								onClick={() => setShowUserMenu(!showUserMenu)}
+								onClick={toggleUserMenu}
 								onMouseEnter={(e) => {
 									e.currentTarget.style.background = "linear-gradient(45deg, #2a2a5f, #323277)";
 								}}
@@ -203,8 +241,9 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						</div>
 
 						{/* User Menu Popup */}
-						{showUserMenu && (
+						{userMenuVisible && (
 							<div
+								className={`user-menu-popup ${userMenuAnimation === "enter" ? "user-menu-enter" : "user-menu-exit"}`}
 								style={{
 									position: "absolute",
 									top: "calc(100% + 8px)",
@@ -261,7 +300,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 										</div>
 									</div>
 									<button
-										onClick={() => setShowUserMenu(false)}
+										onClick={closeUserMenu}
 										style={{
 											background: "transparent",
 											border: "none",
@@ -289,7 +328,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 								<button
 									onClick={() => {
 										logout();
-										setShowUserMenu(false);
+										closeUserMenu();
 									}}
 									style={{
 										width: "100%",
