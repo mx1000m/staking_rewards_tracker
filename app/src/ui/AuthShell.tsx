@@ -256,7 +256,37 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									zIndex: 1000,
 								}}
 							>
-								<div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "20px" }}>
+								<div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "20px", position: "relative" }}>
+								<button
+									onClick={closeUserMenu}
+									style={{
+										position: "absolute",
+										top: "10px",
+										right: "10px",
+										background: "transparent",
+										border: "none",
+										color: "#9aa0b4",
+										fontSize: "22px",
+										cursor: "pointer",
+										padding: 0,
+										width: "28px",
+										height: "28px",
+										display: "flex",
+										alignItems: "center",
+										justifyContent: "center",
+										transition: "color 0.2s, transform 0.2s",
+									}}
+									onMouseEnter={(e) => {
+										e.currentTarget.style.color = "#e8e8f0";
+										e.currentTarget.style.transform = "scale(1.05)";
+									}}
+									onMouseLeave={(e) => {
+										e.currentTarget.style.color = "#9aa0b4";
+										e.currentTarget.style.transform = "scale(1)";
+									}}
+								>
+									×
+								</button>
 								<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px" }}>
 									<div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
 										{userPhoto ? (
@@ -299,31 +329,6 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 											)}
 										</div>
 									</div>
-									<button
-										onClick={closeUserMenu}
-										style={{
-											background: "transparent",
-											border: "none",
-											color: "#9aa0b4",
-											fontSize: "20px",
-											cursor: "pointer",
-											padding: "0",
-											width: "24px",
-											height: "24px",
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											transition: "color 0.2s",
-										}}
-										onMouseEnter={(e) => {
-											e.currentTarget.style.color = "#e8e8f0";
-										}}
-										onMouseLeave={(e) => {
-											e.currentTarget.style.color = "#9aa0b4";
-										}}
-									>
-										×
-									</button>
 								</div>
 								<button
 									onClick={() => {

@@ -67,33 +67,28 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 
 @keyframes userMenuEnter {
   0% {
-    transform: translateX(120%) scale(0.96);
-    opacity: 0;
+    transform: translateX(120%);
   }
   65% {
-    transform: translateX(-6%) scale(1.03);
-    opacity: 1;
+    transform: translateX(-6%);
   }
   85% {
-    transform: translateX(3%) scale(0.99);
+    transform: translateX(3%);
   }
   100% {
     transform: translateX(0);
-    opacity: 1;
   }
 }
 
 @keyframes userMenuExit {
   0% {
     transform: translateX(0);
-    opacity: 1;
   }
   20% {
-    transform: translateX(-4%) scale(1.01);
+    transform: translateX(-4%);
   }
   100% {
-    transform: translateX(120%) scale(0.94);
-    opacity: 0;
+    transform: translateX(120%);
   }
 }
 
