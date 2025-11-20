@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
 import { getTransactions } from "../api/etherscan";
 import { getEthPriceAtTimestamp } from "../api/coingecko";
@@ -52,6 +52,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null); // null means "ALL"
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportYear, setExportYear] = useState<number>(new Date().getFullYear());
+  const [exportModalAnimation, setExportModalAnimation] = useState<"enter" | "exit">("enter");
+  const exportModalCloseTimeoutRef = useRef<number | null>(null);
+  const EXPORT_MODAL_ANIMATION_DURATION = 175;
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
 
@@ -61,6 +64,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrackerId]);
+
+  // Handle export modal body overflow and animation
+  useEffect(() => {
+    if (showExportModal) {
+      // Calculate scrollbar width to prevent layout shift
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+      
+      document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+      setExportModalAnimation("enter");
+      
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [showExportModal]);
+
+  const requestExportModalClose = () => {
+    setExportModalAnimation("exit");
+    if (exportModalCloseTimeoutRef.current) {
+      clearTimeout(exportModalCloseTimeoutRef.current);
+    }
+    exportModalCloseTimeoutRef.current = window.setTimeout(() => {
+      setShowExportModal(false);
+      exportModalCloseTimeoutRef.current = null;
+    }, EXPORT_MODAL_ANIMATION_DURATION);
+  };
 
   // Load transactions: first from cache, then sync with Firestore, then fetch new ones if needed
   const loadTransactions = async (tracker: Tracker) => {
@@ -1378,59 +1413,155 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* Export CSV Modal */}
       {showExportModal && (
         <div
+          className={`modal-overlay ${exportModalAnimation === "enter" ? "modal-overlay-enter" : "modal-overlay-exit"}`}
           style={{
             position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.7)",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 1200,
-            padding: 20,
+            padding: "20px",
           }}
-          onClick={() => setShowExportModal(false)}
+          onClick={requestExportModalClose}
         >
-          <div className="card" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ marginTop: 0 }}>Export CSV</h3>
-            <p className="muted" style={{ marginTop: 0 }}>Select the year to export transactions for.</p>
-            <div style={{ marginTop: 16 }}>
-              <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-                Year
-              </label>
-              <select
-                value={exportYear}
-                onChange={(e) => setExportYear(parseInt(e.target.value))}
+          <div
+            className={`modal-card ${exportModalAnimation === "enter" ? "modal-card-enter" : "modal-card-exit"}`}
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: "linear-gradient(45deg, #3788fd, #01e1fd)",
+                padding: "1px",
+                borderRadius: "18px",
+              }}
+            >
+              <div
                 style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  background: "#0e0e1a",
-                  border: "1px solid #1a1a2e",
-                  borderRadius: "10px",
-                  color: "#e8e8f0",
-                  fontSize: "1rem",
+                  background: "#1c1948",
+                  borderRadius: "17px",
+                  padding: "28px",
                 }}
               >
-                {availableYears.length > 0 ? (
-                  availableYears.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))
-                ) : (
-                  <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
-                )}
-              </select>
-            </div>
-            <div className="actions" style={{ marginTop: 16 }}>
-              <button style={{ background: "#2a2a44" }} onClick={() => setShowExportModal(false)}>
-                Cancel
-              </button>
-              <button
-                onClick={() => exportToCSV(exportYear)}
-                disabled={availableYears.length === 0}
-              >
-                Export
-              </button>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 style={{ margin: 0 }}>Export CSV</h3>
+                  <button
+                    onClick={requestExportModalClose}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#9aa0b4",
+                      fontSize: "24px",
+                      cursor: "pointer",
+                      padding: "0",
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      transition: "color 0.2s, transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#e8e8f0";
+                      e.currentTarget.style.transform = "scale(1.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#9aa0b4";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="muted" style={{ marginTop: 0, marginBottom: "16px" }}>Select the year to export transactions for.</p>
+                <div style={{ marginTop: 16 }}>
+                  <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
+                    Year
+                  </label>
+                  <select
+                    className="gradient-select"
+                    value={exportYear}
+                    onChange={(e) => setExportYear(parseInt(e.target.value))}
+                    style={{
+                      width: "100%",
+                      paddingRight: "40px",
+                    }}
+                  >
+                    {availableYears.length > 0 ? (
+                      availableYears.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))
+                    ) : (
+                      <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
+                    )}
+                  </select>
+                </div>
+                <div className="actions" style={{ marginTop: "32px" }}>
+                  <button
+                    onClick={requestExportModalClose}
+                    style={{
+                      background: "#110e3f",
+                      color: "#24a7fd",
+                      padding: "10px 20px",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      border: "none",
+                      transition: "background 0.2s, transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#1a1648";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#110e3f";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      exportToCSV(exportYear);
+                      requestExportModalClose();
+                    }}
+                    disabled={availableYears.length === 0}
+                    style={{
+                      background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "10px 20px",
+                      color: "#ffffff",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      transition: "transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!e.currentTarget.disabled) {
+                        e.currentTarget.style.transform = "scale(1.05)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    Export
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
