@@ -59,6 +59,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [exportModalAnimation, setExportModalAnimation] = useState<"enter" | "exit">("enter");
   const exportModalCloseTimeoutRef = useRef<number | null>(null);
   const EXPORT_MODAL_ANIMATION_DURATION = 175;
+  const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
@@ -593,7 +594,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* All Nodes Overview */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>All nodes overview</h3>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "24px" }}>
-        <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
+          <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
+            onMouseEnter={() => setVisibleTooltip("rewards")}
+            onMouseLeave={() => setVisibleTooltip(null)}
+          >
+            <img 
+              src="/staking_rewards_tracker/icons/info_icon.svg" 
+              alt="Info" 
+              style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
+            />
+            {visibleTooltip === "rewards" && (
+              <div style={{
+                position: "absolute",
+                top: "50%",
+                left: "calc(100% + 12px)",
+                transform: "translateY(-50%)",
+                background: "#1a1a2e",
+                color: "white",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                whiteSpace: "pre-line",
+                minWidth: "200px",
+                maxWidth: "250px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                zIndex: 1000,
+                opacity: visibleTooltip === "rewards" ? 1 : 0,
+                transition: "opacity 0.2s",
+                pointerEvents: "none",
+              }}>
+                Cumulative staking{'\n'}rewards distributed to{'\n'}all nodes across all{'\n'}years.
+              </div>
+            )}
+          </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL REWARDS</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalRewards.toFixed(2)}
@@ -602,7 +636,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthRewards.toFixed(6)} ETH
           </p>
         </div>
-        <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
+          <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
+            onMouseEnter={() => setVisibleTooltip("taxes")}
+            onMouseLeave={() => setVisibleTooltip(null)}
+          >
+            <img 
+              src="/staking_rewards_tracker/icons/info_icon.svg" 
+              alt="Info" 
+              style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
+            />
+            {visibleTooltip === "taxes" && (
+              <div style={{
+                position: "absolute",
+                top: "50%",
+                left: "calc(100% + 12px)",
+                transform: "translateY(-50%)",
+                background: "#1a1a2e",
+                color: "white",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                whiteSpace: "pre-line",
+                minWidth: "200px",
+                maxWidth: "250px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                zIndex: 1000,
+                opacity: visibleTooltip === "taxes" ? 1 : 0,
+                transition: "opacity 0.2s",
+                pointerEvents: "none",
+              }}>
+                Cumulative taxes at{'\n'}selected country rate{'\n'}across all nodes and years.
+              </div>
+            )}
+          </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL TAXES</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalTaxes.toFixed(2)}
@@ -611,7 +678,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthTaxes.toFixed(6)} ETH
           </p>
         </div>
-        <div style={{ background: "linear-gradient(45deg, #b6325f, #ff887c)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "linear-gradient(45deg, #b6325f, #ff887c)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
+          <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
+            onMouseEnter={() => setVisibleTooltip("leftToSwap")}
+            onMouseLeave={() => setVisibleTooltip(null)}
+          >
+            <img 
+              src="/staking_rewards_tracker/icons/info_icon.svg" 
+              alt="Info" 
+              style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
+            />
+            {visibleTooltip === "leftToSwap" && (
+              <div style={{
+                position: "absolute",
+                top: "50%",
+                left: "calc(100% + 12px)",
+                transform: "translateY(-50%)",
+                background: "#1a1a2e",
+                color: "white",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                whiteSpace: "pre-line",
+                minWidth: "200px",
+                maxWidth: "250px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                zIndex: 1000,
+                opacity: visibleTooltip === "leftToSwap" ? 1 : 0,
+                transition: "opacity 0.2s",
+                pointerEvents: "none",
+              }}>
+                Cumulative taxes{'\n'}remaining to swap{'\n'}to stables across{'\n'}all nodes and years.
+              </div>
+            )}
+          </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL LEFT TO SWAP</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalLeftToSwap.toFixed(2)}
@@ -620,7 +720,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthLeftToSwap.toFixed(6)} ETH
           </p>
         </div>
-        <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+        <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
+          <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
+            onMouseEnter={() => setVisibleTooltip("swapped")}
+            onMouseLeave={() => setVisibleTooltip(null)}
+          >
+            <img 
+              src="/staking_rewards_tracker/icons/info_icon.svg" 
+              alt="Info" 
+              style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
+            />
+            {visibleTooltip === "swapped" && (
+              <div style={{
+                position: "absolute",
+                top: "50%",
+                left: "calc(100% + 12px)",
+                transform: "translateY(-50%)",
+                background: "#1a1a2e",
+                color: "white",
+                padding: "8px 12px",
+                borderRadius: "8px",
+                fontSize: "0.85rem",
+                whiteSpace: "pre-line",
+                minWidth: "200px",
+                maxWidth: "250px",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                zIndex: 1000,
+                opacity: visibleTooltip === "swapped" ? 1 : 0,
+                transition: "opacity 0.2s",
+                pointerEvents: "none",
+              }}>
+                Cumulative amount{'\n'}swapped to stables{'\n'}across all nodes and years.
+              </div>
+            )}
+          </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL SWAPPED</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalSwapped.toFixed(2)}
@@ -1557,7 +1690,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   value={editSwapHashInput}
                   onChange={(e) => setEditSwapHashInput(e.target.value.trim())}
                 />
-                <div className="actions" style={{ marginTop: "32px" }}>
+                <div className="actions" style={{ marginTop: "32px", display: "flex", gap: "12px", justifyContent: "flex-start" }}>
                   <button
                     style={{
                       background: "#ef4444",
@@ -1606,7 +1739,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       e.currentTarget.style.transform = "scale(1)";
                     }}
                   >
-                    Mark as Unpaid
+                    Mark as unpaid
                   </button>
                   <button
                     onClick={requestEditPaidModalClose}
