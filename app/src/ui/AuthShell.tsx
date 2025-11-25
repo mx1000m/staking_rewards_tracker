@@ -161,8 +161,17 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						right: 0,
 						height: "1px",
 						background: "linear-gradient(90deg, #3788fd, #01e1fd)",
+					}}></div>
+					{/* Glow effect - positioned outside only */}
+					<div style={{
+						position: "absolute",
+						bottom: "-1px",
+						left: 0,
+						right: 0,
+						height: "1px",
+						background: "linear-gradient(90deg, #3788fd, #01e1fd)",
 						boxShadow: glowShadow,
-						filter: "drop-shadow(0 0 6px rgba(1, 225, 253, 0.8))",
+						pointerEvents: "none",
 					}}></div>
 						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
 						{/* Logo with gradient */}

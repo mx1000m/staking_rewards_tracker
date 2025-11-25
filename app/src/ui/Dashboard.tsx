@@ -1559,28 +1559,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 />
                 <div className="actions" style={{ marginTop: "32px" }}>
                   <button
-                    onClick={requestEditPaidModalClose}
-                    style={{
-                      background: "#110e3f",
-                      color: "#24a7fd",
-                      padding: "10px 20px",
-                      borderRadius: "10px",
-                      textTransform: "none",
-                      border: "none",
-                      transition: "background 0.2s, transform 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#1a1648";
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#110e3f";
-                      e.currentTarget.style.transform = "scale(1)";
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
                     style={{
                       background: "#ef4444",
                       color: "white",
@@ -1629,6 +1607,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     }}
                   >
                     Mark as Unpaid
+                  </button>
+                  <button
+                    onClick={requestEditPaidModalClose}
+                    style={{
+                      background: "#110e3f",
+                      color: "#24a7fd",
+                      padding: "10px 20px",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      border: "none",
+                      transition: "background 0.2s, transform 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#1a1648";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#110e3f";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }}
+                  >
+                    Cancel
                   </button>
                   <button
                     onClick={async () => {
