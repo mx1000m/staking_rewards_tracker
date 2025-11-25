@@ -15,7 +15,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const headerStroke = "linear-gradient(45deg, #3788fd, #01e1fd)";
 	const panelGradient = "linear-gradient(45deg, #232055, #292967)";
 	const accentBlue = "#24a7fd";
-	const glowShadow = "0 0 20px rgba(1, 225, 253, 0.5)";
+	const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
 
 	const handleGoogleSignIn = async () => {
 		setSigningIn(true);
@@ -162,6 +162,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						height: "1px",
 						background: "linear-gradient(90deg, #3788fd, #01e1fd)",
 						boxShadow: glowShadow,
+						filter: "drop-shadow(0 0 6px rgba(1, 225, 253, 0.8))",
 					}}></div>
 						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
 						{/* Logo with gradient */}

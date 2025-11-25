@@ -61,7 +61,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const EXPORT_MODAL_ANIMATION_DURATION = 175;
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
-  const glowShadow = "0 0 20px rgba(1, 225, 253, 0.5)";
+  const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
 
   useEffect(() => {
     if (activeTracker) {
