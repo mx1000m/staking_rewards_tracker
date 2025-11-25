@@ -609,9 +609,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 className="tooltip-gradient-border"
                 style={{
                   position: "absolute",
-                  top: "50%",
-                  left: "calc(100% + 8px)",
-                  transform: "translateY(-50%)",
+                  top: "calc(100% + 8px)",
+                  right: "8px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -653,9 +652,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 className="tooltip-gradient-border"
                 style={{
                   position: "absolute",
-                  top: "50%",
-                  left: "calc(100% + 8px)",
-                  transform: "translateY(-50%)",
+                  top: "calc(100% + 8px)",
+                  right: "8px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -697,9 +695,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 className="tooltip-gradient-border"
                 style={{
                   position: "absolute",
-                  top: "50%",
-                  left: "calc(100% + 8px)",
-                  transform: "translateY(-50%)",
+                  top: "calc(100% + 8px)",
+                  right: "8px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -741,9 +738,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 className="tooltip-gradient-border"
                 style={{
                   position: "absolute",
-                  top: "50%",
-                  left: "calc(100% + 8px)",
-                  transform: "translateY(-50%)",
+                  top: "calc(100% + 8px)",
+                  right: "8px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
