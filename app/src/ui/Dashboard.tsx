@@ -61,6 +61,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const EXPORT_MODAL_ANIMATION_DURATION = 175;
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
+  const glowShadow = "0 0 20px rgba(1, 225, 253, 0.5)";
 
   useEffect(() => {
     if (activeTracker) {
@@ -632,7 +633,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
       {/* Your Nodes */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Your nodes</h3>
-      <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", marginBottom: "24px" }}>
+      <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", marginBottom: "24px", boxShadow: glowShadow }}>
         <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
           {trackers.map((tracker) => (
@@ -720,7 +721,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {activeTracker && (
         <>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Node selected</h3>
-          <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", marginBottom: "24px" }}>
+          <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", marginBottom: "24px", boxShadow: glowShadow }}>
             <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
@@ -732,8 +733,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 onMouseEnter={(e) => {
                   const p = e.currentTarget.querySelector("p");
                   const img = e.currentTarget.querySelector("img");
-                  if (p) p.style.color = "#6a6bf6";
-                  if (img) img.style.filter = "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)";
+                  const hoverColor = "#24a7fd";
+                  if (p) p.style.color = hoverColor;
+                  if (img) img.style.filter = "brightness(0) saturate(100%) invert(62%) sepia(59%) saturate(653%) hue-rotate(161deg) brightness(101%) contrast(95%)";
                 }}
                 onMouseLeave={(e) => {
                   const p = e.currentTarget.querySelector("p");
@@ -912,7 +914,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {activeTracker && (
         <>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Incoming rewards</h3>
-          <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px" }}>
+          <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", boxShadow: glowShadow }}>
             <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
           {/* Year Filter */}
           {availableYears.length > 0 && (
