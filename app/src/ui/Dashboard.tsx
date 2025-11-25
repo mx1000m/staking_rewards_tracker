@@ -605,26 +605,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
             />
             {visibleTooltip === "rewards" && (
-              <div style={{
-                position: "absolute",
-                top: "50%",
-                left: "calc(100% + 12px)",
-                transform: "translateY(-50%)",
-                background: "#1a1a2e",
-                color: "white",
-                padding: "8px 12px",
-                borderRadius: "8px",
-                fontSize: "0.85rem",
-                whiteSpace: "pre-line",
-                minWidth: "200px",
-                maxWidth: "250px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                zIndex: 1000,
-                opacity: visibleTooltip === "rewards" ? 1 : 0,
-                transition: "opacity 0.2s",
-                pointerEvents: "none",
-              }}>
-                Cumulative staking{'\n'}rewards distributed to{'\n'}all nodes across all{'\n'}years.
+              <div 
+                className="tooltip-gradient-border"
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "calc(100% + 8px)",
+                  transform: "translateY(-50%)",
+                  minWidth: "200px",
+                  maxWidth: "250px",
+                  zIndex: 1000,
+                  opacity: visibleTooltip === "rewards" ? 1 : 0,
+                  transition: "opacity 0.2s",
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="tooltip-content" style={{
+                  color: "white",
+                  fontSize: "0.85rem",
+                  whiteSpace: "pre-line",
+                }}>
+                  Cumulative staking{'\n'}rewards distributed to{'\n'}all nodes across all{'\n'}years.
+                </div>
               </div>
             )}
           </div>
@@ -647,26 +649,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
             />
             {visibleTooltip === "taxes" && (
-              <div style={{
-                position: "absolute",
-                top: "50%",
-                left: "calc(100% + 12px)",
-                transform: "translateY(-50%)",
-                background: "#1a1a2e",
-                color: "white",
-                padding: "8px 12px",
-                borderRadius: "8px",
-                fontSize: "0.85rem",
-                whiteSpace: "pre-line",
-                minWidth: "200px",
-                maxWidth: "250px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                zIndex: 1000,
-                opacity: visibleTooltip === "taxes" ? 1 : 0,
-                transition: "opacity 0.2s",
-                pointerEvents: "none",
-              }}>
-                Cumulative taxes at{'\n'}selected country rate{'\n'}across all nodes and years.
+              <div 
+                className="tooltip-gradient-border"
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "calc(100% + 8px)",
+                  transform: "translateY(-50%)",
+                  minWidth: "200px",
+                  maxWidth: "250px",
+                  zIndex: 1000,
+                  opacity: visibleTooltip === "taxes" ? 1 : 0,
+                  transition: "opacity 0.2s",
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="tooltip-content" style={{
+                  color: "white",
+                  fontSize: "0.85rem",
+                  whiteSpace: "pre-line",
+                }}>
+                  Cumulative taxes at{'\n'}selected country rate{'\n'}across all nodes and years.
+                </div>
               </div>
             )}
           </div>
@@ -689,26 +693,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
             />
             {visibleTooltip === "leftToSwap" && (
-              <div style={{
-                position: "absolute",
-                top: "50%",
-                left: "calc(100% + 12px)",
-                transform: "translateY(-50%)",
-                background: "#1a1a2e",
-                color: "white",
-                padding: "8px 12px",
-                borderRadius: "8px",
-                fontSize: "0.85rem",
-                whiteSpace: "pre-line",
-                minWidth: "200px",
-                maxWidth: "250px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                zIndex: 1000,
-                opacity: visibleTooltip === "leftToSwap" ? 1 : 0,
-                transition: "opacity 0.2s",
-                pointerEvents: "none",
-              }}>
-                Cumulative taxes{'\n'}remaining to swap{'\n'}to stables across{'\n'}all nodes and years.
+              <div 
+                className="tooltip-gradient-border"
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "calc(100% + 8px)",
+                  transform: "translateY(-50%)",
+                  minWidth: "200px",
+                  maxWidth: "250px",
+                  zIndex: 1000,
+                  opacity: visibleTooltip === "leftToSwap" ? 1 : 0,
+                  transition: "opacity 0.2s",
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="tooltip-content" style={{
+                  color: "white",
+                  fontSize: "0.85rem",
+                  whiteSpace: "pre-line",
+                }}>
+                  Cumulative taxes{'\n'}remaining to swap{'\n'}to stables across{'\n'}all nodes and years.
+                </div>
               </div>
             )}
           </div>
@@ -731,26 +737,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
             />
             {visibleTooltip === "swapped" && (
-              <div style={{
-                position: "absolute",
-                top: "50%",
-                left: "calc(100% + 12px)",
-                transform: "translateY(-50%)",
-                background: "#1a1a2e",
-                color: "white",
-                padding: "8px 12px",
-                borderRadius: "8px",
-                fontSize: "0.85rem",
-                whiteSpace: "pre-line",
-                minWidth: "200px",
-                maxWidth: "250px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-                zIndex: 1000,
-                opacity: visibleTooltip === "swapped" ? 1 : 0,
-                transition: "opacity 0.2s",
-                pointerEvents: "none",
-              }}>
-                Cumulative amount{'\n'}swapped to stables{'\n'}across all nodes and years.
+              <div 
+                className="tooltip-gradient-border"
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  left: "calc(100% + 8px)",
+                  transform: "translateY(-50%)",
+                  minWidth: "200px",
+                  maxWidth: "250px",
+                  zIndex: 1000,
+                  opacity: visibleTooltip === "swapped" ? 1 : 0,
+                  transition: "opacity 0.2s",
+                  pointerEvents: "none",
+                }}
+              >
+                <div className="tooltip-content" style={{
+                  color: "white",
+                  fontSize: "0.85rem",
+                  whiteSpace: "pre-line",
+                }}>
+                  Cumulative amount{'\n'}swapped to stables{'\n'}across all nodes and years.
+                </div>
               </div>
             )}
           </div>
