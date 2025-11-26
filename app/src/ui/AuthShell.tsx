@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { Landing } from "./Landing";
 
 export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const { user, loading, signInWithGoogle, signInWithGitHub, logout } = useAuth();
@@ -8,9 +9,14 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const [userMenuVisible, setUserMenuVisible] = useState(false);
 	const [userMenuAnimation, setUserMenuAnimation] = useState<"enter" | "exit">("exit");
 	const [userCardHovered, setUserCardHovered] = useState(false);
+	const [showSignInModal, setShowSignInModal] = useState(false);
+	const [signInModalAnimation, setSignInModalAnimation] = useState<"enter" | "exit">("enter");
 	const menuRef = useRef<HTMLDivElement>(null);
+	const signInModalRef = useRef<HTMLDivElement>(null);
 	const menuAnimationTimeoutRef = useRef<number | null>(null);
+	const signInModalCloseTimeoutRef = useRef<number | null>(null);
 	const USER_MENU_ANIMATION_DURATION = 450;
+	const SIGN_IN_MODAL_ANIMATION_DURATION = 175;
 
 	const headerStroke = "linear-gradient(45deg, #3788fd, #01e1fd)";
 	const panelGradient = "linear-gradient(45deg, #232055, #292967)";
@@ -118,10 +124,49 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		};
 	}, [userMenuVisible]);
 
+	const openSignInModal = () => {
+		if (signInModalCloseTimeoutRef.current) {
+			window.clearTimeout(signInModalCloseTimeoutRef.current);
+			signInModalCloseTimeoutRef.current = null;
+		}
+		setShowSignInModal(true);
+		setSignInModalAnimation("enter");
+	};
+
+	const closeSignInModal = () => {
+		setSignInModalAnimation("exit");
+		if (signInModalCloseTimeoutRef.current) {
+			window.clearTimeout(signInModalCloseTimeoutRef.current);
+		}
+		signInModalCloseTimeoutRef.current = window.setTimeout(() => {
+			setShowSignInModal(false);
+			signInModalCloseTimeoutRef.current = null;
+		}, SIGN_IN_MODAL_ANIMATION_DURATION);
+	};
+
+	// Close sign-in modal when clicking outside
+	useEffect(() => {
+		if (!showSignInModal) return;
+
+		const handleClickOutside = (event: MouseEvent) => {
+			if (signInModalRef.current && !signInModalRef.current.contains(event.target as Node)) {
+				closeSignInModal();
+			}
+		};
+
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => {
+			document.removeEventListener("mousedown", handleClickOutside);
+		};
+	}, [showSignInModal]);
+
 	useEffect(() => {
 		return () => {
 			if (menuAnimationTimeoutRef.current) {
 				window.clearTimeout(menuAnimationTimeoutRef.current);
+			}
+			if (signInModalCloseTimeoutRef.current) {
+				window.clearTimeout(signInModalCloseTimeoutRef.current);
 			}
 		};
 	}, []);
@@ -382,27 +427,157 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		);
 	}
 
-	// User is not signed in, show sign-in options only
+	// User is not signed in, show landing page
 	return (
-		<div className="card">
-			<h2>Sign in</h2>
-			<p className="muted">Choose a method to continue.</p>
-			{error && (
-				<div style={{ padding: "12px", background: "#2a1a1a", border: "1px solid #ff4444", borderRadius: "8px", marginBottom: "16px", color: "#ff8888" }}>
-					{error}
+		<>
+			<Landing onSignInClick={openSignInModal} />
+			
+			{/* Sign-in Modal */}
+			{showSignInModal && (
+				<div
+					className={`modal-overlay ${signInModalAnimation === "enter" ? "modal-overlay-enter" : "modal-overlay-exit"}`}
+					style={{
+						position: "fixed",
+						top: 0,
+						left: 0,
+						width: "100%",
+						height: "100%",
+						background: "rgba(0, 0, 0, 0.7)",
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						zIndex: 1000,
+						backdropFilter: "blur(4px)",
+					}}
+					onClick={closeSignInModal}
+				>
+					<div
+						ref={signInModalRef}
+						className={`modal-card ${signInModalAnimation === "enter" ? "modal-card-enter" : "modal-card-exit"}`}
+						style={{
+							background: "linear-gradient(45deg, #3788fd, #01e1fd)",
+							padding: "1px",
+							borderRadius: "14px",
+							boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+							maxWidth: "400px",
+							width: "90%",
+						}}
+						onClick={(e) => e.stopPropagation()}
+					>
+						<div
+							style={{
+								background: "linear-gradient(45deg, #232055, #292967)",
+								borderRadius: "13px",
+								padding: "32px",
+							}}
+						>
+							<h2 style={{ margin: "0 0 8px 0", fontSize: "1.5rem", fontWeight: 600, color: "#e8e8f0" }}>
+								Sign in
+							</h2>
+							<p className="muted" style={{ margin: "0 0 24px 0", color: "#9aa0b4" }}>
+								Choose a method to continue.
+							</p>
+							{error && (
+								<div style={{ padding: "12px", background: "#2a1a1a", border: "1px solid #ff4444", borderRadius: "8px", marginBottom: "16px", color: "#ff8888" }}>
+									{error}
+								</div>
+							)}
+							<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+								<button
+									onClick={handleGoogleSignIn}
+									disabled={signingIn}
+									style={{
+										background: "#24a7fd",
+										color: "#ffffff",
+										padding: "12px 20px",
+										border: "none",
+										borderRadius: "10px",
+										cursor: signingIn ? "not-allowed" : "pointer",
+										fontSize: "1rem",
+										fontWeight: 500,
+										transition: "all 0.2s",
+										opacity: signingIn ? 0.6 : 1,
+									}}
+									onMouseEnter={(e) => {
+										if (!signingIn) {
+											e.currentTarget.style.background = "#2db3ff";
+											e.currentTarget.style.transform = "scale(1.02)";
+										}
+									}}
+									onMouseLeave={(e) => {
+										if (!signingIn) {
+											e.currentTarget.style.background = "#24a7fd";
+											e.currentTarget.style.transform = "scale(1)";
+										}
+									}}
+								>
+									{signingIn ? "Signing in..." : "Google"}
+								</button>
+								<button
+									onClick={handleGitHubSignIn}
+									disabled={signingIn}
+									style={{
+										background: "#24a7fd",
+										color: "#ffffff",
+										padding: "12px 20px",
+										border: "none",
+										borderRadius: "10px",
+										cursor: signingIn ? "not-allowed" : "pointer",
+										fontSize: "1rem",
+										fontWeight: 500,
+										transition: "all 0.2s",
+										opacity: signingIn ? 0.6 : 1,
+									}}
+									onMouseEnter={(e) => {
+										if (!signingIn) {
+											e.currentTarget.style.background = "#2db3ff";
+											e.currentTarget.style.transform = "scale(1.02)";
+										}
+									}}
+									onMouseLeave={(e) => {
+										if (!signingIn) {
+											e.currentTarget.style.background = "#24a7fd";
+											e.currentTarget.style.transform = "scale(1)";
+										}
+									}}
+								>
+									{signingIn ? "Signing in..." : "GitHub"}
+								</button>
+								<button
+									onClick={handleWalletConnect}
+									disabled={signingIn}
+									style={{
+										background: "#24a7fd",
+										color: "#ffffff",
+										padding: "12px 20px",
+										border: "none",
+										borderRadius: "10px",
+										cursor: signingIn ? "not-allowed" : "pointer",
+										fontSize: "1rem",
+										fontWeight: 500,
+										transition: "all 0.2s",
+										opacity: signingIn ? 0.6 : 1,
+									}}
+									onMouseEnter={(e) => {
+										if (!signingIn) {
+											e.currentTarget.style.background = "#2db3ff";
+											e.currentTarget.style.transform = "scale(1.02)";
+										}
+									}}
+									onMouseLeave={(e) => {
+										if (!signingIn) {
+											e.currentTarget.style.background = "#24a7fd";
+											e.currentTarget.style.transform = "scale(1)";
+										}
+									}}
+								>
+									Connect Wallet
+								</button>
+							</div>
+						</div>
+					</div>
 				</div>
 			)}
-			<div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-				<button onClick={handleGoogleSignIn} disabled={signingIn}>
-					{signingIn ? "Signing in..." : "Google"}
-				</button>
-				<button onClick={handleGitHubSignIn} disabled={signingIn}>
-					{signingIn ? "Signing in..." : "GitHub"}
-				</button>
-				<button onClick={handleWalletConnect} disabled={signingIn}>
-					Connect Wallet
-				</button>
-			</div>
-		</div>
+		</>
 	);
 };
