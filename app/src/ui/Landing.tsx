@@ -1,154 +1,261 @@
 import React, { useState, useEffect, useRef } from "react";
+import * as THREE from "three";
 
 interface LandingProps {
   onSignInClick: () => void;
 }
 
 export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number>();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<{
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    tubes: THREE.Mesh[];
+    mouse: THREE.Vector2;
+    targetMouse: THREE.Vector2;
+    points: THREE.Vector3[];
+  } | null>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!containerRef.current) return;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const container = containerRef.current;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
 
-    // Set canvas size
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resizeCanvas();
-    window.addEventListener("resize", resizeCanvas);
+    // Scene setup
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1b1945);
 
-    // Mouse position
-    const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+    camera.position.z = 5;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    // Mouse tracking
+    const mouse = new THREE.Vector2();
+    const targetMouse = new THREE.Vector2();
+    const points: THREE.Vector3[] = [];
+    const maxPoints = 30;
+
+    // Colors for tubes (pink, cyan, green, blue, purple)
+    const colors = [
+      new THREE.Color(0xff00ff), // Pink
+      new THREE.Color(0x00ffff), // Cyan
+      new THREE.Color(0x00ff88), // Green
+      new THREE.Color(0x0088ff), // Blue
+      new THREE.Color(0x8800ff), // Purple
+    ];
+
+    const tubes: THREE.Mesh[] = [];
+    const tubeCount = 5;
+
+    // Create tubes
+    for (let i = 0; i < tubeCount; i++) {
+      const geometry = new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, 0, 0),
+        ]),
+        64,
+        0.03 + i * 0.015,
+        16,
+        false
+      );
+
+      const material = new THREE.MeshStandardMaterial({
+        color: colors[i % colors.length],
+        emissive: colors[i % colors.length],
+        emissiveIntensity: 1.5,
+        metalness: 0.1,
+        roughness: 0.1,
+        transparent: true,
+        opacity: 0.9,
+      });
+
+      const tube = new THREE.Mesh(geometry, material);
+      scene.add(tube);
+      tubes.push(tube);
+    }
+
+    // Add lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const lights = [
+      new THREE.PointLight(colors[0], 1, 10),
+      new THREE.PointLight(colors[1], 1, 10),
+      new THREE.PointLight(colors[2], 1, 10),
+      new THREE.PointLight(colors[3], 1, 10),
+    ];
+
+    lights.forEach((light, i) => {
+      light.position.set(
+        (i - 1.5) * 2,
+        (i % 2) * 2 - 1,
+        2
+      );
+      scene.add(light);
+    });
+
+    // Mouse move handler
     const handleMouseMove = (e: MouseEvent) => {
-      mouse.x = e.clientX;
-      mouse.y = e.clientY;
+      targetMouse.x = (e.clientX / width) * 2 - 1;
+      targetMouse.y = -(e.clientY / height) * 2 + 1;
     };
+
     window.addEventListener("mousemove", handleMouseMove);
 
-    // Tube/particle system
-    interface Tube {
-      x: number;
-      y: number;
-      vx: number;
-      vy: number;
-      radius: number;
-      hue: number;
-      baseHue: number;
-    }
+    // Animation
+    const lerpFactor = 0.15;
+    let animationFrameId: number;
 
-    const tubes: Tube[] = [];
-    const tubeCount = 80;
-
-    // Initialize tubes with varied hues (pink, cyan, green, blue, purple)
-    const baseHues = [320, 180, 150, 200, 280];
-    for (let i = 0; i < tubeCount; i++) {
-      const baseHue = baseHues[Math.floor(Math.random() * baseHues.length)];
-      tubes.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        radius: Math.random() * 1.5 + 0.5,
-        hue: baseHue + (Math.random() - 0.5) * 20,
-        baseHue: baseHue,
-      });
-    }
-
-    let time = 0;
-
-    // Animation loop
     const animate = () => {
-      time += 0.01;
-      ctx.fillStyle = "#1b1945";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      animationFrameId = requestAnimationFrame(animate);
 
-      // Update and draw tubes
-      tubes.forEach((tube, i) => {
-        // Move towards mouse with stronger attraction
-        const dx = mouse.x - tube.x;
-        const dy = mouse.y - tube.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        if (distance > 0 && distance < 500) {
-          const force = Math.min(0.001 * (500 - distance) / 500, 0.002);
-          tube.vx += (dx / distance) * force;
-          tube.vy += (dy / distance) * force;
+      // Smooth mouse tracking
+      mouse.lerp(targetMouse, lerpFactor);
+
+      // Convert mouse position to 3D space
+      const vector = new THREE.Vector3(mouse.x * 3, mouse.y * 3, 0);
+
+      // Add point to trail
+      points.push(vector.clone());
+      if (points.length > maxPoints) {
+        points.shift();
+      }
+
+      // Update tubes
+      tubes.forEach((tube, tubeIndex) => {
+        if (points.length < 3) {
+          // Initialize with current position
+          const initPoints = [
+            vector.clone(),
+            vector.clone(),
+            vector.clone(),
+          ];
+          const curve = new THREE.CatmullRomCurve3(initPoints);
+          const newGeometry = new THREE.TubeGeometry(
+            curve,
+            64,
+            0.03 + tubeIndex * 0.015,
+            16,
+            false
+          );
+          tube.geometry.dispose();
+          tube.geometry = newGeometry;
+          return;
         }
 
-        // Add some organic movement
-        tube.vx += Math.sin(time + i) * 0.01;
-        tube.vy += Math.cos(time + i * 0.5) * 0.01;
-
-        // Apply friction
-        tube.vx *= 0.97;
-        tube.vy *= 0.97;
-
-        // Update position
-        tube.x += tube.vx;
-        tube.y += tube.vy;
-
-        // Wrap around edges
-        if (tube.x < -50) tube.x = canvas.width + 50;
-        if (tube.x > canvas.width + 50) tube.x = -50;
-        if (tube.y < -50) tube.y = canvas.height + 50;
-        if (tube.y > canvas.height + 50) tube.y = -50;
-
-        // Animate hue
-        tube.hue = tube.baseHue + Math.sin(time * 0.5 + i * 0.1) * 30;
-
-        // Draw tube with glow
-        const gradient = ctx.createRadialGradient(tube.x, tube.y, 0, tube.x, tube.y, tube.radius * 30);
-        gradient.addColorStop(0, `hsla(${tube.hue}, 80%, 65%, 1)`);
-        gradient.addColorStop(0.3, `hsla(${tube.hue}, 80%, 60%, 0.6)`);
-        gradient.addColorStop(0.6, `hsla(${tube.hue}, 70%, 55%, 0.3)`);
-        gradient.addColorStop(1, `hsla(${tube.hue}, 70%, 50%, 0)`);
-        
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
-        ctx.arc(tube.x, tube.y, tube.radius * 30, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Draw connections between nearby tubes
-        tubes.slice(i + 1).forEach((otherTube) => {
-          const dx = tube.x - otherTube.x;
-          const dy = tube.y - otherTube.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < 200) {
-            const opacity = (1 - distance / 200) * 0.4;
-            const midHue = (tube.hue + otherTube.hue) / 2;
-            ctx.strokeStyle = `hsla(${midHue}, 70%, 60%, ${opacity})`;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(tube.x, tube.y);
-            ctx.lineTo(otherTube.x, otherTube.y);
-            ctx.stroke();
-          }
+        // Create curve with offset for each tube
+        const offset = (tubeIndex - tubeCount / 2) * 0.15;
+        const time = Date.now() * 0.001;
+        const curvePoints = points.map((p, i) => {
+          const progress = i / points.length;
+          const offsetVec = new THREE.Vector3(
+            Math.sin(i * 0.15 + tubeIndex + time) * offset * (1 - progress * 0.5),
+            Math.cos(i * 0.15 + tubeIndex + time) * offset * (1 - progress * 0.5),
+            Math.sin(i * 0.08 + tubeIndex * 0.5 + time) * 0.3 * (1 - progress)
+          );
+          return p.clone().add(offsetVec);
         });
+
+        // Ensure we have enough points
+        while (curvePoints.length < 3) {
+          curvePoints.push(curvePoints[curvePoints.length - 1].clone());
+        }
+
+        const curve = new THREE.CatmullRomCurve3(curvePoints);
+        const newGeometry = new THREE.TubeGeometry(
+          curve,
+          64,
+          0.03 + tubeIndex * 0.015,
+          16,
+          false
+        );
+
+        // Update geometry
+        tube.geometry.dispose();
+        tube.geometry = newGeometry;
+
+        // Update material color with slight variation
+        const colorIndex = (tubeIndex + Math.floor(time * 0.3)) % colors.length;
+        const nextColorIndex = (colorIndex + 1) % colors.length;
+        const color = colors[colorIndex].clone().lerp(colors[nextColorIndex], (time * 0.3) % 1);
+        
+        (tube.material as THREE.MeshStandardMaterial).color = color;
+        (tube.material as THREE.MeshStandardMaterial).emissive = color;
+        (tube.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.5 + Math.sin(time + tubeIndex) * 0.3;
       });
 
-      animationFrameRef.current = requestAnimationFrame(animate);
+      // Update light positions
+      lights.forEach((light, i) => {
+        const time = Date.now() * 0.001;
+        light.position.x = Math.sin(time + i) * 2;
+        light.position.y = Math.cos(time * 0.7 + i) * 2;
+        light.position.z = 2 + Math.sin(time * 0.5 + i) * 0.5;
+      });
+
+      renderer.render(scene, camera);
+    };
+
+    // Handle resize
+    const handleResize = () => {
+      const newWidth = window.innerWidth;
+      const newHeight = window.innerHeight;
+
+      camera.aspect = newWidth / newHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(newWidth, newHeight);
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    // Store refs for cleanup
+    sceneRef.current = {
+      scene,
+      camera,
+      renderer,
+      tubes,
+      mouse,
+      targetMouse,
+      points,
     };
 
     animate();
 
+    // Cleanup
     return () => {
-      window.removeEventListener("resize", resizeCanvas);
       window.removeEventListener("mousemove", handleMouseMove);
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      window.removeEventListener("resize", handleResize);
+      cancelAnimationFrame(animationFrameId);
+
+      // Dispose of geometries and materials
+      tubes.forEach((tube) => {
+        tube.geometry.dispose();
+        (tube.material as THREE.Material).dispose();
+        scene.remove(tube);
+      });
+
+      lights.forEach((light) => {
+        scene.remove(light);
+      });
+
+      scene.remove(ambientLight);
+      renderer.dispose();
+      container.removeChild(renderer.domElement);
     };
   }, []);
 
   return (
     <div
+      ref={containerRef}
       style={{
         position: "fixed",
         top: 0,
@@ -163,17 +270,6 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
         overflow: "hidden",
       }}
     >
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          pointerEvents: "none",
-        }}
-      />
       <div
         style={{
           position: "relative",
@@ -183,6 +279,7 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
           flexDirection: "column",
           alignItems: "center",
           gap: "24px",
+          pointerEvents: "auto",
         }}
       >
         <h1
@@ -242,4 +339,3 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
     </div>
   );
 };
-
