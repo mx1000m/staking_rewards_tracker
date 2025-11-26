@@ -609,8 +609,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 className="tooltip-gradient-border"
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 8px)",
-                  right: "0px",
+                  top: "calc(100% + 6px)",
+                  right: "-4px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -652,8 +652,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 className="tooltip-gradient-border"
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 8px)",
-                  right: "0px",
+                  top: "calc(100% + 6px)",
+                  right: "-4px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -695,8 +695,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 className="tooltip-gradient-border"
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 8px)",
-                  right: "0px",
+                  top: "calc(100% + 6px)",
+                  right: "-4px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -738,8 +738,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 className="tooltip-gradient-border"
                 style={{
                   position: "absolute",
-                  top: "calc(100% + 8px)",
-                  right: "0px",
+                  top: "calc(100% + 6px)",
+                  right: "-4px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -1585,6 +1585,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       ));
                       requestMarkPaidModalClose();
                       setSwapHashInput("");
+                    className="pressable-button"
                     }}
                     style={{
                       background: "linear-gradient(45deg, #01e1fd, #3788fd)",
@@ -1655,7 +1656,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0 }}>Edit Paid Status</h3>
+                  <h3 style={{ margin: 0 }}>Edit paid status</h3>
                   <button
                     onClick={requestEditPaidModalClose}
                     style={{
@@ -1694,8 +1695,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   value={editSwapHashInput}
                   onChange={(e) => setEditSwapHashInput(e.target.value.trim())}
                 />
-                <div className="actions" style={{ marginTop: "32px", display: "flex", gap: "12px", justifyContent: "flex-start" }}>
+                <div className="actions" style={{ marginTop: "32px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px" }}>
                   <button
+                    className="pressable-button"
                     style={{
                       background: "#ef4444",
                       color: "white",
@@ -1745,30 +1747,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   >
                     Mark as unpaid
                   </button>
-                  <button
-                    onClick={requestEditPaidModalClose}
-                    style={{
-                      background: "#110e3f",
-                      color: "#24a7fd",
-                      padding: "10px 20px",
-                      borderRadius: "10px",
-                      textTransform: "none",
-                      border: "none",
-                      transition: "background 0.2s, transform 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#1a1648";
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#110e3f";
-                      e.currentTarget.style.transform = "scale(1)";
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={async () => {
+                  <div style={{ display: "flex", gap: "12px", marginLeft: "auto" }}>
+                    <button
+                      className="pressable-button"
+                      onClick={requestEditPaidModalClose}
+                      style={{
+                        background: "#110e3f",
+                        color: "#24a7fd",
+                        padding: "10px 20px",
+                        borderRadius: "10px",
+                        textTransform: "none",
+                        border: "none",
+                        transition: "background 0.2s, transform 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#1a1648";
+                        e.currentTarget.style.transform = "scale(1.05)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#110e3f";
+                        e.currentTarget.style.transform = "scale(1)";
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="pressable-button"
+                      onClick={async () => {
                       if (!activeTracker || !editPaidHash || !user) return;
                       
                       // Validate swap hash if provided
@@ -1801,28 +1806,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
                           : t
                       ));
-                      requestEditPaidModalClose();
-                      setEditSwapHashInput("");
-                    }}
-                    style={{
-                      background: "linear-gradient(45deg, #01e1fd, #3788fd)",
-                      border: "none",
-                      borderRadius: "10px",
-                      padding: "10px 20px",
-                      color: "#ffffff",
-                      textTransform: "none",
-                      fontWeight: 600,
-                      transition: "transform 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "scale(1)";
-                    }}
-                  >
-                    Update
-                  </button>
+                        requestEditPaidModalClose();
+                        setEditSwapHashInput("");
+                      }}
+                      style={{
+                        background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+                        border: "none",
+                        borderRadius: "10px",
+                        padding: "10px 20px",
+                        color: "#ffffff",
+                        textTransform: "none",
+                        fontWeight: 600,
+                        transition: "transform 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "scale(1.05)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "scale(1)";
+                      }}
+                    >
+                      Update
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -216,8 +216,8 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 .tooltip-gradient-border::before {
   content: '';
   position: absolute;
-  top: -16px;
-  right: 20px;
+  top: -14px;
+  right: 8px;
   width: 0;
   height: 0;
   border-left: 7px solid transparent;
@@ -231,8 +231,8 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 .tooltip-gradient-border::after {
   content: '';
   position: absolute;
-  top: -14px;
-  right: 21px;
+  top: -12px;
+  right: 9px;
   width: 0;
   height: 0;
   border-left: 6px solid transparent;
@@ -247,6 +247,14 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   padding: 8px 12px;
   position: relative;
   z-index: 1;
+}
+
+.pressable-button {
+  transition: transform 0.07s ease-out;
+}
+
+.pressable-button:active {
+  transform: scale(0.96) !important;
 }
 
 
