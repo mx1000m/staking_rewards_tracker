@@ -60,6 +60,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const exportModalCloseTimeoutRef = useRef<number | null>(null);
   const EXPORT_MODAL_ANIMATION_DURATION = 175;
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+  const [isCopyingAddress, setIsCopyingAddress] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
@@ -880,15 +881,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   if (p) p.style.color = "#9aa0b4";
                   if (img) img.style.filter = "brightness(0) saturate(1) invert(60%)";
                 }}
-                onClick={() => copyToClipboard(activeTracker.walletAddress, "Wallet address")}
+                onClick={async () => {
+                  setIsCopyingAddress(true);
+                  await copyToClipboard(activeTracker.walletAddress, "Wallet address");
+                  setTimeout(() => {
+                    setIsCopyingAddress(false);
+                  }, 200);
+                }}
               >
-                <p style={{ margin: 0, fontSize: "0.85rem", color: "#9aa0b4", transition: "color 0.2s" }}>
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: "0.85rem", 
+                  color: "#9aa0b4", 
+                  transition: "color 0.2s, transform 0.2s ease-out",
+                  transform: isCopyingAddress ? "scale(0.95)" : "scale(1)"
+                }}>
                   {activeTracker.walletAddress.slice(0, 7)}...{activeTracker.walletAddress.slice(-5)}
                 </p>
                 <img 
                   src="/staking_rewards_tracker/icons/copy_icon.svg" 
                   alt="Copy" 
-                  style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(1) invert(60%)", transition: "filter 0.2s", border: "none" }}
+                  style={{ 
+                    width: "16px", 
+                    height: "16px", 
+                    filter: "brightness(0) saturate(1) invert(60%)", 
+                    transition: "filter 0.2s, transform 0.2s ease-out", 
+                    border: "none",
+                    transform: isCopyingAddress ? "scale(0.95)" : "scale(1)"
+                  }}
                 />
               </div>
             </div>
