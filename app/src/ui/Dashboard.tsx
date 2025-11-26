@@ -1585,8 +1585,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       ));
                       requestMarkPaidModalClose();
                       setSwapHashInput("");
-                    className="pressable-button"
                     }}
+                    className="pressable-button"
                     style={{
                       background: "linear-gradient(45deg, #01e1fd, #3788fd)",
                       border: "none",
