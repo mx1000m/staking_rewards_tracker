@@ -247,6 +247,7 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   padding: 8px 12px;
   position: relative;
   z-index: 1;
+  color: #bfc5da;
 }
 
 .pressable-button {
@@ -255,6 +256,25 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 
 .pressable-button:active {
   transform: scale(0.96) !important;
+}
+
+@keyframes copiedTooltipFade {
+  0% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(-5px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+}
+
+.copied-tooltip {
+  animation: copiedTooltipFade 0.4s ease-out forwards;
 }
 
 

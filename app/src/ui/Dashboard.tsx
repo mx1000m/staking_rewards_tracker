@@ -61,9 +61,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const EXPORT_MODAL_ANIMATION_DURATION = 175;
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
   const [isCopyingAddress, setIsCopyingAddress] = useState(false);
+  const [copiedTooltipPos, setCopiedTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
-  const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
+  const glowShadow = "0 0 6px rgba(1, 225, 253, 0.8), 0 0 15px rgba(1, 225, 253, 0.45)";
 
   useEffect(() => {
     if (activeTracker) {
@@ -872,7 +873,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   alignItems: "center", 
                   gap: 8, 
                   cursor: "pointer",
-                  transition: "transform 0.2s ease-out",
+                  transition: "transform 0.16s ease-out",
                   transform: isCopyingAddress ? "scale(0.95)" : "scale(1)"
                 }}
                 onMouseEnter={(e) => {
@@ -888,12 +889,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   if (p) p.style.color = "#9aa0b4";
                   if (img) img.style.filter = "brightness(0) saturate(1) invert(60%)";
                 }}
-                onClick={async () => {
+                onClick={async (e) => {
                   setIsCopyingAddress(true);
+                  setCopiedTooltipPos({ x: e.clientX, y: e.clientY - 30 });
                   await copyToClipboard(activeTracker.walletAddress, "Wallet address");
                   setTimeout(() => {
                     setIsCopyingAddress(false);
-                  }, 200);
+                    setTimeout(() => {
+                      setCopiedTooltipPos(null);
+                    }, 400);
+                  }, 160);
                 }}
               >
                 <p style={{ 
@@ -916,6 +921,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   }}
                 />
               </div>
+              {copiedTooltipPos && (
+                <div
+                  className="copied-tooltip"
+                  style={{
+                    position: "fixed",
+                    left: `${copiedTooltipPos.x}px`,
+                    top: `${copiedTooltipPos.y}px`,
+                    background: "#1a1a2e",
+                    color: "#bfc5da",
+                    padding: "6px 12px",
+                    borderRadius: "6px",
+                    fontSize: "0.85rem",
+                    pointerEvents: "none",
+                    zIndex: 10000,
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
+                  }}
+                >
+                  Copied!
+                </div>
+              )}
             </div>
             <div style={{ display: "flex", gap: 16 }}>
               <div 
