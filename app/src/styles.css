@@ -217,7 +217,7 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   content: '';
   position: absolute;
   top: -4px;
-  right: 23px;
+  right: 18px;
   width: 0;
   height: 0;
   border-left: 7px solid transparent;
@@ -232,7 +232,7 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   content: '';
   position: absolute;
   top: -2px;
-  right: 24px;
+  right: 19px;
   width: 0;
   height: 0;
   border-left: 6px solid transparent;
