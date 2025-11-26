@@ -867,7 +867,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
               </h2>
               <div 
-                style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+                style={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: 8, 
+                  cursor: "pointer",
+                  transition: "transform 0.2s ease-out",
+                  transform: isCopyingAddress ? "scale(0.95)" : "scale(1)"
+                }}
                 onMouseEnter={(e) => {
                   const p = e.currentTarget.querySelector("p");
                   const img = e.currentTarget.querySelector("img");
@@ -893,8 +900,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   margin: 0, 
                   fontSize: "0.85rem", 
                   color: "#9aa0b4", 
-                  transition: "color 0.2s, transform 0.2s ease-out",
-                  transform: isCopyingAddress ? "scale(0.95)" : "scale(1)"
+                  transition: "color 0.2s"
                 }}>
                   {activeTracker.walletAddress.slice(0, 7)}...{activeTracker.walletAddress.slice(-5)}
                 </p>
@@ -905,9 +911,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     width: "16px", 
                     height: "16px", 
                     filter: "brightness(0) saturate(1) invert(60%)", 
-                    transition: "filter 0.2s, transform 0.2s ease-out", 
-                    border: "none",
-                    transform: isCopyingAddress ? "scale(0.95)" : "scale(1)"
+                    transition: "filter 0.2s", 
+                    border: "none"
                   }}
                 />
               </div>
