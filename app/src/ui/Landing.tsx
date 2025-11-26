@@ -40,7 +40,7 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
     const mouse = new THREE.Vector2();
     const targetMouse = new THREE.Vector2();
     const points: THREE.Vector3[] = [];
-    const maxPoints = 30;
+    const maxPoints = 50;
 
     // Colors for tubes (pink, cyan, green, blue, purple)
     const colors = [
@@ -54,7 +54,7 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
     const tubes: THREE.Mesh[] = [];
     const tubeCount = 5;
 
-    // Create tubes
+    // Create tubes with better visibility
     for (let i = 0; i < tubeCount; i++) {
       const geometry = new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3([
@@ -62,20 +62,20 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
           new THREE.Vector3(0, 0, 0),
           new THREE.Vector3(0, 0, 0),
         ]),
-        64,
-        0.03 + i * 0.015,
-        16,
+        100,
+        0.05 + i * 0.02,
+        20,
         false
       );
 
       const material = new THREE.MeshStandardMaterial({
         color: colors[i % colors.length],
         emissive: colors[i % colors.length],
-        emissiveIntensity: 1.5,
-        metalness: 0.1,
-        roughness: 0.1,
+        emissiveIntensity: 2.5,
+        metalness: 0.0,
+        roughness: 0.0,
         transparent: true,
-        opacity: 0.9,
+        opacity: 1.0,
       });
 
       const tube = new THREE.Mesh(geometry, material);
@@ -112,8 +112,9 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
     window.addEventListener("mousemove", handleMouseMove);
 
     // Animation
-    const lerpFactor = 0.15;
+    const lerpFactor = 0.2;
     let animationFrameId: number;
+    let lastMouseTime = Date.now();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
@@ -121,13 +122,21 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
       // Smooth mouse tracking
       mouse.lerp(targetMouse, lerpFactor);
 
-      // Convert mouse position to 3D space
-      const vector = new THREE.Vector3(mouse.x * 3, mouse.y * 3, 0);
+      // Convert mouse position to 3D space (normalized to screen)
+      const vector = new THREE.Vector3(
+        (mouse.x * width) / 100,
+        (mouse.y * height) / 100,
+        0
+      );
 
-      // Add point to trail
-      points.push(vector.clone());
-      if (points.length > maxPoints) {
-        points.shift();
+      // Add point to trail more frequently for smoother curves
+      const now = Date.now();
+      if (now - lastMouseTime > 16) { // ~60fps
+        points.push(vector.clone());
+        if (points.length > maxPoints) {
+          points.shift();
+        }
+        lastMouseTime = now;
       }
 
       // Update tubes
@@ -152,15 +161,16 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
           return;
         }
 
-        // Create curve with offset for each tube
-        const offset = (tubeIndex - tubeCount / 2) * 0.15;
+        // Create curve with offset for each tube (smaller offset for tighter grouping)
+        const offset = (tubeIndex - tubeCount / 2) * 0.08;
         const time = Date.now() * 0.001;
         const curvePoints = points.map((p, i) => {
-          const progress = i / points.length;
+          const progress = i / Math.max(points.length - 1, 1);
+          // Smaller Z variation for flatter tubes
           const offsetVec = new THREE.Vector3(
-            Math.sin(i * 0.15 + tubeIndex + time) * offset * (1 - progress * 0.5),
-            Math.cos(i * 0.15 + tubeIndex + time) * offset * (1 - progress * 0.5),
-            Math.sin(i * 0.08 + tubeIndex * 0.5 + time) * 0.3 * (1 - progress)
+            Math.sin(i * 0.1 + tubeIndex + time) * offset * (1 - progress * 0.3),
+            Math.cos(i * 0.1 + tubeIndex + time) * offset * (1 - progress * 0.3),
+            Math.sin(i * 0.05 + tubeIndex * 0.3 + time) * 0.1 * (1 - progress)
           );
           return p.clone().add(offsetVec);
         });
@@ -173,9 +183,9 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
         const curve = new THREE.CatmullRomCurve3(curvePoints);
         const newGeometry = new THREE.TubeGeometry(
           curve,
-          64,
-          0.03 + tubeIndex * 0.015,
-          16,
+          100,
+          0.05 + tubeIndex * 0.02,
+          20,
           false
         );
 
@@ -184,13 +194,13 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
         tube.geometry = newGeometry;
 
         // Update material color with slight variation
-        const colorIndex = (tubeIndex + Math.floor(time * 0.3)) % colors.length;
+        const colorIndex = (tubeIndex + Math.floor(time * 0.2)) % colors.length;
         const nextColorIndex = (colorIndex + 1) % colors.length;
-        const color = colors[colorIndex].clone().lerp(colors[nextColorIndex], (time * 0.3) % 1);
+        const color = colors[colorIndex].clone().lerp(colors[nextColorIndex], (time * 0.2) % 1);
         
         (tube.material as THREE.MeshStandardMaterial).color = color;
         (tube.material as THREE.MeshStandardMaterial).emissive = color;
-        (tube.material as THREE.MeshStandardMaterial).emissiveIntensity = 1.5 + Math.sin(time + tubeIndex) * 0.3;
+        (tube.material as THREE.MeshStandardMaterial).emissiveIntensity = 2.5 + Math.sin(time + tubeIndex) * 0.5;
       });
 
       // Update light positions
@@ -287,12 +297,9 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
             fontSize: "clamp(3rem, 8vw, 6rem)",
             fontWeight: 700,
             fontFamily: "Retronoid, ui-sans-serif, system-ui",
-            background: "linear-gradient(45deg, #01e1fd, #3788fd)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
+            color: "#ffffff",
             margin: 0,
-            textShadow: "0 0 30px rgba(1, 225, 253, 0.5)",
+            textShadow: "0 0 30px rgba(255, 255, 255, 0.3)",
             letterSpacing: "0.05em",
           }}
         >
@@ -301,7 +308,7 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
         <p
           style={{
             fontSize: "clamp(1rem, 2vw, 1.25rem)",
-            color: "#e8e8f0",
+            color: "#ffffff",
             margin: 0,
             fontWeight: 400,
             letterSpacing: "0.02em",
@@ -312,25 +319,25 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
         <button
           onClick={onSignInClick}
           style={{
-            background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+            background: "#ffffff",
             border: "none",
             borderRadius: "12px",
             padding: "14px 32px",
-            color: "#ffffff",
+            color: "#1b1945",
             fontSize: "1.1rem",
             fontWeight: 600,
             cursor: "pointer",
             transition: "all 0.3s ease",
-            boxShadow: "0 4px 20px rgba(1, 225, 253, 0.4)",
+            boxShadow: "0 4px 20px rgba(255, 255, 255, 0.2)",
             marginTop: "8px",
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "scale(1.05)";
-            e.currentTarget.style.boxShadow = "0 6px 30px rgba(1, 225, 253, 0.6)";
+            e.currentTarget.style.boxShadow = "0 6px 30px rgba(255, 255, 255, 0.3)";
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = "scale(1)";
-            e.currentTarget.style.boxShadow = "0 4px 20px rgba(1, 225, 253, 0.4)";
+            e.currentTarget.style.boxShadow = "0 4px 20px rgba(255, 255, 255, 0.2)";
           }}
         >
           Sign in
