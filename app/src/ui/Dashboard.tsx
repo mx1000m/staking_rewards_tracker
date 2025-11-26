@@ -963,7 +963,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <img 
                     src="/staking_rewards_tracker/icons/gear_icon.svg" 
                     alt="Settings" 
-                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(67%) sepia(100%) saturate(2000%) hue-rotate(195deg) brightness(1.1) contrast(1.1)" }}
+                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(40%) sepia(84%) saturate(824%) hue-rotate(156deg) brightness(104%) contrast(101%)" }}
                   />
                   <span style={{ color: "#24a7fd" }}>Settings</span>
                 </button>
@@ -992,7 +992,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <img 
                     src="/staking_rewards_tracker/icons/export_icon.svg" 
                     alt="Export" 
-                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(67%) sepia(100%) saturate(2000%) hue-rotate(195deg) brightness(1.1) contrast(1.1)" }}
+                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(40%) sepia(84%) saturate(824%) hue-rotate(156deg) brightness(104%) contrast(101%)" }}
                   />
                   <span style={{ color: "#24a7fd" }}>Export CSV</span>
                 </button>
@@ -1020,7 +1020,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <img 
                     src="/staking_rewards_tracker/icons/refresh_icon.svg" 
                     alt="Refresh" 
-                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(67%) sepia(100%) saturate(2000%) hue-rotate(195deg) brightness(1.1) contrast(1.1)" }}
+                    style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(40%) sepia(84%) saturate(824%) hue-rotate(156deg) brightness(104%) contrast(101%)" }}
                   />
                   <span style={{ color: "#24a7fd" }}>{loading ? "Loading..." : "Refresh"}</span>
                 </button>
