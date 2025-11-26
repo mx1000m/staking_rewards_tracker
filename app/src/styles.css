@@ -216,8 +216,8 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 .tooltip-gradient-border::before {
   content: '';
   position: absolute;
-  top: -14px;
-  right: 8px;
+  top: -4px;
+  right: -2px;
   width: 0;
   height: 0;
   border-left: 7px solid transparent;
@@ -231,8 +231,8 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 .tooltip-gradient-border::after {
   content: '';
   position: absolute;
-  top: -12px;
-  right: 9px;
+  top: -2px;
+  right: -1px;
   width: 0;
   height: 0;
   border-left: 6px solid transparent;

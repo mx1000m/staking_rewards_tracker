@@ -610,7 +610,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 style={{
                   position: "absolute",
                   top: "calc(100% + 6px)",
-                  right: "-4px",
+                  right: "-9px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -653,7 +653,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 style={{
                   position: "absolute",
                   top: "calc(100% + 6px)",
-                  right: "-4px",
+                  right: "-9px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -696,7 +696,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 style={{
                   position: "absolute",
                   top: "calc(100% + 6px)",
-                  right: "-4px",
+                  right: "-9px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
@@ -739,7 +739,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 style={{
                   position: "absolute",
                   top: "calc(100% + 6px)",
-                  right: "-4px",
+                  right: "-9px",
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
