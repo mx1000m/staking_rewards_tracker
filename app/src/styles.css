@@ -247,7 +247,7 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   padding: 8px 12px;
   position: relative;
   z-index: 1;
-  color: #bfc5da;
+  color: #bec4d9 !important;
 }
 
 .pressable-button {
