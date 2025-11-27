@@ -74,7 +74,7 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
             letterSpacing: "0.05em",
           }}
         >
-          SOLOBEAM
+          Solobeam
         </h1>
         <p
           style={{
