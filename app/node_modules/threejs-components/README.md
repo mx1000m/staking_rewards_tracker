@@ -1,0 +1,12 @@
+# ✨ ThreeJS Components - Made with 💙
+
+[![NPM Package][npm]][npm-url]
+[![NPM Downloads][npm-downloads]][npmtrends-url]
+[![Twitter][twitter]][twitter-url]
+
+[npm]: https://img.shields.io/npm/v/threejs-components
+[npm-url]: https://www.npmjs.com/package/threejs-components
+[npm-downloads]: https://img.shields.io/npm/dw/threejs-components
+[npmtrends-url]: https://www.npmtrends.com/threejs-components
+[twitter]: https://img.shields.io/twitter/follow/soju22?label=&style=social
+[twitter-url]: https://twitter.com/soju22
