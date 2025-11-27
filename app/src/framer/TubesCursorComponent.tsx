@@ -22,7 +22,6 @@ export interface TubesCursorProps {
   sleepRadiusY?: number;
   sleepTimeScale1?: number;
   sleepTimeScale2?: number;
-  backgroundColor?: string;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -44,7 +43,6 @@ const TubesCursorComponent: React.FC<TubesCursorProps> = ({
   sleepRadiusY = 150,
   sleepTimeScale1 = 1,
   sleepTimeScale2 = 2,
-  backgroundColor = "#000000",
   className,
   style,
 }) => {
@@ -53,8 +51,6 @@ const TubesCursorComponent: React.FC<TubesCursorProps> = ({
 
   useEffect(() => {
     if (!canvasRef.current) return;
-
-    canvasRef.current.style.background = backgroundColor;
 
     const options: any = {
       bloom: false,
@@ -87,7 +83,6 @@ const TubesCursorComponent: React.FC<TubesCursorProps> = ({
     }
 
     appRef.current = TubesCursor(canvasRef.current, options);
-    appRef.current?.renderer?.setClearColor?.(backgroundColor, 1);
 
     return () => {
       appRef.current?.dispose?.();
@@ -131,12 +126,6 @@ const TubesCursorComponent: React.FC<TubesCursorProps> = ({
     appRef.current.options.sleepTimeScale1 = sleepTimeScale1;
     appRef.current.options.sleepTimeScale2 = sleepTimeScale2;
   }, [sleepTimeScale1, sleepTimeScale2]);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    canvasRef.current.style.background = backgroundColor;
-    appRef.current?.renderer?.setClearColor?.(backgroundColor, 1);
-  }, [backgroundColor]);
 
   return (
     <canvas

@@ -48,7 +48,6 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
           bloomRadius={0.45}
           lerp={0.4}
           noise={0.08}
-          backgroundColor="#1b1945"
           className="landing-tubes-canvas"
         />
       </div>
@@ -69,14 +68,13 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
             fontSize: "clamp(3rem, 8vw, 6rem)",
             fontWeight: 700,
             fontFamily: "Retronoid, ui-sans-serif, system-ui",
-            fontVariant: "small-caps",
             color: "#ffffff",
             margin: 0,
             textShadow: "0 0 30px rgba(255, 255, 255, 0.3)",
             letterSpacing: "0.05em",
           }}
         >
-          solobeam
+          SOLOBEAM
         </h1>
         <p
           style={{
