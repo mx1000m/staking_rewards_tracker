@@ -1012,7 +1012,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           {/* Year Filter */}
           {availableYears.length > 0 && (
             <div style={{ 
-              display: "flex", 
+              display: "inline-flex", 
               background: "#383838", 
               borderRadius: "8px", 
               padding: "4px",
@@ -1037,7 +1037,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       fontWeight: selectedYear === year ? 600 : 400,
                       transition: "background 0.2s, color 0.2s, font-weight 0.2s",
                       position: "relative",
-                      flex: 1,
                     }}
                     onMouseEnter={(e) => {
                       if (selectedYear !== year) {
@@ -1060,88 +1059,84 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           )}
           
           {/* Month Filter */}
-          {availableMonths.length > 0 && (
-            <div style={{ 
-              display: "flex", 
-              background: "#383838", 
-              borderRadius: "8px", 
-              padding: "4px",
-              marginBottom: "16px",
-              gap: 0,
-            }}>
-              <React.Fragment>
-                <button
-                  onClick={() => setSelectedMonth(null)}
-                  style={{
-                    background: selectedMonth === null ? "#555555" : "transparent",
-                    color: selectedMonth === null ? "white" : "#aaaaaa",
-                    padding: "8px 16px",
-                    border: "none",
-                    borderRadius: selectedMonth === null ? "6px" : "0",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    fontWeight: selectedMonth === null ? 600 : 400,
-                    transition: "background 0.2s, color 0.2s, font-weight 0.2s",
-                    textTransform: "none",
-                    position: "relative",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedMonth !== null) {
-                      e.currentTarget.style.color = "white";
-                      e.currentTarget.style.fontWeight = "600";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedMonth !== null) {
-                      e.currentTarget.style.color = "#aaaaaa";
-                      e.currentTarget.style.fontWeight = "400";
-                    }
-                  }}
-                >
-                  All
-                </button>
-                {availableMonths.map((month, index) => {
-                  const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
-                  return (
-                    <React.Fragment key={month}>
-                      <div style={{ width: "1px", background: "#4b4b4b", margin: "4px 0" }}></div>
-                      <button
-                        onClick={() => setSelectedMonth(month)}
-                        style={{
-                          background: selectedMonth === month ? "#555555" : "transparent",
-                          color: selectedMonth === month ? "white" : "#aaaaaa",
-                          padding: "8px 16px",
-                          border: "none",
-                          borderRadius: selectedMonth === month ? "6px" : "0",
-                          cursor: "pointer",
-                          fontSize: "0.9rem",
-                          fontWeight: selectedMonth === month ? 600 : 400,
-                          transition: "background 0.2s, color 0.2s, font-weight 0.2s",
-                          textTransform: "none",
-                          position: "relative",
-                          flex: 1,
-                        }}
-                        onMouseEnter={(e) => {
-                          if (selectedMonth !== month) {
-                            e.currentTarget.style.color = "white";
-                            e.currentTarget.style.fontWeight = "600";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (selectedMonth !== month) {
-                            e.currentTarget.style.color = "#aaaaaa";
-                            e.currentTarget.style.fontWeight = "400";
-                          }
-                        }}
-                      >
-                        {monthName}
-                      </button>
-                    </React.Fragment>
-                  );
-                })}
-              </React.Fragment>
-            </div>
-          )}
+          <div style={{ 
+            display: "flex", 
+            background: "#383838", 
+            borderRadius: "8px", 
+            padding: "4px",
+            marginBottom: "16px",
+            gap: 0,
+          }}>
+            <button
+              onClick={() => setSelectedMonth(null)}
+              style={{
+                background: selectedMonth === null ? "#555555" : "transparent",
+                color: selectedMonth === null ? "white" : "#aaaaaa",
+                padding: "8px 16px",
+                border: "none",
+                borderRadius: selectedMonth === null ? "6px" : "0",
+                cursor: "pointer",
+                fontSize: "0.9rem",
+                fontWeight: selectedMonth === null ? 600 : 400,
+                transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                textTransform: "none",
+                position: "relative",
+              }}
+              onMouseEnter={(e) => {
+                if (selectedMonth !== null) {
+                  e.currentTarget.style.color = "white";
+                  e.currentTarget.style.fontWeight = "600";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedMonth !== null) {
+                  e.currentTarget.style.color = "#aaaaaa";
+                  e.currentTarget.style.fontWeight = "400";
+                }
+              }}
+            >
+              All
+            </button>
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((month, index) => {
+              const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
+              return (
+                <React.Fragment key={month}>
+                  <div style={{ width: "1px", background: "#4b4b4b", margin: "4px 0" }}></div>
+                  <button
+                    onClick={() => setSelectedMonth(month)}
+                    style={{
+                      background: selectedMonth === month ? "#555555" : "transparent",
+                      color: selectedMonth === month ? "white" : "#aaaaaa",
+                      padding: "8px 16px",
+                      border: "none",
+                      borderRadius: selectedMonth === month ? "6px" : "0",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      fontWeight: selectedMonth === month ? 600 : 400,
+                      transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                      textTransform: "none",
+                      position: "relative",
+                      flex: 1,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedMonth !== month) {
+                        e.currentTarget.style.color = "white";
+                        e.currentTarget.style.fontWeight = "600";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedMonth !== month) {
+                        e.currentTarget.style.color = "#aaaaaa";
+                        e.currentTarget.style.fontWeight = "400";
+                      }
+                    }}
+                  >
+                    {monthName}
+                  </button>
+                </React.Fragment>
+              );
+            })}
+          </div>
           {loading ? (
             <p>Loading transactions...</p>
           ) : transactions.length === 0 && !error ? (
