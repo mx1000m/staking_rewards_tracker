@@ -60,11 +60,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const exportModalCloseTimeoutRef = useRef<number | null>(null);
   const EXPORT_MODAL_ANIMATION_DURATION = 175;
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
-  const [isCopyingAddress, setIsCopyingAddress] = useState(false);
-  const [copiedTooltipPos, setCopiedTooltipPos] = useState<{ x: number; y: number } | null>(null);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
-  const glowShadow = "0 0 6px rgba(1, 225, 253, 0.8), 0 0 15px rgba(1, 225, 253, 0.45)";
+  const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
 
   useEffect(() => {
     if (activeTracker) {
@@ -594,8 +592,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   return (
     <div style={{ width: "100%" }}>
       {/* All Nodes Overview */}
-      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>All nodes overview</h3>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All nodes overview</h3>
+      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
         <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
             onMouseEnter={() => setVisibleTooltip("rewards")}
@@ -622,6 +621,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div className="tooltip-content" style={{
+                  color: "white",
                   fontSize: "0.85rem",
                   whiteSpace: "pre-line",
                 }}>
@@ -664,6 +664,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div className="tooltip-content" style={{
+                  color: "white",
                   fontSize: "0.85rem",
                   whiteSpace: "pre-line",
                 }}>
@@ -706,6 +707,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div className="tooltip-content" style={{
+                  color: "white",
                   fontSize: "0.85rem",
                   whiteSpace: "pre-line",
                 }}>
@@ -748,6 +750,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div className="tooltip-content" style={{
+                  color: "white",
                   fontSize: "0.85rem",
                   whiteSpace: "pre-line",
                 }}>
@@ -764,23 +767,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthSwapped.toFixed(6)} ETH
           </p>
         </div>
+        </div>
       </div>
 
       {/* Your Nodes */}
-      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Your nodes</h3>
-      <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", marginBottom: "24px", boxShadow: glowShadow }}>
-        <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your nodes</h3>
+      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px" }}>
+        <div style={{ borderRadius: "13px", padding: "24px" }}>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
           {trackers.map((tracker) => (
             <button
               key={tracker.id}
               onClick={() => setActiveTracker(tracker.id)}
               style={{
-                background: activeTrackerId === tracker.id ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
+                background: activeTrackerId === tracker.id ? "#555555" : "#2b2b2b",
                 padding: "12px 20px",
                 border: "none",
                 borderRadius: "10px",
-                color: activeTrackerId === tracker.id ? "white" : "#24a7fd",
+                color: activeTrackerId === tracker.id ? "white" : "#aaaaaa",
                 cursor: "pointer",
                 fontWeight: activeTrackerId === tracker.id ? 600 : 400,
                 transition: "background 0.2s, color 0.2s, transform 0.2s",
@@ -789,13 +793,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               }}
               onMouseEnter={(e) => {
                 if (activeTrackerId !== tracker.id) {
-                  e.currentTarget.style.background = "#1a1648";
+                  e.currentTarget.style.background = "#383838";
                   e.currentTarget.style.transform = "scale(1.05)";
                 }
               }}
               onMouseLeave={(e) => {
                 if (activeTrackerId !== tracker.id) {
-                  e.currentTarget.style.background = "#110e3f";
+                  e.currentTarget.style.background = "#2b2b2b";
                   e.currentTarget.style.transform = "scale(1)";
                 }
               }}
@@ -815,38 +819,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             </button>
           ))}
           {onAddTracker && (
-            <div 
-              style={{ 
-                background: "linear-gradient(45deg, #3788fd, #01e1fd)", 
-                padding: "1px", 
-                borderRadius: "10px", 
-                display: "inline-block",
+            <button
+              onClick={onAddTracker}
+              style={{
+                background: "transparent",
+                padding: "12px 20px",
+                border: "1px solid #555555",
+                borderRadius: "10px",
+                color: "#aaaaaa",
+                cursor: "pointer",
+                fontWeight: 400,
                 transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.05)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
+                textTransform: "none",
               }}
             >
-              <button
-                onClick={onAddTracker}
-                style={{
-                  background: "linear-gradient(45deg, #232055, #292967)",
-                  padding: "12px 20px",
-                  border: "none",
-                  borderRadius: "9px",
-                  color: "#24a7fd",
-                  cursor: "pointer",
-                  fontWeight: 400,
-                  transition: "all 0.2s",
-                  textTransform: "none",
-                }}
-              >
-                + Add node tracker
-              </button>
-            </div>
+              + Add node tracker
+            </button>
           )}
           </div>
         </div>
@@ -855,218 +843,142 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* Node Selected */}
       {activeTracker && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Node selected</h3>
-          <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", marginBottom: "24px", boxShadow: glowShadow }}>
-            <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Node selected</h3>
+          <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px" }}>
+            <div style={{ borderRadius: "13px", padding: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h2 style={{ margin: "0 0 4px 0" }}>
                 {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
               </h2>
               <div 
-                style={{ 
-                  display: "flex", 
-                  alignItems: "center", 
-                  gap: 8, 
-                  cursor: "pointer",
-                  transition: "transform 0.16s ease-out",
-                  transform: isCopyingAddress ? "scale(0.95)" : "scale(1)"
-                }}
+                style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
                 onMouseEnter={(e) => {
                   const p = e.currentTarget.querySelector("p");
                   const img = e.currentTarget.querySelector("img");
-                  const hoverColor = "#24a7fd";
-                  if (p) p.style.color = hoverColor;
-                  if (img) img.style.filter = "brightness(0) saturate(100%) invert(62%) sepia(59%) saturate(653%) hue-rotate(161deg) brightness(101%) contrast(95%)";
+                  if (p) p.style.color = "#aaaaaa";
+                  if (img) img.style.filter = "brightness(0) saturate(100%) invert(67%)";
                 }}
                 onMouseLeave={(e) => {
                   const p = e.currentTarget.querySelector("p");
                   const img = e.currentTarget.querySelector("img");
-                  if (p) p.style.color = "#9aa0b4";
-                  if (img) img.style.filter = "brightness(0) saturate(1) invert(60%)";
+                  if (p) p.style.color = "#aaaaaa";
+                  if (img) img.style.filter = "brightness(0) saturate(100%) invert(67%)";
                 }}
-                onClick={async (e) => {
-                  setIsCopyingAddress(true);
-                  setCopiedTooltipPos({ x: e.clientX, y: e.clientY - 30 });
-                  await copyToClipboard(activeTracker.walletAddress, "Wallet address");
-                  setTimeout(() => {
-                    setIsCopyingAddress(false);
-                    setTimeout(() => {
-                      setCopiedTooltipPos(null);
-                    }, 400);
-                  }, 160);
-                }}
+                onClick={() => copyToClipboard(activeTracker.walletAddress, "Wallet address")}
               >
-                <p style={{ 
-                  margin: 0, 
-                  fontSize: "0.85rem", 
-                  color: "#9aa0b4", 
-                  transition: "color 0.2s"
-                }}>
+                <p style={{ margin: 0, fontSize: "0.85rem", color: "#aaaaaa", transition: "color 0.2s" }}>
                   {activeTracker.walletAddress.slice(0, 7)}...{activeTracker.walletAddress.slice(-5)}
                 </p>
                 <img 
                   src="/staking_rewards_tracker/icons/copy_icon.svg" 
                   alt="Copy" 
-                  style={{ 
-                    width: "16px", 
-                    height: "16px", 
-                    filter: "brightness(0) saturate(1) invert(60%)", 
-                    transition: "filter 0.2s", 
-                    border: "none"
-                  }}
+                  style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(100%) invert(67%)", transition: "filter 0.2s", border: "none" }}
                 />
               </div>
-              {copiedTooltipPos && (
-                <div
-                  className="copied-tooltip"
-                  style={{
-                    position: "fixed",
-                    left: `${copiedTooltipPos.x}px`,
-                    top: `${copiedTooltipPos.y}px`,
-                    background: "#1a1a2e",
-                    color: "#bfc5da",
-                    padding: "6px 12px",
-                    borderRadius: "6px",
-                    fontSize: "0.85rem",
-                    pointerEvents: "none",
-                    zIndex: 10000,
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.3)"
-                  }}
-                >
-                  Copied!
-                </div>
-              )}
             </div>
             <div style={{ display: "flex", gap: 16 }}>
-              <div 
-                style={{ 
-                  background: "linear-gradient(45deg, #3788fd, #01e1fd)", 
-                  padding: "1px", 
-                  borderRadius: "10px", 
-                  display: "inline-block",
-                  transition: "all 0.2s",
-                }}
+              <button
+                onClick={() => setShowSettings(true)}
+                style={{ background: "#2b2b2b", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", textTransform: "none" }}
+                title="Settings"
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
+                  e.currentTarget.style.background = "#383838";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.background = "#2b2b2b";
                 }}
               >
-                <button
-                  onClick={() => setShowSettings(true)}
-                  style={{ background: "linear-gradient(45deg, #232055, #292967)", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", textTransform: "none" }}
-                  title="Settings"
-                >
-                  <svg width="18" height="18" viewBox="0 0 22.97 22.66" style={{ display: "inline-block" }}>
-                    <path fill="#24a7fd" d="M14.28,20.02c-.42.15-.86.26-1.3.35-.07.23-.13.43-.18.62-.1.36-.17.68-.22.98-.07.38-.38.66-.77.68-1.28.07-2.59-.08-3.88-.42-.13-.04-.27-.08-.41-.12-.31-.1-.53-.37-.57-.69-.01-.13-.03-.27-.04-.42-.03-.3-.04-.54-.08-1.07-.01-.19-.02-.32-.03-.42-.67-.36-1.3-.8-1.88-1.34-.48.11-.95.2-1.82.35l-.19.03c-.3.05-.61-.07-.79-.31-.89-1.16-1.56-2.46-2-3.86-.1-.33.01-.69.29-.89.5-.38.98-.74,1.46-1.07-.17-1.13-.14-2.27.1-3.35-.5-.34-.98-.7-1.43-1.07-.27-.22-.37-.6-.24-.93.62-1.61,1.62-3.01,2.98-4.17.28-.24.7-.26,1-.05.31.22.55.41,1.09.87.07.06.12.1.17.14.52-.35,1.07-.66,1.66-.91.03-.6.06-1.21.1-1.74.02-.35.26-.64.6-.74C9.65,0,11.49-.12,13.25.15c.33.05.6.3.67.63.04.17.08.34.12.53.07.34.13.61.25,1.22.21.1.41.17.6.25.32.12.63.27.94.42.17-.14.35-.29.64-.52l.06-.05c.29-.23.45-.36.63-.51.28-.23.68-.25.98-.05,1.51,1.02,2.76,2.35,3.61,3.85.18.33.12.74-.15,1l-.32.3c-.19.18-.27.26-.38.36-.22.21-.41.38-.59.54.22.59.36,1.21.43,1.83.51.21,1.06.42,1.69.65.35.13.56.47.53.84-.06.78-.19,1.54-.39,2.28-.19.7-.43,1.38-.73,2.03-.15.33-.49.52-.85.47-.53-.07-1.07-.15-1.71-.25-.22.35-.46.69-.71,1.01.26.4.55.82.87,1.27.23.33.19.78-.09,1.06-.8.79-1.7,1.45-2.67,1.98-.27.15-.61.13-.86-.05-.28-.2-.5-.37-1.21-.95-.02-.02-.17-.14-.32-.26ZM11.84,20.73c.08-.29.17-.59.28-.95.06-.18.21-.31.4-.34.57-.09,1.14-.24,1.68-.45.17-.06.35-.03.49.08.13.1.51.41.54.44.61.5.85.69,1.08.85.81-.45,1.56-1,2.24-1.65-.37-.53-.7-1.02-1.01-1.49-.12-.19-.1-.43.04-.6.39-.44.73-.93,1.02-1.44.1-.18.31-.28.52-.25.72.12,1.31.21,1.88.29.25-.56.46-1.15.62-1.75.17-.64.29-1.3.35-1.97-.7-.26-1.31-.5-1.88-.73-.18-.07-.3-.24-.31-.43-.05-.74-.22-1.46-.51-2.16-.08-.2-.03-.43.13-.57.25-.22.5-.45.82-.75.1-.1.19-.18.37-.35l.22-.21c-.75-1.28-1.82-2.42-3.12-3.32-.15.12-.3.24-.54.44l-.06.05c-.44.35-.64.52-.88.72-.16.14-.39.16-.57.06-.36-.2-.74-.38-1.12-.53-.26-.1-.52-.19-.79-.27-.18-.05-.32-.2-.35-.38l-.07-.34c-.12-.61-.18-.87-.25-1.21-.03-.14-.06-.27-.09-.4-1.54-.22-3.15-.12-4.67.28-.04.6-.08,1.26-.1,1.91,0,.2-.13.37-.32.44-.74.29-1.43.67-2.05,1.14-.18.14-.44.13-.62-.01-.14-.11-.25-.21-.48-.4-.44-.38-.66-.56-.9-.73-1.14,1-1.99,2.19-2.54,3.55.47.39.99.76,1.53,1.12.18.12.26.34.21.55-.3,1.14-.34,2.37-.12,3.57.04.19-.04.39-.2.5-.51.36-1.03.74-1.58,1.16.39,1.21.97,2.33,1.73,3.34h.08c1-.19,1.46-.28,2.01-.42.17-.04.35,0,.47.13.63.61,1.32,1.11,2.08,1.48.16.08.27.23.28.41.01.19.03.35.05.7.04.54.05.77.08,1.06,0,.1.02.19.03.28.09.03.17.05.25.07,1.15.31,2.3.44,3.43.4.06-.29.13-.59.21-.92ZM15.95,8.31c.19.34.34.69.46,1.04.95,2.91-.59,5.94-3.49,6.89-2.65.86-5.71-.74-6.58-3.44-.83-2.57.72-5.63,3.64-6.58.19-.06.38-.11.57-.15,2.32-.48,4.44.51,5.4,2.23ZM10.75,7.06c-.15.03-.31.07-.47.12-2.4.78-3.66,3.27-3,5.32.71,2.17,3.21,3.48,5.32,2.79,2.38-.77,3.63-3.24,2.85-5.63-.1-.3-.22-.59-.38-.86-.75-1.34-2.44-2.13-4.33-1.74l-.1-.49.1.49Z"/>
-                  </svg>
-                  <span style={{ color: "#24a7fd" }}>Settings</span>
-                </button>
-              </div>
-              <div 
-                style={{ 
-                  background: "linear-gradient(45deg, #3788fd, #01e1fd)", 
-                  padding: "1px", 
-                  borderRadius: "10px", 
-                  display: "inline-block",
-                  transition: "all 0.2s",
-                }}
+                <svg width="18" height="18" viewBox="0 0 22.97 22.66" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M14.28,20.02c-.42.15-.86.26-1.3.35-.07.23-.13.43-.18.62-.1.36-.17.68-.22.98-.07.38-.38.66-.77.68-1.28.07-2.59-.08-3.88-.42-.13-.04-.27-.08-.41-.12-.31-.1-.53-.37-.57-.69-.01-.13-.03-.27-.04-.42-.03-.3-.04-.54-.08-1.07-.01-.19-.02-.32-.03-.42-.67-.36-1.3-.8-1.88-1.34-.48.11-.95.2-1.82.35l-.19.03c-.3.05-.61-.07-.79-.31-.89-1.16-1.56-2.46-2-3.86-.1-.33.01-.69.29-.89.5-.38.98-.74,1.46-1.07-.17-1.13-.14-2.27.1-3.35-.5-.34-.98-.7-1.43-1.07-.27-.22-.37-.6-.24-.93.62-1.61,1.62-3.01,2.98-4.17.28-.24.7-.26,1-.05.31.22.55.41,1.09.87.07.06.12.1.17.14.52-.35,1.07-.66,1.66-.91.03-.6.06-1.21.1-1.74.02-.35.26-.64.6-.74C9.65,0,11.49-.12,13.25.15c.33.05.6.3.67.63.04.17.08.34.12.53.07.34.13.61.25,1.22.21.1.41.17.6.25.32.12.63.27.94.42.17-.14.35-.29.64-.52l.06-.05c.29-.23.45-.36.63-.51.28-.23.68-.25.98-.05,1.51,1.02,2.76,2.35,3.61,3.85.18.33.12.74-.15,1l-.32.3c-.19.18-.27.26-.38.36-.22.21-.41.38-.59.54.22.59.36,1.21.43,1.83.51.21,1.06.42,1.69.65.35.13.56.47.53.84-.06.78-.19,1.54-.39,2.28-.19.7-.43,1.38-.73,2.03-.15.33-.49.52-.85.47-.53-.07-1.07-.15-1.71-.25-.22.35-.46.69-.71,1.01.26.4.55.82.87,1.27.23.33.19.78-.09,1.06-.8.79-1.7,1.45-2.67,1.98-.27.15-.61.13-.86-.05-.28-.2-.5-.37-1.21-.95-.02-.02-.17-.14-.32-.26ZM11.84,20.73c.08-.29.17-.59.28-.95.06-.18.21-.31.4-.34.57-.09,1.14-.24,1.68-.45.17-.06.35-.03.49.08.13.1.51.41.54.44.61.5.85.69,1.08.85.81-.45,1.56-1,2.24-1.65-.37-.53-.7-1.02-1.01-1.49-.12-.19-.1-.43.04-.6.39-.44.73-.93,1.02-1.44.1-.18.31-.28.52-.25.72.12,1.31.21,1.88.29.25-.56.46-1.15.62-1.75.17-.64.29-1.3.35-1.97-.7-.26-1.31-.5-1.88-.73-.18-.07-.3-.24-.31-.43-.05-.74-.22-1.46-.51-2.16-.08-.2-.03-.43.13-.57.25-.22.5-.45.82-.75.1-.1.19-.18.37-.35l.22-.21c-.75-1.28-1.82-2.42-3.12-3.32-.15.12-.3.24-.54.44l-.06.05c-.44.35-.64.52-.88.72-.16.14-.39.16-.57.06-.36-.2-.74-.38-1.12-.53-.26-.1-.52-.19-.79-.27-.18-.05-.32-.2-.35-.38l-.07-.34c-.12-.61-.18-.87-.25-1.21-.03-.14-.06-.27-.09-.4-1.54-.22-3.15-.12-4.67.28-.04.6-.08,1.26-.1,1.91,0,.2-.13.37-.32.44-.74.29-1.43.67-2.05,1.14-.18.14-.44.13-.62-.01-.14-.11-.25-.21-.48-.4-.44-.38-.66-.56-.9-.73-1.14,1-1.99,2.19-2.54,3.55.47.39.99.76,1.53,1.12.18.12.26.34.21.55-.3,1.14-.34,2.37-.12,3.57.04.19-.04.39-.2.5-.51.36-1.03.74-1.58,1.16.39,1.21.97,2.33,1.73,3.34h.08c1-.19,1.46-.28,2.01-.42.17-.04.35,0,.47.13.63.61,1.32,1.11,2.08,1.48.16.08.27.23.28.41.01.19.03.35.05.7.04.54.05.77.08,1.06,0,.1.02.19.03.28.09.03.17.05.25.07,1.15.31,2.3.44,3.43.4.06-.29.13-.59.21-.92ZM15.95,8.31c.19.34.34.69.46,1.04.95,2.91-.59,5.94-3.49,6.89-2.65.86-5.71-.74-6.58-3.44-.83-2.57.72-5.63,3.64-6.58.19-.06.38-.11.57-.15,2.32-.48,4.44.51,5.4,2.23ZM10.75,7.06c-.15.03-.31.07-.47.12-2.4.78-3.66,3.27-3,5.32.71,2.17,3.21,3.48,5.32,2.79,2.38-.77,3.63-3.24,2.85-5.63-.1-.3-.22-.59-.38-.86-.75-1.34-2.44-2.13-4.33-1.74l-.1-.49.1.49Z" fill="#aaaaaa"/>
+                </svg>
+                <span style={{ color: "#aaaaaa" }}>Settings</span>
+              </button>
+              <button
+                onClick={() => setShowExportModal(true)}
+                disabled={transactions.length === 0}
+                style={{ background: "#2b2b2b", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", padding: "10px 12px", textTransform: "none" }}
+                title="Export CSV"
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.background = "#383838";
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.background = "#2b2b2b";
                 }}
               >
-                <button
-                  onClick={() => setShowExportModal(true)}
-                  disabled={transactions.length === 0}
-                  style={{ background: "linear-gradient(45deg, #232055, #292967)", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", padding: "10px 12px", textTransform: "none" }}
-                  title="Export CSV"
-                >
-                  <svg width="18" height="18" viewBox="0 0 87.5 88.23" style={{ display: "inline-block" }}>
-                    <path fill="#24a7fd" d="M84.38,25.73h-27.16c-1.73,0-3.12,1.4-3.12,3.13s1.4,3.12,3.12,3.12h24.03v50H6.25V31.98h24.03c1.73,0,3.12-1.4,3.12-3.12s-1.4-3.12-3.12-3.12H3.12c-1.73,0-3.12,1.4-3.12,3.12v56.25c0,1.73,1.4,3.12,3.12,3.12h81.25c1.73,0,3.12-1.4,3.12-3.12V28.86c0-1.73-1.4-3.12-3.12-3.13Z"/>
-                    <path fill="#24a7fd" d="M40.63,19.48v42.04c0,1.73,1.4,3.12,3.12,3.12s3.12-1.4,3.12-3.12V19.48c0-1.73-1.4-3.12-3.12-3.12s-3.12,1.4-3.12,3.12Z"/>
-                    <path fill="#24a7fd" d="M56.25,19.75c.79,0,1.58-.3,2.19-.89,1.23-1.21,1.25-3.19.05-4.42L45.98,1.68c-1.18-1.2-3.29-1.2-4.46,0l-12.5,12.76c-1.21,1.23-1.19,3.21.05,4.42,1.23,1.21,3.21,1.19,4.42-.05l10.27-10.48,10.27,10.48c.61.62,1.42.94,2.23.94h0Z"/>
-                  </svg>
-                  <span style={{ color: "#24a7fd" }}>Export CSV</span>
-                </button>
-              </div>
-              <div 
-                style={{ 
-                  background: "linear-gradient(45deg, #3788fd, #01e1fd)", 
-                  padding: "1px", 
-                  borderRadius: "10px", 
-                  display: "inline-block",
-                  transition: "all 0.2s",
-                }}
+                <svg width="18" height="18" viewBox="0 0 87.5 88.23" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M84.38,25.73h-27.16c-1.73,0-3.12,1.4-3.12,3.13s1.4,3.12,3.12,3.12h24.03v50H6.25V31.98h24.03c1.73,0,3.12-1.4,3.12-3.12s-1.4-3.12-3.12-3.12H3.12c-1.73,0-3.12,1.4-3.12,3.12v56.25c0,1.73,1.4,3.12,3.12,3.12h81.25c1.73,0,3.12-1.4,3.12-3.12V28.86c0-1.73-1.4-3.12-3.12-3.13Z" fill="#aaaaaa"/>
+                  <path d="M40.63,19.48v42.04c0,1.73,1.4,3.12,3.12,3.12s3.12-1.4,3.12-3.12V19.48c0-1.73-1.4-3.12-3.12-3.12s-3.12,1.4-3.12,3.12Z" fill="#aaaaaa"/>
+                  <path d="M56.25,19.75c.79,0,1.58-.3,2.19-.89,1.23-1.21,1.25-3.19.05-4.42L45.98,1.68c-1.18-1.2-3.29-1.2-4.46,0l-12.5,12.76c-1.21,1.23-1.19,3.21.05,4.42,1.23,1.21,3.21,1.19,4.42-.05l10.27-10.48,10.27,10.48c.61.62,1.42.94,2.23.94h0Z" fill="#aaaaaa"/>
+                </svg>
+                <span style={{ color: "#aaaaaa" }}>Export CSV</span>
+              </button>
+              <button 
+                onClick={() => fetchTransactions(activeTracker, true)}
+                disabled={loading}
+                style={{ background: "#2b2b2b", transition: "all 0.2s", border: "none", borderRadius: "9px", padding: "10px 12px", display: "inline-flex", alignItems: "center", gap: 6, textTransform: "none" }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.05)";
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.background = "#383838";
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.background = "#2b2b2b";
                 }}
               >
-                <button 
-                  onClick={() => fetchTransactions(activeTracker, true)}
-                  disabled={loading}
-                  style={{ background: "linear-gradient(45deg, #232055, #292967)", transition: "all 0.2s", border: "none", borderRadius: "9px", padding: "10px 12px", display: "inline-flex", alignItems: "center", gap: 6, textTransform: "none" }}
-                >
-                  <svg width="18" height="18" viewBox="0 0 67.6 67.5" style={{ display: "inline-block" }}>
-                    <path fill="#24a7fd" d="M0,60c0,2.1,1.7,3.8,3.8,3.8s3.8-1.7,3.8-3.8v-4.7c6.5,7.7,16.1,12.2,26.2,12.2,17,0,31.3-12.6,33.5-29.5.3-2.1-1.1-3.9-3.2-4.2s-3.9,1.1-4.2,3.2v.1c-1.7,13.1-12.8,22.9-26,22.9-8.7,0-16.9-4.2-21.9-11.2h6.8c2.1,0,3.8-1.7,3.8-3.8s-1.7-3.8-3.8-3.8H3.8C1.7,41.2,0,42.9,0,45H0s0,15,0,15Z"/>
-                    <path fill="#24a7fd" d="M45,22.5c0,2.1,1.7,3.8,3.8,3.8h15c2.1,0,3.8-1.7,3.8-3.8h0V7.5c0-2.1-1.7-3.8-3.8-3.8s-3.8,1.7-3.8,3.8v4.7C53.5,4.5,43.9,0,33.8,0,16.8,0,2.4,12.7.3,29.5c-.2,2.1,1.3,3.9,3.4,4.1,2,.2,3.8-1.2,4.1-3.2,1.6-13.1,12.8-23,26-23,8.7,0,16.9,4.2,21.9,11.3h-6.9c-2.1.1-3.8,1.8-3.8,3.8h0Z"/>
-                  </svg>
-                  <span style={{ color: "#24a7fd" }}>{loading ? "Loading..." : "Refresh"}</span>
-                </button>
-              </div>
+                <svg width="18" height="18" viewBox="0 0 67.6 67.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M0,60c0,2.1,1.7,3.8,3.8,3.8s3.8-1.7,3.8-3.8v-4.7c6.5,7.7,16.1,12.2,26.2,12.2,17,0,31.3-12.6,33.5-29.5.3-2.1-1.1-3.9-3.2-4.2s-3.9,1.1-4.2,3.2v.1c-1.7,13.1-12.8,22.9-26,22.9-8.7,0-16.9-4.2-21.9-11.2h6.8c2.1,0,3.8-1.7,3.8-3.8s-1.7-3.8-3.8-3.8H3.8C1.7,41.2,0,42.9,0,45H0s0,15,0,15Z" fill="#aaaaaa"/>
+                  <path d="M45,22.5c0,2.1,1.7,3.8,3.8,3.8h15c2.1,0,3.8-1.7,3.8-3.8h0V7.5c0-2.1-1.7-3.8-3.8-3.8s-3.8,1.7-3.8,3.8v4.7C53.5,4.5,43.9,0,33.8,0,16.8,0,2.4,12.7.3,29.5c-.2,2.1,1.3,3.9,3.4,4.1,2,.2,3.8-1.2,4.1-3.2,1.6-13.1,12.8-23,26-23,8.7,0,16.9,4.2,21.9,11.3h-6.9c-2.1.1-3.8,1.8-3.8,3.8h0Z" fill="#aaaaaa"/>
+                </svg>
+                <span style={{ color: "#aaaaaa" }}>{loading ? "Loading..." : "Refresh"}</span>
+              </button>
             </div>
           </div>
           
           {/* Line separator */}
           <div style={{ 
             height: "1px", 
-            background: "linear-gradient(90deg, #0c86ab, #2d55ac)", 
+            background: "#aaaaaa", 
             margin: "16px 0" 
           }}></div>
           
           {/* Node totals */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total rewards</p>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", paddingLeft: "20px" }}>Total rewards</p>
               <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", paddingLeft: "20px", textTransform: "none" }}>
                 {currencySymbol}{totalRewards.toFixed(2)}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa", paddingLeft: "20px" }}>
                 {totalEthRewards.toFixed(6)} ETH
               </p>
             </div>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total taxes</p>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", paddingLeft: "20px" }}>Total taxes</p>
               <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", paddingLeft: "20px", textTransform: "none" }}>
                 {currencySymbol}{totalTaxes.toFixed(2)}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa", paddingLeft: "20px" }}>
                 {totalEthTaxes.toFixed(6)} ETH
               </p>
             </div>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total left to swap</p>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", paddingLeft: "20px" }}>Total left to swap</p>
               <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#d84b6a", paddingLeft: "20px", textTransform: "none" }}>
                 {currencySymbol}{totalLeftToSwap.toFixed(2)}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa", paddingLeft: "20px" }}>
                 {totalEthLeftToSwap.toFixed(6)} ETH
               </p>
             </div>
             <div>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>Total swapped</p>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", paddingLeft: "20px" }}>Total swapped</p>
               <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", paddingLeft: "20px", textTransform: "none" }}>
                 {currencySymbol}{totalSwapped.toFixed(2)}
               </p>
-              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4", paddingLeft: "20px" }}>
+              <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa", paddingLeft: "20px" }}>
                 {totalEthSwapped.toFixed(6)} ETH
               </p>
             </div>
@@ -1094,170 +1006,140 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* Incoming Rewards */}
       {activeTracker && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#8a8ea1" }}>Incoming rewards</h3>
-          <div style={{ background: "linear-gradient(45deg, #3788fd, #01e1fd)", padding: "1px", borderRadius: "14px", boxShadow: glowShadow }}>
-            <div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "24px" }}>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Incoming rewards</h3>
+          <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px" }}>
+            <div style={{ borderRadius: "13px", padding: "24px" }}>
           {/* Year Filter */}
           {availableYears.length > 0 && (
-            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-              {availableYears.map((year) => (
-                <button
-                  key={year}
-                  onClick={() => setSelectedYear(year)}
-                  style={{
-                    background: selectedYear === year ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#232055",
-                    color: selectedYear === year ? "white" : "#8a8ea1",
-                    padding: "8px 16px",
-                    border: "none",
-                    borderRadius: "20px",
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                    fontWeight: selectedYear === year ? 600 : 400,
-                    transition: "background 0.2s, color 0.2s, transform 0.2s",
-                    transitionProperty: "background, color, transform",
-                    position: "relative",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedYear !== year) {
-                      e.currentTarget.style.background = "#2a2a44";
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (selectedYear !== year) {
-                      e.currentTarget.style.background = "#232055";
-                      e.currentTarget.style.transform = "scale(1)";
-                    }
-                  }}
-                  onMouseDown={(e) => {
-                    e.currentTarget.style.transform = "scale(0.95)";
-                  }}
-                  onMouseUp={(e) => {
-                    e.currentTarget.style.transform = selectedYear === year ? "scale(1)" : "scale(1.05)";
-                  }}
-                >
-                  <span style={{ 
-                    fontWeight: 600, 
-                    visibility: "hidden",
-                    position: "absolute",
-                    whiteSpace: "nowrap",
-                    pointerEvents: "none"
-                  }}>
+            <div style={{ 
+              display: "flex", 
+              background: "#383838", 
+              borderRadius: "8px", 
+              padding: "4px",
+              marginBottom: "16px",
+              gap: 0,
+            }}>
+              {availableYears.map((year, index) => (
+                <React.Fragment key={year}>
+                  {index > 0 && (
+                    <div style={{ width: "1px", background: "#4b4b4b", margin: "4px 0" }}></div>
+                  )}
+                  <button
+                    onClick={() => setSelectedYear(year)}
+                    style={{
+                      background: selectedYear === year ? "#555555" : "transparent",
+                      color: selectedYear === year ? "white" : "#aaaaaa",
+                      padding: "8px 16px",
+                      border: "none",
+                      borderRadius: selectedYear === year ? "6px" : "0",
+                      cursor: "pointer",
+                      fontSize: "0.9rem",
+                      fontWeight: selectedYear === year ? 600 : 400,
+                      transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                      position: "relative",
+                      flex: 1,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedYear !== year) {
+                        e.currentTarget.style.color = "white";
+                        e.currentTarget.style.fontWeight = "600";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedYear !== year) {
+                        e.currentTarget.style.color = "#aaaaaa";
+                        e.currentTarget.style.fontWeight = "400";
+                      }
+                    }}
+                  >
                     {year}
-                  </span>
-                  <span style={{ fontWeight: selectedYear === year ? 600 : 400 }}>
-                    {year}
-                  </span>
-                </button>
+                  </button>
+                </React.Fragment>
               ))}
             </div>
           )}
           
           {/* Month Filter */}
           {availableMonths.length > 0 && (
-            <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-              <button
-                onClick={() => setSelectedMonth(null)}
-                style={{
-                  background: selectedMonth === null ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
-                  color: selectedMonth === null ? "white" : "#8a8ea1",
-                  padding: "8px 16px",
-                  border: "none",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                  fontSize: "0.9rem",
-                  fontWeight: selectedMonth === null ? 600 : 400,
-                  transition: "background 0.2s, color 0.2s, transform 0.2s",
-                  transitionProperty: "background, color, transform",
-                  textTransform: "none",
-                  position: "relative",
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedMonth !== null) {
-                    e.currentTarget.style.background = "#1a1648";
-                    e.currentTarget.style.transform = "scale(1.05)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedMonth !== null) {
-                    e.currentTarget.style.background = "#110e3f";
-                    e.currentTarget.style.transform = "scale(1)";
-                  }
-                }}
-                onMouseDown={(e) => {
-                  e.currentTarget.style.transform = "scale(0.95)";
-                }}
-                onMouseUp={(e) => {
-                  e.currentTarget.style.transform = selectedMonth === null ? "scale(1)" : "scale(1.05)";
-                }}
-              >
-                <span style={{ 
-                  fontWeight: 600, 
-                  visibility: "hidden",
-                  position: "absolute",
-                  whiteSpace: "nowrap",
-                  pointerEvents: "none"
-                }}>
+            <div style={{ 
+              display: "flex", 
+              background: "#383838", 
+              borderRadius: "8px", 
+              padding: "4px",
+              marginBottom: "16px",
+              gap: 0,
+            }}>
+              <React.Fragment>
+                <button
+                  onClick={() => setSelectedMonth(null)}
+                  style={{
+                    background: selectedMonth === null ? "#555555" : "transparent",
+                    color: selectedMonth === null ? "white" : "#aaaaaa",
+                    padding: "8px 16px",
+                    border: "none",
+                    borderRadius: selectedMonth === null ? "6px" : "0",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                    fontWeight: selectedMonth === null ? 600 : 400,
+                    transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                    textTransform: "none",
+                    position: "relative",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedMonth !== null) {
+                      e.currentTarget.style.color = "white";
+                      e.currentTarget.style.fontWeight = "600";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedMonth !== null) {
+                      e.currentTarget.style.color = "#aaaaaa";
+                      e.currentTarget.style.fontWeight = "400";
+                    }
+                  }}
+                >
                   All
-                </span>
-                <span style={{ fontWeight: selectedMonth === null ? 600 : 400 }}>
-                  All
-                </span>
-              </button>
-              {availableMonths.map((month) => {
-                const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
-                return (
-                  <button
-                    key={month}
-                    onClick={() => setSelectedMonth(month)}
-                    style={{
-                      background: selectedMonth === month ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
-                      color: selectedMonth === month ? "white" : "#8a8ea1",
-                      padding: "8px 16px",
-                      border: "none",
-                      borderRadius: "20px",
-                      cursor: "pointer",
-                      fontSize: "0.9rem",
-                      fontWeight: selectedMonth === month ? 600 : 400,
-                      transition: "background 0.2s, color 0.2s, transform 0.2s",
-                      transitionProperty: "background, color, transform",
-                      textTransform: "none",
-                      position: "relative",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (selectedMonth !== month) {
-                        e.currentTarget.style.background = "#1a1648";
-                        e.currentTarget.style.transform = "scale(1.05)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (selectedMonth !== month) {
-                        e.currentTarget.style.background = "#110e3f";
-                        e.currentTarget.style.transform = "scale(1)";
-                      }
-                    }}
-                    onMouseDown={(e) => {
-                      e.currentTarget.style.transform = "scale(0.95)";
-                    }}
-                    onMouseUp={(e) => {
-                      e.currentTarget.style.transform = selectedMonth === month ? "scale(1)" : "scale(1.05)";
-                    }}
-                  >
-                    <span style={{ 
-                      fontWeight: 600, 
-                      visibility: "hidden",
-                      position: "absolute",
-                      whiteSpace: "nowrap",
-                      pointerEvents: "none"
-                    }}>
-                      {monthName}
-                    </span>
-                    <span style={{ fontWeight: selectedMonth === month ? 600 : 400 }}>
-                      {monthName}
-                    </span>
-                  </button>
-                );
-              })}
+                </button>
+                {availableMonths.map((month, index) => {
+                  const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
+                  return (
+                    <React.Fragment key={month}>
+                      <div style={{ width: "1px", background: "#4b4b4b", margin: "4px 0" }}></div>
+                      <button
+                        onClick={() => setSelectedMonth(month)}
+                        style={{
+                          background: selectedMonth === month ? "#555555" : "transparent",
+                          color: selectedMonth === month ? "white" : "#aaaaaa",
+                          padding: "8px 16px",
+                          border: "none",
+                          borderRadius: selectedMonth === month ? "6px" : "0",
+                          cursor: "pointer",
+                          fontSize: "0.9rem",
+                          fontWeight: selectedMonth === month ? 600 : 400,
+                          transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                          textTransform: "none",
+                          position: "relative",
+                          flex: 1,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (selectedMonth !== month) {
+                            e.currentTarget.style.color = "white";
+                            e.currentTarget.style.fontWeight = "600";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (selectedMonth !== month) {
+                            e.currentTarget.style.color = "#aaaaaa";
+                            e.currentTarget.style.fontWeight = "400";
+                          }
+                        }}
+                      >
+                        {monthName}
+                      </button>
+                    </React.Fragment>
+                  );
+                })}
+              </React.Fragment>
             </div>
           )}
           {loading ? (
@@ -1269,15 +1151,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Date, Time</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>ETH Rewards</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Rewards in {activeTracker.currency}</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Tax Rate</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Taxes in ETH</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Taxes in {activeTracker.currency}</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Transaction Hash</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#9aa0b4", fontSize: "0.85rem", fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Date, Time</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>ETH Rewards</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Rewards in {activeTracker.currency}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Tax Rate</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Taxes in ETH</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Taxes in {activeTracker.currency}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Transaction Hash</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1289,10 +1171,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           colSpan={9} 
                           style={{ 
                             padding: "12px 12px 8px 12px", 
-                            color: "#9aa0b4", 
+                            color: "#aaaaaa", 
                             fontSize: "0.9rem", 
                             fontWeight: 600,
-                            background: "linear-gradient(90deg, #292967, #232055)"
+                            background: "#2b2b2b"
                           }}
                         >
                           {monthGroup.monthName}
@@ -1303,7 +1185,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         <React.Fragment key={`${monthGroup.monthKey}-${idx}`}>
                           <tr>
                             <td colSpan={9} style={{ padding: 0, height: "1px" }}>
-                              <div style={{ height: "1px", background: "linear-gradient(90deg, #0c86ab, #2d55ac)" }}></div>
+                              <div style={{ height: "1px", background: "#383838" }}></div>
                             </td>
                           </tr>
                           <tr>
@@ -1437,8 +1319,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           <button
                             onClick={() => { setMarkPaidHash(tx.transactionHash); setSwapHashInput(""); }}
                             style={{ 
-                              background: "#110e3f", 
-                              color: "white", 
+                              background: "#2b2b2b", 
+                              color: "#ffffff", 
                               padding: "6px 10px", 
                               border: 0, 
                               borderRadius: 8, 
@@ -1447,11 +1329,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               textTransform: "none",
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.background = "#1a1648";
+                              e.currentTarget.style.background = "#383838";
                               e.currentTarget.style.transform = "scale(1.05)";
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.background = "#110e3f";
+                              e.currentTarget.style.background = "#2b2b2b";
                               e.currentTarget.style.transform = "scale(1)";
                             }}
                             onMouseDown={(e) => {
