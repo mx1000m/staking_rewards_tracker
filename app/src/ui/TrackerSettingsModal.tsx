@@ -244,7 +244,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Name:
             </label>
             <input
@@ -256,7 +256,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Wallet address (receiving the staking rewards):
             </label>
             <input
@@ -268,7 +268,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Currency preference:
             </label>
             <div style={{ display: "flex", gap: "12px" }}>
@@ -332,7 +332,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Country and tax rate:
             </label>
             <div className="row">
@@ -366,7 +366,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Etherscan API Key:
             </label>
             <div style={{ position: "relative" }}>
@@ -416,7 +416,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 href="https://etherscan.io/apidashboard"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={{ color: "#24a7fd", textDecoration: "underline" }}
+                style={{ color: "#aaaaaa", textDecoration: "underline" }}
               >
                 Etherscan API key here
               </a>.
@@ -425,31 +425,29 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
         </div>
 
         <div style={{ marginTop: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button
-            onClick={() => {
-              setShowDeleteConfirm(true);
-              setDeleteNameInput("");
-              setDeleteNameError(false);
-            }}
-            style={{
-              background: "#ef4444",
-              color: "white",
-              padding: "10px 20px",
-              border: "none",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontWeight: 500,
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#dc2626";
-              e.currentTarget.style.transform = "scale(1.05)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#ef4444";
-              e.currentTarget.style.transform = "scale(1)";
-            }}
-          >
+            <button
+              onClick={() => {
+                setShowDeleteConfirm(true);
+                setDeleteNameInput("");
+                setDeleteNameError(false);
+              }}
+              style={{
+                background: "#ef4444",
+                color: "white",
+                padding: "10px 20px",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontWeight: 500,
+                transition: "background 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#dc2626";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#ef4444";
+              }}
+            >
             Delete
           </button>
           <div className="actions" style={{ margin: 0 }}>
@@ -462,17 +460,14 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 borderRadius: "10px",
                 textTransform: "none",
                 border: "none",
-                transform: "scale(1)",
-                transition: "background 0.2s, transform 0.2s",
+                transition: "background 0.2s",
                 fontWeight: 400,
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "#383838";
-                e.currentTarget.style.transform = "scale(1.02)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "#2b2b2b";
-                e.currentTarget.style.transform = "scale(1)";
               }}
             >
               Cancel
@@ -487,16 +482,13 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 color: "#f0f0f0",
                 textTransform: "none",
                 fontWeight: 600,
-                transform: "scale(1)",
-                transition: "background 0.2s, transform 0.2s",
+                transition: "background 0.2s",
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = "#666666";
-                e.currentTarget.style.transform = "scale(1.02)";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "#555555";
-                e.currentTarget.style.transform = "scale(1)";
               }}
             >
               {saveButtonText}
