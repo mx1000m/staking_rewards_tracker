@@ -885,7 +885,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               {/* Header row: node name, wallet + copy, action buttons */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                 <div>
-                  <h2 style={{ margin: "0 0 4px 0" }}>
+                  <h2 style={{ margin: "0 0 4px 0", color: "#f0f0f0" }}>
                     {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
                   </h2>
                   <div
@@ -1066,20 +1066,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       onClick={() => setSelectedMonth(null)}
                       style={{
                         background: selectedMonth === null ? "#555555" : "transparent",
-                        color: selectedMonth === null ? "white" : "#aaaaaa",
+                        color: selectedMonth === null ? "#f0f0f0" : "#aaaaaa",
                         padding: "8px 16px",
                         border: "none",
                         borderRadius: selectedMonth === null ? "6px" : "0",
                         cursor: "pointer",
                         fontSize: "0.9rem",
                         fontWeight: selectedMonth === null ? 600 : 400,
-                        transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                        transition: "background 0.2s, color 0.2s",
                         textTransform: "none",
                         position: "relative",
                       }}
                       onMouseEnter={(e) => {
                         if (selectedMonth !== null) {
-                          e.currentTarget.style.color = "white";
+                          e.currentTarget.style.color = "#f0f0f0";
                           e.currentTarget.style.fontWeight = "600";
                         }
                       }}
@@ -1108,21 +1108,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             onClick={() => setSelectedMonth(month)}
                             style={{
                               background: selectedMonth === month ? "#555555" : "transparent",
-                              color: selectedMonth === month ? "white" : "#aaaaaa",
+                              color: selectedMonth === month ? "#f0f0f0" : "#aaaaaa",
                               padding: "8px 16px",
                               border: "none",
                               borderRadius: selectedMonth === month ? "6px" : "0",
                               cursor: "pointer",
                               fontSize: "0.9rem",
                               fontWeight: selectedMonth === month ? 600 : 400,
-                              transition: "background 0.2s, color 0.2s, font-weight 0.2s",
+                              transition: "background 0.2s, color 0.2s",
                               textTransform: "none",
                               position: "relative",
                               flex: 1,
                             }}
                             onMouseEnter={(e) => {
                               if (selectedMonth !== month) {
-                                e.currentTarget.style.color = "white";
+                                e.currentTarget.style.color = "#f0f0f0";
                                 e.currentTarget.style.fontWeight = "600";
                               }
                             }}
