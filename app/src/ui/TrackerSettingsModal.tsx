@@ -200,14 +200,15 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       >
         <div
           style={{
-            background: "linear-gradient(45deg, #3788fd, #01e1fd)",
-            padding: "1px",
+            background: "#181818",
             borderRadius: "18px",
+            padding: "1px",
+            border: "1px solid #2b2b2b",
           }}
         >
           <div
             style={{
-              background: "#1c1948",
+              background: "#181818",
               borderRadius: "17px",
               padding: "28px",
               maxHeight: "90vh",
@@ -217,7 +218,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             }}
           >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", paddingRight: "48px" }}>
-          <h2 style={{ margin: 0 }}>Edit node tracker</h2>
+          <h2 style={{ margin: 0, color: "#f0f0f0" }}>Edit node tracker</h2>
           <button
             onClick={requestClose}
             style={{
@@ -243,8 +244,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
         <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-              Name
+            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+              Name:
             </label>
             <input
               className="input"
@@ -255,8 +256,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-              Wallet Address (receiving staking rewards)
+            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+              Wallet address (receiving the staking rewards):
             </label>
             <input
               className="input"
@@ -267,8 +268,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-              Currency Preference
+            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+              Currency preference:
             </label>
             <div style={{ display: "flex", gap: "12px" }}>
               <button
@@ -277,10 +278,10 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 style={{
                   flex: 1,
                   padding: "12px 20px",
-                  background: currency === "EUR" ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
-                  border: currency === "EUR" ? "none" : "1px solid #1a1a2e",
+                  background: currency === "EUR" ? "#2b2b2b" : "#1f1f1f",
+                  border: "none",
                   borderRadius: "10px",
-                  color: currency === "EUR" ? "#ffffff" : "#24a7fd",
+                  color: currency === "EUR" ? "#f0f0f0" : "#aaaaaa",
                   textTransform: "none",
                   cursor: "pointer",
                   fontWeight: currency === "EUR" ? 600 : 400,
@@ -288,12 +289,12 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 }}
                 onMouseEnter={(e) => {
                   if (currency !== "EUR") {
-                    e.currentTarget.style.background = "#1a1648";
+                    e.currentTarget.style.background = "#383838";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (currency !== "EUR") {
-                    e.currentTarget.style.background = "#110e3f";
+                    e.currentTarget.style.background = "#1f1f1f";
                   }
                 }}
               >
@@ -305,10 +306,10 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 style={{
                   flex: 1,
                   padding: "12px 20px",
-                  background: currency === "USD" ? "linear-gradient(45deg, #01e1fd, #3788fd)" : "#110e3f",
-                  border: currency === "USD" ? "none" : "1px solid #1a1a2e",
+                  background: currency === "USD" ? "#2b2b2b" : "#1f1f1f",
+                  border: "none",
                   borderRadius: "10px",
-                  color: currency === "USD" ? "#ffffff" : "#24a7fd",
+                  color: currency === "USD" ? "#f0f0f0" : "#aaaaaa",
                   textTransform: "none",
                   cursor: "pointer",
                   fontWeight: currency === "USD" ? 600 : 400,
@@ -316,12 +317,12 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 }}
                 onMouseEnter={(e) => {
                   if (currency !== "USD") {
-                    e.currentTarget.style.background = "#1a1648";
+                    e.currentTarget.style.background = "#383838";
                   }
                 }}
                 onMouseLeave={(e) => {
                   if (currency !== "USD") {
-                    e.currentTarget.style.background = "#110e3f";
+                    e.currentTarget.style.background = "#1f1f1f";
                   }
                 }}
               >
@@ -331,8 +332,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-              Country and Tax Rate
+            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+              Country and tax rate:
             </label>
             <div className="row">
               <select
@@ -359,14 +360,14 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               />
               <span style={{ color: "#9aa0b4" }}>%</span>
             </div>
-            <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem" }}>
+            <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
               Disclaimer: The country tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
             </p>
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-              Etherscan API Key
+            <label style={{ display: "block", marginBottom: "8px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+              Etherscan API Key:
             </label>
             <div style={{ position: "relative" }}>
               <input
@@ -409,7 +410,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 />
               </button>
             </div>
-            <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem" }}>
+            <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
               You can find your{" "}
               <a
                 href="https://etherscan.io/apidashboard"
@@ -455,21 +456,22 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             <button
               onClick={requestClose}
               style={{
-                background: "#110e3f",
-                color: "#24a7fd",
+                background: "#2b2b2b",
+                color: "#aaaaaa",
                 padding: "10px 20px",
                 borderRadius: "10px",
                 textTransform: "none",
                 border: "none",
                 transform: "scale(1)",
                 transition: "background 0.2s, transform 0.2s",
+                fontWeight: 400,
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "#1a1648";
-                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.background = "#383838";
+                e.currentTarget.style.transform = "scale(1.02)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = "#110e3f";
+                e.currentTarget.style.background = "#2b2b2b";
                 e.currentTarget.style.transform = "scale(1)";
               }}
             >
@@ -478,20 +480,22 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             <button
               onClick={handleSave}
               style={{
-                background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+                background: "#555555",
                 border: "none",
                 borderRadius: "10px",
                 padding: "10px 20px",
-                color: "#ffffff",
+                color: "#f0f0f0",
                 textTransform: "none",
                 fontWeight: 600,
                 transform: "scale(1)",
-                transition: "transform 0.2s",
+                transition: "background 0.2s, transform 0.2s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.background = "#666666";
+                e.currentTarget.style.transform = "scale(1.02)";
               }}
               onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#555555";
                 e.currentTarget.style.transform = "scale(1)";
               }}
             >
