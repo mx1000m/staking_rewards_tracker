@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
+import { Landing } from "./Landing";
 
 export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const { user, loading, signInWithGoogle, signInWithGitHub, logout } = useAuth();
@@ -127,11 +128,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	}, []);
 
 	if (loading) {
-		return (
-			<div className="card">
-				<p>Loading...</p>
-			</div>
-		);
+		return null;
 	}
 
 	if (user) {
@@ -365,27 +362,13 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		);
 	}
 
-	// User is not signed in, show sign-in options only
+	// User is not signed in: show Solobeam landing with Tubes cursor
 	return (
-		<div className="card">
-			<h2>Sign in</h2>
-			<p className="muted">Choose a method to continue.</p>
-			{error && (
-				<div style={{ padding: "12px", background: "#2a1a1a", border: "1px solid #ff4444", borderRadius: "8px", marginBottom: "16px", color: "#ff8888" }}>
-					{error}
-				</div>
-			)}
-			<div className="row" style={{ gap: 8, flexWrap: "wrap" }}>
-				<button onClick={handleGoogleSignIn} disabled={signingIn}>
-					{signingIn ? "Signing in..." : "Google"}
-				</button>
-				<button onClick={handleGitHubSignIn} disabled={signingIn}>
-					{signingIn ? "Signing in..." : "GitHub"}
-				</button>
-				<button onClick={handleWalletConnect} disabled={signingIn}>
-					Connect Wallet
-				</button>
-			</div>
-		</div>
+		<Landing
+			onSignInClick={() => {
+				// For now open Google as primary; we can expand to a modal later
+				handleGoogleSignIn();
+			}}
+		/>
 	);
 };
