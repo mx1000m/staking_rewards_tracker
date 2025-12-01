@@ -1487,20 +1487,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           >
             <div
               style={{
-                background: "linear-gradient(45deg, #3788fd, #01e1fd)",
-                padding: "1px",
+                background: "#181818",
                 borderRadius: "18px",
+                padding: "1px",
+                border: "1px solid #2b2b2b",
               }}
             >
               <div
                 style={{
-                  background: "#1c1948",
+                  background: "#181818",
                   borderRadius: "17px",
                   padding: "28px",
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0 }}>Mark as Paid</h3>
+                  <h3 style={{ margin: 0, color: "#f0f0f0" }}>Mark as paid?</h3>
                   <button
                     onClick={requestMarkPaidModalClose}
                     style={{
@@ -1518,24 +1519,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       position: "absolute",
                       top: "10px",
                       right: "10px",
-                      transition: "color 0.2s, transform 0.2s",
+                      transition: "color 0.2s",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.color = "#e8e8f0";
-                      e.currentTarget.style.transform = "scale(1.1)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.color = "#9aa0b4";
-                      e.currentTarget.style.transform = "scale(1)";
                     }}
                   >
                     ×
                   </button>
                 </div>
-                <p className="muted" style={{ marginTop: 0, marginBottom: "16px" }}>Enter the transaction hash of the swap (optional).</p>
+                <p className="muted" style={{ marginTop: 0, marginBottom: "8px", color: "#f0f0f0" }}>
+                  Swap tranaction Hash (optional):
+                </p>
                 <input
                   className="input"
-                  placeholder="Swap transaction hash (optional, 0x...)"
+                  placeholder="0x..."
                   value={swapHashInput}
                   onChange={(e) => setSwapHashInput(e.target.value.trim())}
                 />
@@ -1543,21 +1544,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <button
                     onClick={requestMarkPaidModalClose}
                     style={{
-                      background: "#110e3f",
-                      color: "#24a7fd",
+                      background: "#2b2b2b",
+                      color: "#aaaaaa",
                       padding: "10px 20px",
                       borderRadius: "10px",
                       textTransform: "none",
                       border: "none",
-                      transition: "background 0.2s, transform 0.2s",
+                      transition: "background 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#1a1648";
-                      e.currentTarget.style.transform = "scale(1.05)";
+                      e.currentTarget.style.background = "#383838";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#110e3f";
-                      e.currentTarget.style.transform = "scale(1)";
+                      e.currentTarget.style.background = "#2b2b2b";
                     }}
                   >
                     Cancel
@@ -1601,20 +1600,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     }}
                     className="pressable-button"
                     style={{
-                      background: "linear-gradient(45deg, #01e1fd, #3788fd)",
+                      background: "#555555",
                       border: "none",
                       borderRadius: "10px",
                       padding: "10px 20px",
-                      color: "#ffffff",
+                      color: "#f0f0f0",
                       textTransform: "none",
                       fontWeight: 600,
-                      transition: "transform 0.2s",
+                      transition: "background 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "scale(1.05)";
+                      e.currentTarget.style.background = "#666666";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "scale(1)";
+                      e.currentTarget.style.background = "#555555";
                     }}
                   >
                     Confirm

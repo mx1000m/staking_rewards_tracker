@@ -62,7 +62,7 @@ body {
   border: 1px solid transparent;
   background: #1f1f1f;
   color: #aaaaaa;
-  font-size: 1rem;
+  font-size: 0.9rem;
   box-sizing: border-box;
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
