@@ -974,14 +974,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 </div>
               </div>
 
-              {/* Thin separator under header */}
-              <div
-                style={{
-                  height: "1px",
-                  background: "#aaaaaa",
-                  margin: "16px 0",
-                }}
-              ></div>
 
               {/* Filters row: year dropdown + months bar */}
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: "16px" }}>
@@ -995,7 +987,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         }
                       }}
                       style={{
-                        background: "#2b2b2b",
+                        background: "#555555",
                         color: "#f0f0f0",
                         padding: "8px 16px",
                         border: "none",
@@ -1058,8 +1050,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       display: "flex",
                       background: "#2b2b2b",
                       borderRadius: "8px",
-                      padding: "4px",
+                      padding: "2px",
                       gap: 0,
+                      alignItems: "center",
                     }}
                   >
                     <button
@@ -1076,6 +1069,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         transition: "background 0.2s, color 0.2s",
                         textTransform: "none",
                         position: "relative",
+                        minWidth: "48px",
                       }}
                       onMouseEnter={(e) => {
                         if (selectedMonth !== null) {
@@ -1090,7 +1084,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         }
                       }}
                     >
-                      All
+                      <span style={{ 
+                        fontWeight: selectedMonth === null ? 600 : 400,
+                        visibility: "hidden",
+                        position: "absolute",
+                        whiteSpace: "nowrap",
+                        pointerEvents: "none"
+                      }}>All</span>
+                      <span style={{ fontWeight: selectedMonth === null ? 600 : 400 }}>All</span>
                     </button>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((month) => {
                       const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
@@ -1149,7 +1150,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                   background: dotColor,
                                 }}
                               />
-                              {monthName}
+                              <span style={{ 
+                                fontWeight: selectedMonth === month ? 600 : 400,
+                                visibility: "hidden",
+                                position: "absolute",
+                                whiteSpace: "nowrap",
+                                pointerEvents: "none"
+                              }}>{monthName}</span>
+                              <span style={{ fontWeight: selectedMonth === month ? 600 : 400 }}>{monthName}</span>
                             </span>
                           </button>
                         </React.Fragment>
@@ -1168,7 +1176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   marginBottom: "16px",
                 }}
               >
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "16px" }}>
+                <div style={{ display: "flex", justifyContent: "center", gap: "32px", flexWrap: "wrap" }}>
                   <div>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total rewards</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
