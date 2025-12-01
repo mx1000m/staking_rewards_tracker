@@ -240,15 +240,16 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									position: "absolute",
 									top: "calc(100% + 8px)",
 									right: 0,
-									background: "linear-gradient(45deg, #3788fd, #01e1fd)",
+									background: "#181818",
 									borderRadius: "14px",
 									padding: "1px",
 									minWidth: "280px",
-									boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+									boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
 									zIndex: 1000,
+									border: "1px solid #2b2b2b",
 								}}
 							>
-								<div style={{ background: "linear-gradient(45deg, #232055, #292967)", borderRadius: "13px", padding: "20px", position: "relative" }}>
+								<div style={{ background: "#181818", borderRadius: "13px", padding: "20px", position: "relative" }}>
 								<button
 									onClick={closeUserMenu}
 									style={{
@@ -311,11 +312,11 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 											</div>
 										)}
 										<div>
-											<p style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "#e8e8f0" }}>
+											<p style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "#f0f0f0" }}>
 												GM {userName}!
 											</p>
 											{userEmail && (
-												<p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#9aa0b4" }}>
+												<p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
 													{userEmail}
 												</p>
 											)}
@@ -329,8 +330,8 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									}}
 									style={{
 										width: "100%",
-										background: "#110e3f",
-										color: "#24a7fd",
+										background: "#2b2b2b",
+										color: "#aaaaaa",
 										padding: "10px 16px",
 										border: "none",
 										borderRadius: "10px",
@@ -340,12 +341,10 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 										transform: "scale(1)",
 									}}
 									onMouseEnter={(e) => {
-										e.currentTarget.style.background = "#1a1648";
-										e.currentTarget.style.transform = "scale(1.05)";
+										e.currentTarget.style.background = "#383838";
 									}}
 									onMouseLeave={(e) => {
-										e.currentTarget.style.background = "#110e3f";
-										e.currentTarget.style.transform = "scale(1)";
+										e.currentTarget.style.background = "#2b2b2b";
 									}}
 								>
 									Sign out

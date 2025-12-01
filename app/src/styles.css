@@ -136,29 +136,24 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 }
 
 @keyframes userMenuEnter {
-  0% {
-    transform: translateX(120%);
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
   }
-  65% {
-    transform: translateX(-6%);
-  }
-  85% {
-    transform: translateX(3%);
-  }
-  100% {
-    transform: translateX(0);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes userMenuExit {
-  0% {
-    transform: translateX(0);
+  from {
+    opacity: 1;
+    transform: translateY(0);
   }
-  20% {
-    transform: translateX(-4%);
-  }
-  100% {
-    transform: translateX(120%);
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
   }
 }
 
