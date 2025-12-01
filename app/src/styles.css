@@ -85,7 +85,7 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 .muted { color: #9aa0b4; font-size: 0.9rem; }
 
 .user-menu-popup {
-  animation-duration: 0.45s;
+  animation-duration: 0.3s;
   animation-fill-mode: forwards;
   will-change: transform, opacity;
 }
@@ -98,6 +98,7 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 .user-menu-exit {
   animation-name: userMenuExit;
   animation-timing-function: cubic-bezier(0.55, 0.06, 0.68, 0.19);
+  animation-duration: 0.15s;
 }
 
 .modal-overlay {

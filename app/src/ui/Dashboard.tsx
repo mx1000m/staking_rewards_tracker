@@ -995,8 +995,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         }
                       }}
                       style={{
-                        background: "#383838",
-                        color: "#ffffff",
+                        background: "#2b2b2b",
+                        color: "#f0f0f0",
                         padding: "8px 16px",
                         border: "none",
                         borderRadius: "8px",
@@ -1056,7 +1056,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <div
                     style={{
                       display: "flex",
-                      background: "#383838",
+                      background: "#2b2b2b",
                       borderRadius: "8px",
                       padding: "4px",
                       gap: 0,
