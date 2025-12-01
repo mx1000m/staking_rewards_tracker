@@ -1531,8 +1531,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     ×
                   </button>
                 </div>
-                <p className="muted" style={{ marginTop: 0, marginBottom: "8px", color: "#f0f0f0" }}>
-                  Swap tranaction Hash (optional):
+                <p className="muted" style={{ marginTop: 0, marginBottom: "8px", color: "#aaaaaa" }}>
+                  Swap transaction hash (optional):
                 </p>
                 <input
                   className="input"
@@ -1669,7 +1669,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0, color: "#f0f0f0" }}>Edit paid status</h3>
+                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Edit paid status</h3>
                   <button
                     onClick={requestEditPaidModalClose}
                     style={{
@@ -1699,8 +1699,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     ×
                   </button>
                 </div>
-                <p className="muted" style={{ marginTop: 0, marginBottom: "8px", color: "#f0f0f0" }}>
-                  Swap tranaction Hash (optional):
+                <p className="muted" style={{ marginTop: 0, marginBottom: "8px", color: "#aaaaaa" }}>
+                  Swap transaction hash (optional):
                 </p>
                 <input
                   className="input"
@@ -1889,7 +1889,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0, color: "#f0f0f0" }}>Export CSV</h3>
+                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Export CSV?</h3>
                   <button
                     onClick={requestExportModalClose}
                     style={{
@@ -1919,7 +1919,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     ×
                   </button>
                 </div>
-                <p className="muted" style={{ marginTop: 0, marginBottom: "16px", color: "#f0f0f0" }}>
+                <p className="muted" style={{ marginTop: 0, marginBottom: "16px", color: "#aaaaaa" }}>
                   Select the year you wish to export transactions for:
                 </p>
                 <div style={{ marginTop: 16 }}>
