@@ -447,6 +447,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       });
   }, [filteredTransactions]);
 
+  // Month payment status for the selected year (used for month dots)
+  const monthPaymentStatus = React.useMemo(() => {
+    const stats: { [month: number]: { total: number; paid: number } } = {};
+
+    transactions.forEach((tx) => {
+      const date = new Date(tx.timestamp * 1000);
+      const year = date.getFullYear();
+      if (year !== selectedYear) return;
+      const month = date.getMonth(); // 0-11
+
+      if (!stats[month]) {
+        stats[month] = { total: 0, paid: 0 };
+      }
+      stats[month].total += 1;
+      if (tx.status === "✓ Paid") {
+        stats[month].paid += 1;
+      }
+    });
+
+    const statusMap: { [month: number]: "none" | "partial" | "allPaid" } = {};
+    for (let m = 0; m < 12; m++) {
+      const s = stats[m];
+      if (!s || s.total === 0) {
+        statusMap[m] = "none";
+      } else if (s.paid === s.total) {
+        statusMap[m] = "allPaid";
+      } else {
+        statusMap[m] = "partial";
+      }
+    }
+
+    return statusMap;
+  }, [transactions, selectedYear]);
+
   // Calculate totals for ALL trackers (for All nodes overview)
   const [allTrackersTotals, setAllTrackersTotals] = React.useState({
     totalRewards: 0,
@@ -1060,6 +1094,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     </button>
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((month) => {
                       const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
+                      const status = monthPaymentStatus[month] || "none";
+                      const dotColor =
+                        status === "allPaid"
+                          ? "#00c853" // green
+                          : status === "partial"
+                          ? "#ff5252" // red
+                          : "#777777"; // grey
                       return (
                         <React.Fragment key={month}>
                           <div style={{ width: "1px", background: "#4b4b4b", margin: "4px 0" }}></div>
@@ -1092,7 +1133,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               }
                             }}
                           >
-                            {monthName}
+                            <span
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: 8,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: "50%",
+                                  background: dotColor,
+                                }}
+                              />
+                              {monthName}
+                            </span>
                           </button>
                         </React.Fragment>
                       );
