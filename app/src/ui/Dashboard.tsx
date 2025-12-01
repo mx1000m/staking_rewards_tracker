@@ -884,10 +884,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             <div style={{ borderRadius: "13px", padding: "24px" }}>
               {/* Header row: node name, wallet + copy, action buttons */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                <div>
-                  <h2 style={{ margin: "0 0 4px 0", color: "#f0f0f0" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <h2 style={{ margin: 0, color: "#f0f0f0" }}>
                     {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
                   </h2>
+                  <div style={{ width: "1px", height: "16px", background: "#aaaaaa" }}></div>
                   <div
                     style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
                     onMouseEnter={(e) => {
@@ -976,7 +977,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
 
               {/* Filters row: year dropdown + months bar */}
-              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: "16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginTop: "24px", marginBottom: "24px" }}>
                 {/* Year dropdown */}
                 {availableYears.length > 0 && (
                   <div style={{ position: "relative" }}>
@@ -1176,8 +1177,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   marginBottom: "16px",
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "center", gap: "32px", flexWrap: "wrap" }}>
-                  <div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total rewards</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
                       {currencySymbol}
@@ -1187,7 +1188,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {totalEthRewards.toFixed(6)} ETH
                     </p>
                   </div>
-                  <div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total taxes</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none" }}>
                       {currencySymbol}
@@ -1197,7 +1198,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {totalEthTaxes.toFixed(6)} ETH
                     </p>
                   </div>
-                  <div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total left to swap</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#d84b6a", textTransform: "none" }}>
                       {currencySymbol}
@@ -1207,7 +1208,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {totalEthLeftToSwap.toFixed(6)} ETH
                     </p>
                   </div>
-                  <div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total swapped</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", textTransform: "none" }}>
                       {currencySymbol}

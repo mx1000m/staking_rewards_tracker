@@ -200,9 +200,8 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
 
 .tooltip-gradient-border {
   position: relative;
-  background: linear-gradient(90deg, #01e1fd, #3788fd, #01e1fd);
-  background-size: 200% 200%;
-  animation: gradientRotate 3s ease infinite;
+  background: #181818;
+  border: 1px solid #2b2b2b;
   padding: 2px;
   border-radius: 8px;
 }
@@ -217,8 +216,7 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   border-left: 7px solid transparent;
   border-right: 7px solid transparent;
   border-bottom: 7px solid;
-  border-bottom-color: #01e1fd;
-  filter: drop-shadow(0 0 2px rgba(1, 225, 253, 0.8));
+  border-bottom-color: #2b2b2b;
   z-index: 1;
 }
 
@@ -231,12 +229,12 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   height: 0;
   border-left: 6px solid transparent;
   border-right: 6px solid transparent;
-  border-bottom: 6px solid #1a1a2e;
+  border-bottom: 6px solid #181818;
   z-index: 2;
 }
 
 .tooltip-content {
-  background: #1a1a2e;
+  background: #181818;
   border-radius: 7px;
   padding: 8px 12px;
   position: relative;
