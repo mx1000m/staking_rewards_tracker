@@ -557,6 +557,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const allNodesCurrencySymbol = trackers.length > 0 && trackers[0].currency === "USD" ? "$" : "€";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
 
+  // Human-readable description of the currently selected time range
+  const dataShownText = (() => {
+    if (!selectedYear) return "";
+    if (selectedMonth === null) {
+      return `Data shown for Jan–Dec ${selectedYear}`;
+    }
+    const monthName = new Date(selectedYear, selectedMonth, 1).toLocaleDateString("en-US", {
+      month: "short",
+    });
+    return `Data shown for ${monthName} ${selectedYear}`;
+  })();
+
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -977,7 +989,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
 
               {/* Filters row: year dropdown + months bar */}
-              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginTop: "24px", marginBottom: "24px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginTop: "24px", marginBottom: "12px" }}>
                 {/* Year dropdown */}
                 {availableYears.length > 0 && (
                   <div style={{ position: "relative" }}>
@@ -1168,6 +1180,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 </div>
               </div>
 
+              {/* Description of the selected time range */}
+              <p style={{ margin: "0 0 16px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                {dataShownText}
+              </p>
+
               {/* Totals strip */}
               <div
                 style={{
@@ -1179,7 +1196,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               >
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total rewards</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Rewards Received</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
                       {currencySymbol}
                       {totalRewards.toFixed(2)}
@@ -1189,7 +1206,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total taxes</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Tax due</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none" }}>
                       {currencySymbol}
                       {totalTaxes.toFixed(2)}
@@ -1199,7 +1216,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total left to swap</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Still to cover</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#d84b6a", textTransform: "none" }}>
                       {currencySymbol}
                       {totalLeftToSwap.toFixed(2)}
@@ -1209,7 +1226,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Total swapped</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Covered</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", textTransform: "none" }}>
                       {currencySymbol}
                       {totalSwapped.toFixed(2)}
@@ -1357,7 +1374,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               alignItems: "center",
                               gap: 6,
                             }}>
-                              ✓ Paid{tx.swapHash ? ` + ${tx.swapHash.slice(0, 6)}...${tx.swapHash.slice(-4)}` : ""}
+                              ✓ Covered{tx.swapHash ? ` + ${tx.swapHash.slice(0, 6)}...${tx.swapHash.slice(-4)}` : ""}
                             </span>
                             <button
                               onClick={() => {
@@ -1365,9 +1382,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 setEditSwapHashInput(tx.swapHash || "");
                               }}
                               style={{
-                                background: "transparent",
-                                border: "1px solid #10b981",
-                                color: "#10b981",
+                                background: "#10b981",
+                                border: "none",
+                                color: "white",
                                 padding: "4px 8px",
                                 borderRadius: "6px",
                                 cursor: "pointer",
@@ -1377,9 +1394,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 gap: 4,
                                 transition: "all 0.2s",
                               }}
-                              title="Edit paid status"
+                              title="Edit covered status"
                               onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "#10b981";
+                                e.currentTarget.style.background = "#0ea769";
                                 e.currentTarget.style.color = "white";
                                 e.currentTarget.style.transform = "scale(1.05)";
                                 const img = e.currentTarget.querySelector("img");
@@ -1388,8 +1405,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 }
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "transparent";
-                                e.currentTarget.style.color = "#10b981";
+                                e.currentTarget.style.background = "#10b981";
+                                e.currentTarget.style.color = "white";
                                 e.currentTarget.style.transform = "scale(1)";
                                 const img = e.currentTarget.querySelector("img");
                                 if (img) {
@@ -1406,7 +1423,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               <img 
                                 src="/staking_rewards_tracker/icons/edit_icon.svg" 
                                 alt="Edit" 
-                                style={{ width: "14px", height: "14px", filter: "brightness(0) saturate(100%) invert(60%) sepia(95%) saturate(500%) hue-rotate(120deg) brightness(95%) contrast(90%)" }}
+                                style={{ width: "14px", height: "14px", filter: "brightness(0) invert(1)" }}
                               />
                               Edit
                             </button>
@@ -1439,7 +1456,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               e.currentTarget.style.transform = "scale(1.05)";
                             }}
                           >
-                            Mark as paid
+                            Mark as covered
                           </button>
                         )}
                       </td>
@@ -1466,7 +1483,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         />
       )}
 
-      {/* Mark as Paid Modal */}
+      {/* Mark as Covered Modal */}
       {markPaidHash && (
         <div
           className={`modal-overlay ${markPaidModalAnimation === "enter" ? "modal-overlay-enter" : "modal-overlay-exit"}`}
@@ -1510,7 +1527,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Mark as paid?</h3>
+                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Mark as covered?</h3>
                   <button
                     onClick={requestMarkPaidModalClose}
                     style={{
@@ -1634,7 +1651,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         </div>
       )}
 
-      {/* Edit Paid Status Modal */}
+      {/* Edit Covered Status Modal */}
       {editPaidHash && (
         <div
           className={`modal-overlay ${editPaidModalAnimation === "enter" ? "modal-overlay-enter" : "modal-overlay-exit"}`}
@@ -1678,7 +1695,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Edit paid status</h3>
+                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Edit covered status</h3>
                   <button
                     onClick={requestEditPaidModalClose}
                     style={{
@@ -1732,7 +1749,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     onClick={async () => {
                       if (!activeTracker || !editPaidHash || !user) return;
                       
-                      // Mark as unpaid
+                      // Mark as uncovered
                       const { updateTransactionStatus } = await import("../utils/transactionCache");
                       await updateTransactionStatus(activeTracker.id, editPaidHash, "Unpaid", undefined);
                       
@@ -1765,7 +1782,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       e.currentTarget.style.background = "#ef4444";
                     }}
                   >
-                    Mark as unpaid
+                    Mark as uncovered
                   </button>
                   <div style={{ display: "flex", gap: "12px", marginLeft: "auto" }}>
                     <button
