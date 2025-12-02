@@ -1339,7 +1339,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             href={`https://etherscan.io/tx/${tx.transactionHash}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ color: "#6b6bff", textDecoration: "none", transition: "all 0.2s" }}
+                            style={{ color: "#6b6bff", textDecoration: "none", transition: "all 0.2s", fontSize: "0.85rem" }}
                           >
                             {tx.transactionHash.slice(0, 6)}...{tx.transactionHash.slice(-4)}
                           </a>
@@ -1378,6 +1378,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               display: "inline-flex",
                               alignItems: "center",
                               gap: 6,
+                              whiteSpace: "nowrap",
                             }}
                           >
                             ✓ Covered
@@ -1385,7 +1386,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         ) : (
                           <span
                             style={{
-                              background: "#ef4444",
+                              background: "#953349",
                               color: "white",
                               padding: "4px 8px",
                               borderRadius: "6px",
@@ -1408,6 +1409,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               target="_blank"
                               rel="noopener noreferrer"
                               style={{ color: "#55b685", textDecoration: "none", transition: "all 0.2s" }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.color = "#7be09b";
+                                e.currentTarget.style.textDecoration = "underline";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.color = "#55b685";
+                                e.currentTarget.style.textDecoration = "none";
+                              }}
                             >
                               {tx.swapHash.slice(0, 6)}...{tx.swapHash.slice(-4)}
                             </a>
