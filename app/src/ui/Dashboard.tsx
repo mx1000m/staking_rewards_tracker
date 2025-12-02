@@ -554,6 +554,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   // Use active tracker's currency, or default to EUR for All nodes overview
   const currencySymbol = activeTracker?.currency === "EUR" ? "€" : "$";
+  const valueLabel = activeTracker?.currency === "EUR" ? "Value in EUR" : "Value in USD";
+  const taxCurrencyLabel = activeTracker?.currency === "EUR" ? "Tax EUR" : "Tax USD";
   const allNodesCurrencySymbol = trackers.length > 0 && trackers[0].currency === "USD" ? "$" : "€";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
 
@@ -891,7 +893,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* Node Selected + Incoming Rewards combined */}
       {activeTracker && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Node selected</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Node selected:</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px" }}>
             <div style={{ borderRadius: "13px", padding: "24px" }}>
               {/* Header row: node name, wallet + copy, action buttons */}
@@ -1264,15 +1266,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Date, Time</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>ETH Rewards</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Received</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward (ETH)</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Rewards in {activeTracker.currency}</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Tax Rate</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Taxes in ETH</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Taxes in {activeTracker.currency}</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Transaction Hash</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>{valueLabel}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Tax rate</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Tax (ETH)</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{taxCurrencyLabel}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Swap Tx</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1281,7 +1285,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {/* Month separator row */}
                       <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                         <td 
-                          colSpan={9} 
+                          colSpan={11} 
                           style={{ 
                             padding: "12px 12px 8px 12px", 
                             color: "#aaaaaa", 
@@ -1363,71 +1367,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       </td>
                       <td style={{ padding: "12px" }}>
                         {tx.status === "✓ Paid" ? (
-                          <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ 
-                              background: "#10b981", 
-                              color: "white", 
-                              padding: "4px 8px", 
-                              borderRadius: "6px", 
-                              fontSize: "0.85rem",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 6,
-                            }}>
-                              ✓ Covered{tx.swapHash ? ` + ${tx.swapHash.slice(0, 6)}...${tx.swapHash.slice(-4)}` : ""}
-                            </span>
-                            <button
-                              onClick={() => {
-                                setEditPaidHash(tx.transactionHash);
-                                setEditSwapHashInput(tx.swapHash || "");
-                              }}
-                              style={{
-                                background: "#10b981",
-                                border: "none",
-                                color: "white",
-                                padding: "4px 8px",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                                fontSize: "0.85rem",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 4,
-                                transition: "all 0.2s",
-                              }}
-                              title="Edit covered status"
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "#0ea769";
-                                e.currentTarget.style.color = "white";
-                                e.currentTarget.style.transform = "scale(1.05)";
-                                const img = e.currentTarget.querySelector("img");
-                                if (img) {
-                                  img.style.filter = "brightness(0) invert(1)";
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "#10b981";
-                                e.currentTarget.style.color = "white";
-                                e.currentTarget.style.transform = "scale(1)";
-                                const img = e.currentTarget.querySelector("img");
-                                if (img) {
-                                  img.style.filter = "brightness(0) saturate(100%) invert(60%) sepia(95%) saturate(500%) hue-rotate(120deg) brightness(95%) contrast(90%)";
-                                }
-                              }}
-                              onMouseDown={(e) => {
-                                e.currentTarget.style.transform = "scale(0.95)";
-                              }}
-                              onMouseUp={(e) => {
-                                e.currentTarget.style.transform = "scale(1.05)";
-                              }}
-                            >
-                              <img 
-                                src="/staking_rewards_tracker/icons/edit_icon.svg" 
-                                alt="Edit" 
-                                style={{ width: "14px", height: "14px", filter: "brightness(0) invert(1)" }}
-                              />
-                              Edit
-                            </button>
-                          </div>
+                          <span style={{ 
+                            background: "#10b981", 
+                            color: "white", 
+                            padding: "4px 8px", 
+                            borderRadius: "6px", 
+                            fontSize: "0.85rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}>
+                            ✓ Covered
+                          </span>
                         ) : (
                           <button
                             onClick={() => { setMarkPaidHash(tx.transactionHash); setSwapHashInput(""); }}
@@ -1459,6 +1410,66 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             Mark as covered
                           </button>
                         )}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        {tx.swapHash ? (
+                          <a
+                            href={`https://etherscan.io/tx/${tx.swapHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#6b6bff", textDecoration: "none", transition: "all 0.2s" }}
+                          >
+                            {tx.swapHash.slice(0, 6)}...{tx.swapHash.slice(-4)}
+                          </a>
+                        ) : (
+                          <span style={{ color: "#555555" }}>—</span>
+                        )}
+                      </td>
+                      <td style={{ padding: "12px" }}>
+                        <button
+                          onClick={() => {
+                            setEditPaidHash(tx.transactionHash);
+                            setEditSwapHashInput(tx.swapHash || "");
+                          }}
+                          className="pressable-button"
+                          style={{
+                            background: "transparent",
+                            border: "1px solid #55b685",
+                            color: "#55b685",
+                            padding: "4px 10px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            fontSize: "0.85rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            transition: "background 0.2s, color 0.2s",
+                          }}
+                          title="Edit covered status"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#55b685";
+                            e.currentTarget.style.color = "#ffffff";
+                            const img = e.currentTarget.querySelector("img");
+                            if (img) {
+                              img.style.filter = "brightness(0) invert(1)";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "transparent";
+                            e.currentTarget.style.color = "#55b685";
+                            const img = e.currentTarget.querySelector("img");
+                            if (img) {
+                              img.style.filter = "brightness(0) saturate(100%) invert(59%) sepia(35%) saturate(496%) hue-rotate(96deg) brightness(95%) contrast(94%)";
+                            }
+                          }}
+                        >
+                          <img 
+                            src="/staking_rewards_tracker/icons/edit_icon.svg" 
+                            alt="Edit" 
+                            style={{ width: "14px", height: "14px", filter: "brightness(0) saturate(100%) invert(59%) sepia(35%) saturate(496%) hue-rotate(96deg) brightness(95%) contrast(94%)" }}
+                          />
+                          Edit
+                        </button>
                       </td>
                     </tr>
                         </React.Fragment>
