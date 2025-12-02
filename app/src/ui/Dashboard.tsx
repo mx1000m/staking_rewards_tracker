@@ -1400,14 +1400,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         )}
                       </td>
                       {/* Swap Tx column: hash / no tx text / Mark as covered button */}
-                      <td style={{ padding: "12px" }}>
+                      <td style={{ padding: "12px", fontSize: "0.85rem" }}>
                         {tx.status === "✓ Paid" ? (
                           tx.swapHash ? (
                             <a
                               href={`https://etherscan.io/tx/${tx.swapHash}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              style={{ color: "#6b6bff", textDecoration: "none", transition: "all 0.2s" }}
+                              style={{ color: "#55b685", textDecoration: "none", transition: "all 0.2s" }}
                             >
                               {tx.swapHash.slice(0, 6)}...{tx.swapHash.slice(-4)}
                             </a>
@@ -1422,7 +1422,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             }}
                             style={{
                               background: "#2b2b2b",
-                              color: "#ffffff",
+                              color: "#aaaaaa",
                               padding: "6px 10px",
                               border: 0,
                               borderRadius: 8,
