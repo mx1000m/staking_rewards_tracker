@@ -1271,7 +1271,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {monthGroup.transactions.map((tx, idx) => (
                         <React.Fragment key={`${monthGroup.monthKey}-${idx}`}>
                           <tr>
-                            <td colSpan={11} style={{ padding: 0, height: "1px" }}>
+                            <td colSpan={7} style={{ padding: 0, height: "1px" }}>
                               <div style={{ height: "1px", background: "#383838" }}></div>
                             </td>
                           </tr>
@@ -1314,7 +1314,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               </div>
                               <div
                                 style={{
-                                  width: "100%",
+                                  width: "70%",
+                                  maxWidth: "220px",
                                   height: 4,
                                   borderRadius: 9999,
                                   background: "#2b2b2b",
@@ -1335,6 +1336,59 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         })() : (
                           <span style={{ fontSize: "0.8rem", color: "#aaaaaa" }}>N/A</span>
                         )}
+                      </td>
+                      {/* Reward Tx column */}
+                      <td style={{ padding: "12px" }}>
+                        <div 
+                          style={{ display: "flex", alignItems: "center", gap: 6 }}
+                          onMouseEnter={(e) => {
+                            const links = e.currentTarget.querySelectorAll("a");
+                            links.forEach(link => {
+                              (link as HTMLAnchorElement).style.color = "#8a8eff";
+                              (link as HTMLAnchorElement).style.textDecoration = "underline";
+                            });
+                            const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
+                            if (img) img.style.filter = "brightness(0) saturate(100%) invert(60%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(120%) contrast(101%)";
+                          }}
+                          onMouseLeave={(e) => {
+                            const links = e.currentTarget.querySelectorAll("a");
+                            links.forEach(link => {
+                              (link as HTMLAnchorElement).style.color = "#6b6bff";
+                              (link as HTMLAnchorElement).style.textDecoration = "none";
+                            });
+                            const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
+                            if (img) img.style.filter = "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)";
+                          }}
+                        >
+                          <a
+                            href={`https://etherscan.io/tx/${tx.transactionHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ color: "#6b6bff", textDecoration: "none", transition: "all 0.2s", fontSize: "0.85rem" }}
+                          >
+                            {tx.transactionHash.slice(0, 6)}...{tx.transactionHash.slice(-4)}
+                          </a>
+                          <a
+                            href={`https://etherscan.io/tx/${tx.transactionHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ 
+                              color: "#6b6bff", 
+                              textDecoration: "none",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              fontSize: "0.85rem",
+                              transition: "all 0.2s",
+                            }}
+                            title="View on Etherscan"
+                          >
+                            <img 
+                              src="/staking_rewards_tracker/icons/link_icon.svg" 
+                              alt="View on Etherscan" 
+                              style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(100%) invert(47%) sepia(96%) saturate(1234%) hue-rotate(228deg) brightness(102%) contrast(101%)", transition: "filter 0.2s" }}
+                            />
+                          </a>
+                        </div>
                       </td>
                     </tr>
                         </React.Fragment>
