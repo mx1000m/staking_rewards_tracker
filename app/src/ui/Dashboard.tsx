@@ -64,7 +64,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [holdingStatusMap, setHoldingStatusMap] = useState<Record<string, "Hodling" | "Sold">>({});
   // Bulk "mark as sold" modal state
   const [showMarkSoldModal, setShowMarkSoldModal] = useState(false);
-  const [markSoldYear, setMarkSoldYear] = useState<number>(new Date().getFullYear());
   const [markSoldMode, setMarkSoldMode] = useState<"year" | "custom">("year");
   const [markSoldStartMonth, setMarkSoldStartMonth] = useState<number>(0);
   const [markSoldEndMonth, setMarkSoldEndMonth] = useState<number>(0);
@@ -981,7 +980,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <button
                     onClick={() => {
                       setShowMarkSoldModal(true);
-                      setMarkSoldYear(selectedYear);
                       setMarkSoldMode("year");
                     }}
                     style={{ background: "#2b2b2b", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", textTransform: "none" }}
@@ -2234,23 +2232,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       checked={markSoldMode === "year"}
                       onChange={() => setMarkSoldMode("year")}
                     />
-                    <span>Entire year</span>
-                    <select
-                      className="gradient-select"
-                      value={markSoldYear}
-                      onChange={(e) => setMarkSoldYear(parseInt(e.target.value))}
-                      style={{ marginLeft: 4, minWidth: 80 }}
-                    >
-                      {availableYears.length > 0
-                        ? availableYears.map((year) => (
-                            <option key={year} value={year}>
-                              {year}
-                            </option>
-                          ))
-                        : (
-                          <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
-                        )}
-                    </select>
+                    <span>Entire year {selectedYear}</span>
                   </label>
 
                   {/* Custom range */}
@@ -2260,11 +2242,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       flexDirection: "column",
                       gap: 8,
                       cursor: "pointer",
-                      color: "#e8e8f0",
                       fontSize: "0.9rem",
                     }}
                   >
-                    <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 10, color: markSoldMode === "custom" ? "#f0f0f0" : "#aaaaaa" }}>
                       <input
                         type="radio"
                         checked={markSoldMode === "custom"}
@@ -2278,6 +2259,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         value={markSoldStartMonth}
                         onChange={(e) => setMarkSoldStartMonth(parseInt(e.target.value))}
                         disabled={markSoldMode !== "custom"}
+                        style={{ color: markSoldMode === "custom" ? "#f0f0f0" : undefined }}
                       >
                         {Array.from({ length: 12 }).map((_, idx) => {
                           const name = new Date(2024, idx, 1).toLocaleDateString("en-US", { month: "short" });
@@ -2294,6 +2276,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         value={markSoldEndMonth}
                         onChange={(e) => setMarkSoldEndMonth(parseInt(e.target.value))}
                         disabled={markSoldMode !== "custom"}
+                        style={{ color: markSoldMode === "custom" ? "#f0f0f0" : undefined }}
                       >
                         {Array.from({ length: 12 }).map((_, idx) => {
                           const name = new Date(2024, idx, 1).toLocaleDateString("en-US", { month: "short" });
@@ -2341,11 +2324,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         const year = txDate.getFullYear();
                         const month = txDate.getMonth();
                         if (markSoldMode === "year") {
-                          if (year === markSoldYear) {
+                          if (year === selectedYear) {
                             updated[tx.transactionHash] = "Sold";
                           }
                         } else {
-                          if (year === markSoldYear && month >= markSoldStartMonth && month <= markSoldEndMonth) {
+                          if (year === selectedYear && month >= markSoldStartMonth && month <= markSoldEndMonth) {
                             updated[tx.transactionHash] = "Sold";
                           }
                         }
