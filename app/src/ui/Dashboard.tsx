@@ -1281,7 +1281,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{valueLabel}</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{incomeTaxLabel}</th>
-                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>CGT Status</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>CGT status</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Hodling status</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
                   </tr>
@@ -1319,7 +1319,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
                       {/* CGT Status column */}
-                      <td style={{ padding: "12px", minWidth: "180px" }}>
+                      <td style={{ padding: "12px", minWidth: "180px", textAlign: "center" }}>
                         {isCroatia ? (() => {
                           const rewardDate = new Date(tx.timestamp * 1000);
                           const taxableUntil = new Date(rewardDate);
@@ -1358,6 +1358,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                     height: 8,
                                     borderRadius: "50%",
                                     background: dotColor,
+                                    marginLeft: 10,
                                   }}
                                 />
                               </div>
@@ -1430,7 +1431,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {/* Reward Tx column */}
                       <td style={{ padding: "12px", textAlign: "center" }}>
                         <div 
-                          style={{ display: "flex", alignItems: "center", gap: 6 }}
+                          style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center" }}
                           onMouseEnter={(e) => {
                             const links = e.currentTarget.querySelectorAll("a");
                             links.forEach(link => {
@@ -1493,6 +1494,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
         </>
       )}
+
+      {/* Disclaimer */}
+      <div
+        style={{
+          marginTop: "8px",
+          textAlign: "center",
+          fontSize: "0.75rem",
+          color: "#666666",
+        }}
+      >
+        Not tax advice · Use at your own risk · Verify everything with a professional
+      </div>
 
       {/* Settings Modal */}
       {showSettings && activeTracker && (
