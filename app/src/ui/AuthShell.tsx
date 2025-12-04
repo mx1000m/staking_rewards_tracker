@@ -187,7 +187,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									padding: "4px 8px",
 									borderRadius: "7px",
 									background: "#2b2b2b",
-									transition: "all 0.2s",
+									transition: "background 0.2s",
 								}}
 								onClick={toggleUserMenu}
 								onMouseEnter={(e) => {
