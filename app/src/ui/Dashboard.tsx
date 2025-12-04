@@ -886,7 +886,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             <div style={{ borderRadius: "13px", padding: "24px" }}>
               {/* Header row: node name, wallet + copy, action buttons */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, position: "relative" }}>
                   <h2 style={{ margin: 0, color: "#f0f0f0" }}>
                     {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
                   </h2>
@@ -1464,7 +1464,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           onMouseEnter={(e) => {
                             const links = e.currentTarget.querySelectorAll("a");
                             links.forEach(link => {
-                              (link as HTMLAnchorElement).style.color = "#aaaaaa";
+                              (link as HTMLAnchorElement).style.color = "#f0f0f0";
                               (link as HTMLAnchorElement).style.textDecoration = "underline";
                             });
                             const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
