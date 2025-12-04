@@ -487,10 +487,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     totalTaxes: 0,
     totalEthRewards: 0,
     totalEthTaxes: 0,
-    totalSwapped: 0,
-    totalEthSwapped: 0,
-    totalLeftToSwap: 0,
-    totalEthLeftToSwap: 0,
+    // Capital gains tax‑free amounts (across all trackers)
+    totalCgtFreeRewards: 0,
+    totalCgtFreeEth: 0,
   });
 
   // Load and calculate totals for all trackers
@@ -500,8 +499,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       let allTaxes = 0;
       let allEthRewards = 0;
       let allEthTaxes = 0;
-      let allSwapped = 0;
-      let allEthSwapped = 0;
+      let allCgtFreeRewards = 0;
+      let allCgtFreeEth = 0;
 
       for (const tracker of trackers) {
         const cached = await getCachedTransactions(tracker.id);
@@ -509,12 +508,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         allTaxes += cached.reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
         allEthRewards += cached.reduce((sum, tx) => sum + tx.ethAmount, 0);
         allEthTaxes += cached.reduce((sum, tx) => sum + tx.taxesInEth, 0);
-        allSwapped += cached
-          .filter((tx) => tx.status === "✓ Paid")
-          .reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
-        allEthSwapped += cached
-          .filter((tx) => tx.status === "✓ Paid")
-          .reduce((sum, tx) => sum + tx.taxesInEth, 0);
+
+        // Capital gains tax‑free (currently implemented for Croatia: rewards held ≥ 2 years)
+        if (tracker.country === "Croatia") {
+          const now = new Date();
+          cached.forEach((tx) => {
+            const rewardDate = new Date(tx.timestamp * 1000);
+            const taxableUntil = new Date(rewardDate);
+            taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+            if (now >= taxableUntil) {
+              allCgtFreeRewards += tx.rewardsInCurrency;
+              allCgtFreeEth += tx.ethAmount;
+            }
+          });
+        }
       }
 
       setAllTrackersTotals({
@@ -522,10 +529,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         totalTaxes: allTaxes,
         totalEthRewards: allEthRewards,
         totalEthTaxes: allEthTaxes,
-        totalSwapped: allSwapped,
-        totalEthSwapped: allEthSwapped,
-        totalLeftToSwap: allTaxes - allSwapped,
-        totalEthLeftToSwap: allEthTaxes - allEthSwapped,
+        totalCgtFreeRewards: allCgtFreeRewards,
+        totalCgtFreeEth: allCgtFreeEth,
       });
     };
 
@@ -540,22 +545,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + tx.ethAmount, 0);
   const totalEthTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInEth, 0);
   
-  // Calculate total swapped (paid transactions) - in taxes amount
-  const totalSwapped = filteredTransactions
-    .filter((tx) => tx.status === "✓ Paid")
-    .reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
-  const totalEthSwapped = filteredTransactions
-    .filter((tx) => tx.status === "✓ Paid")
-    .reduce((sum, tx) => sum + tx.taxesInEth, 0);
-  
-  // Calculate total left to swap (total taxes - total swapped)
-  const totalLeftToSwap = totalTaxes - totalSwapped;
-  const totalEthLeftToSwap = totalEthTaxes - totalEthSwapped;
+  // Capital gains tax‑free amounts for the active tracker (Croatia: rewards held ≥ 2 years)
+  const nowForCgt = new Date();
+  const isCroatia = activeTracker?.country === "Croatia";
+  const totalCgtFreeEth = isCroatia
+    ? filteredTransactions.reduce((sum, tx) => {
+        const rewardDate = new Date(tx.timestamp * 1000);
+        const taxableUntil = new Date(rewardDate);
+        taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+        return nowForCgt >= taxableUntil ? sum + tx.ethAmount : sum;
+      }, 0)
+    : 0;
+  const totalCgtFreeRewards = isCroatia
+    ? filteredTransactions.reduce((sum, tx) => {
+        const rewardDate = new Date(tx.timestamp * 1000);
+        const taxableUntil = new Date(rewardDate);
+        taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+        return nowForCgt >= taxableUntil ? sum + tx.rewardsInCurrency : sum;
+      }, 0)
+    : 0;
 
   // Use active tracker's currency, or default to EUR for All nodes overview
   const currencySymbol = activeTracker?.currency === "EUR" ? "€" : "$";
   const valueLabel = activeTracker?.currency === "EUR" ? "Value in EUR" : "Value in USD";
-  const taxCurrencyLabel = activeTracker?.currency === "EUR" ? "Tax EUR" : "Tax USD";
+  const incomeTaxLabel = activeTracker?.currency === "EUR" ? "Income tax (EUR)" : "Income tax (USD)";
   const allNodesCurrencySymbol = trackers.length > 0 && trackers[0].currency === "USD" ? "$" : "€";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
 
@@ -680,7 +693,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </div>
             )}
           </div>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL REWARDS</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>REWARDS RECEIVED</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalRewards.toFixed(2)}
           </p>
@@ -723,7 +736,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </div>
             )}
           </div>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL TAXES</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>INCOME TAX DUE</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
             {allNodesCurrencySymbol} {allTrackersTotals.totalTaxes.toFixed(2)}
           </p>
@@ -731,52 +744,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {allTrackersTotals.totalEthTaxes.toFixed(6)} ETH
           </p>
         </div>
-        <div style={{ background: "linear-gradient(45deg, #b6325f, #ff887c)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
-          <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
-            onMouseEnter={() => setVisibleTooltip("leftToSwap")}
-            onMouseLeave={() => setVisibleTooltip(null)}
-          >
-            <img 
-              src="/staking_rewards_tracker/icons/info_icon.svg" 
-              alt="Info" 
-              style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
-            />
-            {visibleTooltip === "leftToSwap" && (
-              <div 
-                className="tooltip-gradient-border"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  right: "-9px",
-                  minWidth: "200px",
-                  maxWidth: "250px",
-                  zIndex: 1000,
-                  opacity: visibleTooltip === "leftToSwap" ? 1 : 0,
-                  transition: "opacity 0.2s",
-                  pointerEvents: "none",
-                }}
-              >
-                <div className="tooltip-content" style={{
-                  color: "white",
-                  fontSize: "0.85rem",
-                  whiteSpace: "pre-line",
-                }}>
-                  Cumulative taxes{'\n'}remaining to swap{'\n'}to stables across{'\n'}all nodes and years.
-                </div>
-              </div>
-            )}
-          </div>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL LEFT TO SWAP</h3>
-          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {allNodesCurrencySymbol} {allTrackersTotals.totalLeftToSwap.toFixed(2)}
-          </p>
-          <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {allTrackersTotals.totalEthLeftToSwap.toFixed(6)} ETH
-          </p>
-        </div>
         <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
-            onMouseEnter={() => setVisibleTooltip("swapped")}
+            onMouseEnter={() => setVisibleTooltip("cgtFree")}
             onMouseLeave={() => setVisibleTooltip(null)}
           >
             <img 
@@ -784,7 +754,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               alt="Info" 
               style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
             />
-            {visibleTooltip === "swapped" && (
+            {visibleTooltip === "cgtFree" && (
               <div 
                 className="tooltip-gradient-border"
                 style={{
@@ -794,7 +764,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   minWidth: "200px",
                   maxWidth: "250px",
                   zIndex: 1000,
-                  opacity: visibleTooltip === "swapped" ? 1 : 0,
+                  opacity: visibleTooltip === "cgtFree" ? 1 : 0,
                   transition: "opacity 0.2s",
                   pointerEvents: "none",
                 }}
@@ -804,17 +774,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   fontSize: "0.85rem",
                   whiteSpace: "pre-line",
                 }}>
-                  Cumulative amount{'\n'}swapped to stables{'\n'}across all nodes and years.
+                  Estimated amount of{'\n'}rewards currently{'\n'}capital‑gains tax free{'\n'}(based on local rules).
                 </div>
               </div>
             )}
           </div>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>TOTAL SWAPPED</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>CAPITAL GAINS TAX FREE</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {allNodesCurrencySymbol} {allTrackersTotals.totalSwapped.toFixed(2)}
+            {allNodesCurrencySymbol} {allTrackersTotals.totalCgtFreeRewards.toFixed(2)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {allTrackersTotals.totalEthSwapped.toFixed(6)} ETH
+            {allTrackersTotals.totalCgtFreeEth.toFixed(6)} ETH
           </p>
         </div>
         </div>
@@ -988,6 +958,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   </button>
                 </div>
               </div>
+
+              {/* Node metadata */}
+              <p
+                style={{
+                  margin: "8px 0 0 0",
+                  fontSize: "0.85rem",
+                  color: "#aaaaaa",
+                }}
+              >
+                Node location: {activeTracker.country || "—"} - Income tax rate:{" "}
+                {typeof activeTracker.taxRate === "number"
+                  ? `${activeTracker.taxRate.toFixed(0)}%`
+                  : "—"}
+              </p>
 
 
               {/* Filters row: year dropdown + months bar */}
@@ -1196,7 +1180,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   marginBottom: "16px",
                 }}
               >
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Rewards Received</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
@@ -1208,7 +1192,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Tax due</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Income tax due</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none" }}>
                       {currencySymbol}
                       {totalTaxes.toFixed(2)}
@@ -1218,23 +1202,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Still to cover</p>
-                    <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#d84b6a", textTransform: "none" }}>
-                      {currencySymbol}
-                      {totalLeftToSwap.toFixed(2)}
-                    </p>
-                    <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                      {totalEthLeftToSwap.toFixed(6)} ETH
-                    </p>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Covered</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Capital gains tax free</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", textTransform: "none" }}>
                       {currencySymbol}
-                      {totalSwapped.toFixed(2)}
+                      {totalCgtFreeRewards.toFixed(2)}
                     </p>
                     <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                      {totalEthSwapped.toFixed(6)} ETH
+                      {totalCgtFreeEth.toFixed(6)} ETH
                     </p>
                   </div>
                 </div>
@@ -1270,9 +1244,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward (ETH)</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>{valueLabel}</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Tax rate</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Tax (ETH)</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{taxCurrencyLabel}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>{incomeTaxLabel}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>CGT Status</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Status</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Swap Tx</th>
@@ -1285,7 +1258,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {/* Month separator row */}
                       <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                         <td 
-                          colSpan={11} 
+                          colSpan={10} 
                           style={{ 
                             padding: "12px 12px 8px 12px", 
                             color: "#aaaaaa", 
@@ -1310,9 +1283,62 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       <td style={{ padding: "12px", color: "#32c0ea" }}>{tx.ethAmount.toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#e8e8f0", whiteSpace: "nowrap" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
                       <td style={{ padding: "12px", color: "#32c0ea" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
-                      <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.taxRate}%</td>
-                      <td style={{ padding: "12px", color: "#e4a729" }}>{tx.taxesInEth.toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
+                      {/* CGT Status column */}
+                      <td style={{ padding: "12px", minWidth: "180px" }}>
+                        {isCroatia ? (() => {
+                          const rewardDate = new Date(tx.timestamp * 1000);
+                          const taxableUntil = new Date(rewardDate);
+                          taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+                          const now = nowForCgt;
+                          const totalMs = taxableUntil.getTime() - rewardDate.getTime();
+                          const elapsedMs = Math.max(0, now.getTime() - rewardDate.getTime());
+                          const ratio = totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 1;
+                          const progressPercent = Math.round(ratio * 100);
+                          const isTaxFree = now >= taxableUntil;
+                          const label = isTaxFree
+                            ? "Tax free"
+                            : `Taxable until ${taxableUntil.toLocaleDateString("en-GB")}`;
+                          const barColor = isTaxFree ? "#55b685" : "#aaaaaa";
+                          const dotColor = isTaxFree ? "#55b685" : "#ff5252";
+                          return (
+                            <div>
+                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+                                <span style={{ fontSize: "0.8rem", color: "#f0f0f0" }}>{label}</span>
+                                <span
+                                  style={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: "50%",
+                                    marginLeft: 8,
+                                    background: dotColor,
+                                  }}
+                                />
+                              </div>
+                              <div
+                                style={{
+                                  width: "100%",
+                                  height: 4,
+                                  borderRadius: 9999,
+                                  background: "#2b2b2b",
+                                  overflow: "hidden",
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    width: `${progressPercent}%`,
+                                    height: "100%",
+                                    background: barColor,
+                                    transition: "width 0.3s ease-out",
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        })() : (
+                          <span style={{ fontSize: "0.8rem", color: "#aaaaaa" }}>N/A</span>
+                        )}
+                      </td>
                       <td style={{ padding: "12px" }}>
                         <div 
                           style={{ display: "flex", alignItems: "center", gap: 6 }}
