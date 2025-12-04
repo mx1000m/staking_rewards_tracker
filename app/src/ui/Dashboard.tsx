@@ -897,7 +897,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       const p = e.currentTarget.querySelector("p");
                       const img = e.currentTarget.querySelector("img");
                       if (p) p.style.color = "#f0f0f0";
-                      if (img) img.style.filter = "brightness(1.2) saturate(120%) invert(67%)";
+                      if (img) img.style.filter = "brightness(0) invert(1)";
                     }}
                     onMouseLeave={(e) => {
                       const p = e.currentTarget.querySelector("p");
@@ -1468,7 +1468,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               (link as HTMLAnchorElement).style.textDecoration = "underline";
                             });
                             const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
-                            if (img) img.style.filter = "brightness(1.1) saturate(110%) invert(33%)";
+                            if (img) img.style.filter = "brightness(0) invert(1)";
                           }}
                           onMouseLeave={(e) => {
                             const links = e.currentTarget.querySelectorAll("a");
