@@ -1269,11 +1269,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Capital gains tax free</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", textTransform: "none" }}>
-                      {currencySymbol}
-                      {totalCgtFreeRewards.toFixed(2)}
+                      {totalCgtFreeEth.toFixed(6)} ETH
                     </p>
                     <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                      {totalCgtFreeEth.toFixed(6)} ETH
+                      {currencySymbol}
+                      {totalCgtFreeRewards.toFixed(2)}
                     </p>
                   </div>
                 </div>
