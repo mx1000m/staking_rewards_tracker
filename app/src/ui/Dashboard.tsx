@@ -141,6 +141,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [editPaidHash]);
 
+  // Handle mark sold modal body overflow
+  useEffect(() => {
+    if (showMarkSoldModal) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+
+      document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [showMarkSoldModal]);
+
   const requestMarkPaidModalClose = () => {
     setMarkPaidModalAnimation("exit");
     if (markPaidModalCloseTimeoutRef.current) {
