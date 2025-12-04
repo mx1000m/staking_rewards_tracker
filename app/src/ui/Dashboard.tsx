@@ -1241,10 +1241,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 <thead>
                   <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Received</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward (ETH)</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Reward (ETH)</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>{valueLabel}</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>{incomeTaxLabel}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{valueLabel}</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{incomeTaxLabel}</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>CGT Status</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
                   </tr>
@@ -1299,23 +1299,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           const barColor = isTaxFree ? "#55b685" : "#aaaaaa";
                           const dotColor = isTaxFree ? "#55b685" : "#ff5252";
                           return (
-                            <div>
-                              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                                <span style={{ fontSize: "0.8rem", color: "#f0f0f0" }}>{label}</span>
+                            <div
+                              style={{
+                                display: "inline-flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                              }}
+                            >
+                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                                <span style={{ fontSize: "0.85rem", color: "#f0f0f0", whiteSpace: "nowrap" }}>{label}</span>
                                 <span
                                   style={{
                                     width: 8,
                                     height: 8,
                                     borderRadius: "50%",
-                                    marginLeft: 8,
                                     background: dotColor,
                                   }}
                                 />
                               </div>
                               <div
                                 style={{
-                                  width: "70%",
-                                  maxWidth: "220px",
+                                  width: "100%",
                                   height: 4,
                                   borderRadius: 9999,
                                   background: "#2b2b2b",
