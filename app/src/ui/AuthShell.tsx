@@ -8,7 +8,6 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const [signingIn, setSigningIn] = useState(false);
 	const [userMenuVisible, setUserMenuVisible] = useState(false);
 	const [userMenuAnimation, setUserMenuAnimation] = useState<"enter" | "exit">("exit");
-	const [userCardHovered, setUserCardHovered] = useState(false);
 	const menuRef = useRef<HTMLDivElement>(null);
 	const menuAnimationTimeoutRef = useRef<number | null>(null);
 	const USER_MENU_ANIMATION_DURATION = 450;
@@ -170,15 +169,6 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 					</div>
 					<div style={{ position: "relative" }} ref={menuRef}>
 						<div
-							style={{
-								display: "inline-block",
-								transition: "transform 0.2s",
-								transform: userCardHovered ? "scale(1.05)" : "scale(1)",
-							}}
-							onMouseEnter={() => setUserCardHovered(true)}
-							onMouseLeave={() => setUserCardHovered(false)}
-						>
-							<div
 								style={{
 									display: "flex",
 									alignItems: "center",
