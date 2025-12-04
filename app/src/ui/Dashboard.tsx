@@ -798,11 +798,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>CAPITAL GAINS TAX FREE</h3>
-          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {allNodesCurrencySymbol} {allTrackersTotals.totalCgtFreeRewards.toFixed(2)}
+          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "#00e08a" }}>
+            {allTrackersTotals.totalCgtFreeEth.toFixed(6)} ETH
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {allTrackersTotals.totalCgtFreeEth.toFixed(6)} ETH
+            {allNodesCurrencySymbol} {allTrackersTotals.totalCgtFreeRewards.toFixed(2)}
           </p>
         </div>
         </div>
