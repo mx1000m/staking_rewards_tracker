@@ -1362,75 +1362,83 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           const dateLabel = taxableUntil.toLocaleDateString("en-GB");
                           const barColor = isTaxFree ? "#55b685" : "#aaaaaa";
                           const dotColor = isTaxFree ? "#55b685" : "#ff5252";
+
                           return (
                             <div
                               style={{
-                                display: "inline-flex",
-                                flexDirection: "column",
-                                alignItems: "flex-start",
+                                display: "inline-block",
+                                position: "relative",
                               }}
                             >
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <div style={{ display: "flex", flexDirection: "column" }}>
-                                  {isTaxFree ? (
-                                    <>
-                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Tax free</span>
+                              <div
+                                style={{
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  alignItems: "flex-start",
+                                }}
+                              >
+                                {isTaxFree ? (
+                                  <>
+                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Tax free</span>
+                                    <div
+                                      style={{
+                                        marginTop: 4,
+                                        width: "100%",
+                                        height: 4,
+                                        borderRadius: 9999,
+                                        background: "#2b2b2b",
+                                        overflow: "hidden",
+                                      }}
+                                    >
                                       <div
                                         style={{
-                                          marginTop: 4,
-                                          width: "100%",
-                                          height: 4,
-                                          borderRadius: 9999,
-                                          background: "#2b2b2b",
-                                          overflow: "hidden",
+                                          width: `${progressPercent}%`,
+                                          height: "100%",
+                                          background: barColor,
+                                          transition: "width 0.3s ease-out",
                                         }}
-                                      >
-                                        <div
-                                          style={{
-                                            width: `${progressPercent}%`,
-                                            height: "100%",
-                                            background: barColor,
-                                            transition: "width 0.3s ease-out",
-                                          }}
-                                        />
-                                      </div>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Taxable until</span>
-                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Taxable until</span>
+                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
+                                    <div
+                                      style={{
+                                        marginTop: 4,
+                                        width: "100%",
+                                        height: 4,
+                                        borderRadius: 9999,
+                                        background: "#2b2b2b",
+                                        overflow: "hidden",
+                                      }}
+                                    >
                                       <div
                                         style={{
-                                          marginTop: 4,
-                                          width: "100%",
-                                          height: 4,
-                                          borderRadius: 9999,
-                                          background: "#2b2b2b",
-                                          overflow: "hidden",
+                                          width: `${progressPercent}%`,
+                                          height: "100%",
+                                          background: barColor,
+                                          transition: "width 0.3s ease-out",
                                         }}
-                                      >
-                                        <div
-                                          style={{
-                                            width: `${progressPercent}%`,
-                                            height: "100%",
-                                            background: barColor,
-                                            transition: "width 0.3s ease-out",
-                                          }}
-                                        />
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                                <span
-                                  style={{
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: "50%",
-                                    background: dotColor,
-                                    marginLeft: 10,
-                                  }}
-                                />
+                                      />
+                                    </div>
+                                  </>
+                                )}
                               </div>
+                              <span
+                                style={{
+                                  position: "absolute",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  left: "100%",
+                                  marginLeft: 10,
+                                  width: 8,
+                                  height: 8,
+                                  borderRadius: "50%",
+                                  background: dotColor,
+                                }}
+                              />
                             </div>
                           );
                         })() : (
