@@ -1348,7 +1348,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
                       {/* CGT Status column */}
-                      <td style={{ padding: "12px 8px", minWidth: "180px", textAlign: "center" }}>
+                      <td style={{ padding: "12px 8px", textAlign: "center" }}>
                         {isCroatia ? (() => {
                           const rewardDate = new Date(tx.timestamp * 1000);
                           const taxableUntil = new Date(rewardDate);
