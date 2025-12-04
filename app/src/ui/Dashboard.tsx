@@ -1370,14 +1370,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 alignItems: "flex-start",
                               }}
                             >
-                              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                                 <div style={{ display: "flex", flexDirection: "column" }}>
                                   {isTaxFree ? (
-                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Tax free</span>
+                                    <>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Tax free</span>
+                                      <div
+                                        style={{
+                                          marginTop: 4,
+                                          width: "100%",
+                                          height: 4,
+                                          borderRadius: 9999,
+                                          background: "#2b2b2b",
+                                          overflow: "hidden",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            width: `${progressPercent}%`,
+                                            height: "100%",
+                                            background: barColor,
+                                            transition: "width 0.3s ease-out",
+                                          }}
+                                        />
+                                      </div>
+                                    </>
                                   ) : (
                                     <>
                                       <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Taxable until</span>
                                       <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
+                                      <div
+                                        style={{
+                                          marginTop: 4,
+                                          width: "100%",
+                                          height: 4,
+                                          borderRadius: 9999,
+                                          background: "#2b2b2b",
+                                          overflow: "hidden",
+                                        }}
+                                      >
+                                        <div
+                                          style={{
+                                            width: `${progressPercent}%`,
+                                            height: "100%",
+                                            background: barColor,
+                                            transition: "width 0.3s ease-out",
+                                          }}
+                                        />
+                                      </div>
                                     </>
                                   )}
                                 </div>
@@ -1388,24 +1428,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                     borderRadius: "50%",
                                     background: dotColor,
                                     marginLeft: 10,
-                                  }}
-                                />
-                              </div>
-                              <div
-                                style={{
-                                  width: "100%",
-                                  height: 4,
-                                  borderRadius: 9999,
-                                  background: "#2b2b2b",
-                                  overflow: "hidden",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    width: `${progressPercent}%`,
-                                    height: "100%",
-                                    background: barColor,
-                                    transition: "width 0.3s ease-out",
                                   }}
                                 />
                               </div>
