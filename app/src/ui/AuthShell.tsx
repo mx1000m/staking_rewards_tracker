@@ -220,7 +220,6 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 									</div>
 								)}
 							</div>
-						</div>
 
 						{/* User Menu Popup */}
 						{userMenuVisible && (
