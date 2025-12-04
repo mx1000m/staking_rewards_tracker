@@ -1468,7 +1468,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               (link as HTMLAnchorElement).style.textDecoration = "underline";
                             });
                             const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
-                            if (img) img.style.filter = "brightness(0) invert(1)";
+                            if (img) {
+                              // Light grey close to #aaaaaa so it visually matches the hash color
+                              img.style.filter = "brightness(0) saturate(100%) invert(67%)";
+                            }
                           }}
                           onMouseLeave={(e) => {
                             const links = e.currentTarget.querySelectorAll("a");
