@@ -606,7 +606,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       console.log(`${label} copied to clipboard`);
       if (label === "Wallet address") {
         setWalletCopied(true);
-        setTimeout(() => setWalletCopied(false), 1200);
+        setTimeout(() => setWalletCopied(false), 650);
       }
     } catch (err) {
       console.error("Failed to copy:", err);
@@ -1464,7 +1464,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           onMouseEnter={(e) => {
                             const links = e.currentTarget.querySelectorAll("a");
                             links.forEach(link => {
-                              (link as HTMLAnchorElement).style.color = "#f0f0f0";
+                              (link as HTMLAnchorElement).style.color = "#aaaaaa";
                               (link as HTMLAnchorElement).style.textDecoration = "underline";
                             });
                             const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
