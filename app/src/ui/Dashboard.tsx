@@ -60,6 +60,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const exportModalCloseTimeoutRef = useRef<number | null>(null);
   const EXPORT_MODAL_ANIMATION_DURATION = 175;
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
+  // Local holding status per transaction hash: "Hodling" (default) or "Sold"
+  const [holdingStatusMap, setHoldingStatusMap] = useState<Record<string, "Hodling" | "Sold">>({});
+  // Bulk "mark as sold" modal state
+  const [showMarkSoldModal, setShowMarkSoldModal] = useState(false);
+  const [markSoldYear, setMarkSoldYear] = useState<number>(new Date().getFullYear());
+  const [markSoldMode, setMarkSoldMode] = useState<"year" | "custom">("year");
+  const [markSoldStartMonth, setMarkSoldStartMonth] = useState<number>(0);
+  const [markSoldEndMonth, setMarkSoldEndMonth] = useState<number>(0);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
@@ -513,6 +521,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         if (tracker.country === "Croatia") {
           const now = new Date();
           cached.forEach((tx) => {
+            const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
+            if (holding === "Sold") return;
             const rewardDate = new Date(tx.timestamp * 1000);
             const taxableUntil = new Date(rewardDate);
             taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
@@ -537,7 +547,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     if (trackers.length > 0) {
       calculateAllTotals();
     }
-  }, [trackers, transactions]); // Recalculate when trackers or transactions change
+  }, [trackers, transactions, holdingStatusMap]); // Recalculate when trackers, transactions or holding status change
 
   // Calculate totals based on filtered transactions (for selected node)
   const totalRewards = filteredTransactions.reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
@@ -550,6 +560,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const isCroatia = activeTracker?.country === "Croatia";
   const totalCgtFreeEth = isCroatia
     ? filteredTransactions.reduce((sum, tx) => {
+        const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
+        if (holding === "Sold") return sum;
         const rewardDate = new Date(tx.timestamp * 1000);
         const taxableUntil = new Date(rewardDate);
         taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
@@ -558,6 +570,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     : 0;
   const totalCgtFreeRewards = isCroatia
     ? filteredTransactions.reduce((sum, tx) => {
+        const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
+        if (holding === "Sold") return sum;
         const rewardDate = new Date(tx.timestamp * 1000);
         const taxableUntil = new Date(rewardDate);
         taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
@@ -917,6 +931,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <span style={{ color: "#aaaaaa" }}>Settings</span>
                   </button>
                   <button
+                    onClick={() => {
+                      setShowMarkSoldModal(true);
+                      setMarkSoldYear(selectedYear);
+                      setMarkSoldMode("year");
+                    }}
+                    style={{ background: "#2b2b2b", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", textTransform: "none" }}
+                    title="Mark rewards as sold"
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#383838";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#2b2b2b";
+                    }}
+                  >
+                    <img
+                      src="/staking_rewards_tracker/icons/sold_icon.svg"
+                      alt="Mark as sold"
+                      style={{ width: "18px", height: "18px", filter: "brightness(0) saturate(100%) invert(67%)" }}
+                    />
+                    <span style={{ color: "#aaaaaa" }}>Mark as sold</span>
+                  </button>
+                  <button
                     onClick={() => setShowExportModal(true)}
                     disabled={transactions.length === 0}
                     style={{ background: "#2b2b2b", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", padding: "10px 12px", textTransform: "none" }}
@@ -1246,6 +1282,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{valueLabel}</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{incomeTaxLabel}</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>CGT Status</th>
+                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Hodling status</th>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
                   </tr>
                 </thead>
@@ -1270,8 +1307,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {/* Transactions for this month */}
                       {monthGroup.transactions.map((tx, idx) => (
                         <React.Fragment key={`${monthGroup.monthKey}-${idx}`}>
-                          <tr>
-                            <td colSpan={7} style={{ padding: 0, height: "1px" }}>
+                      <tr>
+                            <td colSpan={8} style={{ padding: 0, height: "1px" }}>
                               <div style={{ height: "1px", background: "#383838" }}></div>
                             </td>
                           </tr>
@@ -1293,9 +1330,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           const ratio = totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 1;
                           const progressPercent = Math.round(ratio * 100);
                           const isTaxFree = now >= taxableUntil;
-                          const label = isTaxFree
-                            ? "Tax free"
-                            : `Taxable until ${taxableUntil.toLocaleDateString("en-GB")}`;
+                          const dateLabel = taxableUntil.toLocaleDateString("en-GB");
                           const barColor = isTaxFree ? "#55b685" : "#aaaaaa";
                           const dotColor = isTaxFree ? "#55b685" : "#ff5252";
                           return (
@@ -1307,7 +1342,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               }}
                             >
                               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                                <span style={{ fontSize: "0.85rem", color: "#f0f0f0", whiteSpace: "nowrap" }}>{label}</span>
+                                <div style={{ display: "flex", flexDirection: "column" }}>
+                                  {isTaxFree ? (
+                                    <span style={{ fontSize: "0.85rem", color: "#f0f0f0" }}>Tax free</span>
+                                  ) : (
+                                    <>
+                                      <span style={{ fontSize: "0.85rem", color: "#f0f0f0" }}>Taxable until</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#f0f0f0" }}>{dateLabel}</span>
+                                    </>
+                                  )}
+                                </div>
                                 <span
                                   style={{
                                     width: 8,
@@ -1340,6 +1384,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         })() : (
                           <span style={{ fontSize: "0.8rem", color: "#aaaaaa" }}>N/A</span>
                         )}
+                      </td>
+                      {/* Hodling status column */}
+                      <td style={{ padding: "12px" }}>
+                        {(() => {
+                          const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
+                          const isSold = holding === "Sold";
+                          return (
+                            <button
+                              onClick={() => {
+                                setHoldingStatusMap((prev) => ({
+                                  ...prev,
+                                  [tx.transactionHash]: isSold ? "Hodling" : "Sold",
+                                }));
+                              }}
+                              style={{
+                                padding: "4px 12px",
+                                borderRadius: 9999,
+                                border: "1px solid #4b4b4b",
+                                background: isSold ? "#2b2b2b" : "#4b4b4b",
+                                color: "#f0f0f0",
+                                fontSize: "0.8rem",
+                                cursor: "pointer",
+                                textTransform: "none",
+                                transition: "background 0.2s, transform 0.1s",
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = isSold ? "#383838" : "#5b5b5b";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = isSold ? "#2b2b2b" : "#4b4b4b";
+                              }}
+                              onMouseDown={(e) => {
+                                e.currentTarget.style.transform = "scale(0.96)";
+                              }}
+                              onMouseUp={(e) => {
+                                e.currentTarget.style.transform = "scale(1)";
+                              }}
+                            >
+                              {isSold ? "Sold" : "Hodling"}
+                            </button>
+                          );
+                        })()}
                       </td>
                       {/* Reward Tx column */}
                       <td style={{ padding: "12px" }}>
@@ -1950,6 +2036,246 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     }}
                   >
                     Export
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mark rewards as sold modal */}
+      {showMarkSoldModal && (
+        <div
+          className="modal-overlay modal-overlay-enter"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1200,
+            padding: "20px",
+          }}
+          onClick={() => setShowMarkSoldModal(false)}
+        >
+          <div
+            className="modal-card modal-card-enter"
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: "#181818",
+                borderRadius: "18px",
+                padding: "1px",
+                border: "1px solid #2b2b2b",
+              }}
+            >
+              <div
+                style={{
+                  background: "#181818",
+                  borderRadius: "17px",
+                  padding: "28px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Mark rewards as sold?</h3>
+                  <button
+                    onClick={() => setShowMarkSoldModal(false)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#9aa0b4",
+                      fontSize: "24px",
+                      cursor: "pointer",
+                      padding: "0",
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#e8e8f0";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#9aa0b4";
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <p className="muted" style={{ marginTop: 0, marginBottom: "16px", color: "#aaaaaa" }}>
+                  Which period do you want to apply this to:
+                </p>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {/* Entire year */}
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      cursor: "pointer",
+                      color: "#e8e8f0",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      checked={markSoldMode === "year"}
+                      onChange={() => setMarkSoldMode("year")}
+                    />
+                    <span>Entire year</span>
+                    <select
+                      className="gradient-select"
+                      value={markSoldYear}
+                      onChange={(e) => setMarkSoldYear(parseInt(e.target.value))}
+                      style={{ marginLeft: 4, minWidth: 80 }}
+                    >
+                      {availableYears.length > 0
+                        ? availableYears.map((year) => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))
+                        : (
+                          <option value={new Date().getFullYear()}>{new Date().getFullYear()}</option>
+                        )}
+                    </select>
+                  </label>
+
+                  {/* Custom range */}
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      cursor: "pointer",
+                      color: "#e8e8f0",
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <input
+                        type="radio"
+                        checked={markSoldMode === "custom"}
+                        onChange={() => setMarkSoldMode("custom")}
+                      />
+                      <span>Custom range:</span>
+                    </span>
+                    <div style={{ display: "flex", gap: 8, marginLeft: 26 }}>
+                      <select
+                        className="gradient-select"
+                        value={markSoldStartMonth}
+                        onChange={(e) => setMarkSoldStartMonth(parseInt(e.target.value))}
+                        disabled={markSoldMode !== "custom"}
+                      >
+                        {Array.from({ length: 12 }).map((_, idx) => {
+                          const name = new Date(2024, idx, 1).toLocaleDateString("en-US", { month: "short" });
+                          return (
+                            <option key={idx} value={idx}>
+                              {name}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <span style={{ color: "#aaaaaa", alignSelf: "center" }}>–</span>
+                      <select
+                        className="gradient-select"
+                        value={markSoldEndMonth}
+                        onChange={(e) => setMarkSoldEndMonth(parseInt(e.target.value))}
+                        disabled={markSoldMode !== "custom"}
+                      >
+                        {Array.from({ length: 12 }).map((_, idx) => {
+                          const name = new Date(2024, idx, 1).toLocaleDateString("en-US", { month: "short" });
+                          return (
+                            <option key={idx} value={idx}>
+                              {name}
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+                  </label>
+                </div>
+
+                <div className="actions" style={{ marginTop: "32px" }}>
+                  <button
+                    onClick={() => setShowMarkSoldModal(false)}
+                    style={{
+                      background: "#2b2b2b",
+                      color: "#aaaaaa",
+                      padding: "10px 20px",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      border: "none",
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#383838";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#2b2b2b";
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!activeTracker) {
+                        setShowMarkSoldModal(false);
+                        return;
+                      }
+                      const updated: Record<string, "Hodling" | "Sold"> = { ...holdingStatusMap };
+                      transactions.forEach((tx) => {
+                        const txDate = new Date(tx.timestamp * 1000);
+                        const year = txDate.getFullYear();
+                        const month = txDate.getMonth();
+                        if (markSoldMode === "year") {
+                          if (year === markSoldYear) {
+                            updated[tx.transactionHash] = "Sold";
+                          }
+                        } else {
+                          if (year === markSoldYear && month >= markSoldStartMonth && month <= markSoldEndMonth) {
+                            updated[tx.transactionHash] = "Sold";
+                          }
+                        }
+                      });
+                      setHoldingStatusMap(updated);
+                      setShowMarkSoldModal(false);
+                    }}
+                    style={{
+                      background: "#555555",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "10px 20px",
+                      color: "#f0f0f0",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#666666";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#555555";
+                    }}
+                  >
+                    Confirm
                   </button>
                 </div>
               </div>
