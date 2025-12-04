@@ -998,7 +998,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               {/* Node metadata */}
               <p
                 style={{
-                  margin: "8px 0 0 0",
+                  margin: "4px 0 0 0",
                   fontSize: "0.85rem",
                   color: "#aaaaaa",
                 }}
@@ -1277,13 +1277,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 <thead>
                   <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Received</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Reward (ETH)</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{valueLabel}</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{incomeTaxLabel}</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>CGT Status</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Hodling status</th>
-                    <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Reward (ETH)</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{valueLabel}</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{incomeTaxLabel}</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>CGT Status</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Hodling status</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1291,8 +1291,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <React.Fragment key={monthGroup.monthKey}>
                       {/* Month separator row */}
                       <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
-                        <td 
-                          colSpan={7} 
+                      <td 
+                          colSpan={8} 
                           style={{ 
                             padding: "12px 12px 8px 12px", 
                             color: "#aaaaaa", 
@@ -1313,11 +1313,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             </td>
                           </tr>
                           <tr>
-                      <td style={{ padding: "12px", color: "#e8e8f0" }}>{tx.date}, {tx.time}</td>
-                      <td style={{ padding: "12px", color: "#32c0ea" }}>{tx.ethAmount.toFixed(6)}</td>
-                      <td style={{ padding: "12px", color: "#e8e8f0", whiteSpace: "nowrap" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
-                      <td style={{ padding: "12px", color: "#32c0ea" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
-                      <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
+                      <td style={{ padding: "12px", color: "#f0f0f0", textAlign: "left" }}>{tx.date}, {tx.time}</td>
+                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{tx.ethAmount.toFixed(6)}</td>
+                      <td style={{ padding: "12px", color: "#e8e8f0", whiteSpace: "nowrap", textAlign: "center" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
+                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
+                      <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
                       {/* CGT Status column */}
                       <td style={{ padding: "12px", minWidth: "180px" }}>
                         {isCroatia ? (() => {
@@ -1344,11 +1344,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
                                 <div style={{ display: "flex", flexDirection: "column" }}>
                                   {isTaxFree ? (
-                                    <span style={{ fontSize: "0.85rem", color: "#f0f0f0" }}>Tax free</span>
+                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Tax free</span>
                                   ) : (
                                     <>
-                                      <span style={{ fontSize: "0.85rem", color: "#f0f0f0" }}>Taxable until</span>
-                                      <span style={{ fontSize: "0.85rem", color: "#f0f0f0" }}>{dateLabel}</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Taxable until</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
                                     </>
                                   )}
                                 </div>
@@ -1386,7 +1386,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         )}
                       </td>
                       {/* Hodling status column */}
-                      <td style={{ padding: "12px" }}>
+                      <td style={{ padding: "12px", textAlign: "center" }}>
                         {(() => {
                           const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
                           const isSold = holding === "Sold";
@@ -1428,7 +1428,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         })()}
                       </td>
                       {/* Reward Tx column */}
-                      <td style={{ padding: "12px" }}>
+                      <td style={{ padding: "12px", textAlign: "center" }}>
                         <div 
                           style={{ display: "flex", alignItems: "center", gap: 6 }}
                           onMouseEnter={(e) => {
