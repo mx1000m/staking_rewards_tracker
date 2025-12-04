@@ -1374,7 +1374,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 style={{
                                   display: "flex",
                                   flexDirection: "column",
-                                  alignItems: "flex-start",
+                                  alignItems: "center",
+                                  textAlign: "center",
                                 }}
                               >
                                 {isTaxFree ? (
@@ -1402,8 +1403,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                   </>
                                 ) : (
                                   <>
-                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Taxable until</span>
-                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Taxable until</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
                                     <div
                                       style={{
                                         marginTop: 4,
@@ -1461,7 +1462,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               style={{
                                 padding: "4px 12px",
                                 borderRadius: 9999,
-                                border: "1px solid #4b4b4b",
+                                border: isSold ? "1px solid transparent" : "1px solid #4b4b4b",
                                 background: "#2b2b2b",
                                 color: "#aaaaaa",
                                 fontSize: "0.8rem",
