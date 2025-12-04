@@ -68,6 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [markSoldMode, setMarkSoldMode] = useState<"year" | "custom">("year");
   const [markSoldStartMonth, setMarkSoldStartMonth] = useState<number>(0);
   const [markSoldEndMonth, setMarkSoldEndMonth] = useState<number>(0);
+  const [walletCopied, setWalletCopied] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
@@ -602,8 +603,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      // You could add a toast notification here
       console.log(`${label} copied to clipboard`);
+      if (label === "Wallet address") {
+        setWalletCopied(true);
+        setTimeout(() => setWalletCopied(false), 1200);
+      }
     } catch (err) {
       console.error("Failed to copy:", err);
     }
@@ -919,6 +923,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(100%) invert(67%)", transition: "filter 0.2s", border: "none" }}
                     />
                   </div>
+                  {walletCopied && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "-18px",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        padding: "2px 6px",
+                        borderRadius: "6px",
+                        background: "#2b2b2b",
+                        color: "#f0f0f0",
+                        fontSize: "0.7rem",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      Copied!
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: "flex", gap: 16 }}>
                   <button
