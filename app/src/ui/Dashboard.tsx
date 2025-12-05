@@ -2258,8 +2258,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         className="gradient-select"
                         value={markSoldStartMonth}
                         onChange={(e) => setMarkSoldStartMonth(parseInt(e.target.value))}
-                        disabled={markSoldMode !== "custom"}
-                        style={{ color: markSoldMode === "custom" ? "#f0f0f0" : undefined }}
+                        onFocus={() => {
+                          if (markSoldMode === "year") {
+                            setMarkSoldMode("custom");
+                          }
+                        }}
+                        style={{ color: markSoldMode === "custom" ? "#f0f0f0" : "#aaaaaa", opacity: markSoldMode === "custom" ? 1 : 0.6 }}
                       >
                         {Array.from({ length: 12 }).map((_, idx) => {
                           const name = new Date(2024, idx, 1).toLocaleDateString("en-US", { month: "short" });
@@ -2275,8 +2279,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         className="gradient-select"
                         value={markSoldEndMonth}
                         onChange={(e) => setMarkSoldEndMonth(parseInt(e.target.value))}
-                        disabled={markSoldMode !== "custom"}
-                        style={{ color: markSoldMode === "custom" ? "#f0f0f0" : undefined }}
+                        onFocus={() => {
+                          if (markSoldMode === "year") {
+                            setMarkSoldMode("custom");
+                          }
+                        }}
+                        style={{ color: markSoldMode === "custom" ? "#f0f0f0" : "#aaaaaa", opacity: markSoldMode === "custom" ? 1 : 0.6 }}
                       >
                         {Array.from({ length: 12 }).map((_, idx) => {
                           const name = new Date(2024, idx, 1).toLocaleDateString("en-US", { month: "short" });
