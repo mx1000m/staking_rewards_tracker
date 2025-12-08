@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
-import { getTransactions, getEthPriceAtTimestamp, getEurUsdRateAtTimestamp } from "../api/etherscan";
+import { getTransactions } from "../api/etherscan";
+import { getEthPriceAtTimestamp } from "../api/coingecko";
 import { getCachedPrice, setCachedPrice, getDateKey } from "../utils/priceCache";
 import {
   getCachedTransactions,
@@ -305,8 +306,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const date = new Date(timestamp);
         const ethAmount = parseFloat(tx.value) / 1e18;
         
-        // Get ETH price at transaction time (use cache to avoid duplicate API calls)
-        // Etherscan returns USD price, which matches their "Estimated Value on Day of Txn"
+        // Get ETH price at transaction time using CoinGecko (daily average price)
+        // CoinGecko provides daily average prices for both USD and EUR
         let ethPrice = 0;
         const dateKey = getDateKey(parseInt(tx.timeStamp));
         const cachedPrice = getCachedPrice(`${dateKey}-${tracker.currency}`);
@@ -316,53 +317,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Using cached price: ${ethPrice}`);
         } else {
           try {
-            // Get USD price from Etherscan (matches their website's "Estimated Value on Day of Txn")
-            const ethPriceUSD = await getEthPriceAtTimestamp(parseInt(tx.timeStamp), tracker.etherscanKey);
-            
-            // If user wants EUR, convert USD to EUR using EUR/USD exchange rate
-            if (tracker.currency === "EUR") {
-              // Get EUR/USD rate for that date (cached separately)
-              const eurUsdCacheKey = `eurusd-${dateKey}`;
-              let eurUsdRate = getCachedPrice(eurUsdCacheKey);
-              
-              if (eurUsdRate === null) {
-                eurUsdRate = await getEurUsdRateAtTimestamp(parseInt(tx.timeStamp));
-                setCachedPrice(eurUsdCacheKey, eurUsdRate);
-              }
-              
-              // Convert: EUR Price = USD Price / EUR_USD_rate
-              // The API returns USD per 1 EUR (e.g., 1.09 means 1 EUR = 1.09 USD)
-              // So to convert USD to EUR: divide by the rate
-              ethPrice = ethPriceUSD / eurUsdRate;
-              console.log(`Transaction ${i + 1}/${etherscanTxs.length}: USD price from Etherscan: ${ethPriceUSD}, EUR/USD rate: ${eurUsdRate}, EUR price: ${ethPrice}`);
-            } else {
-              // USD: use Etherscan price directly
-              ethPrice = ethPriceUSD;
-              console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Price fetched from Etherscan (USD): ${ethPrice}`);
-            }
-            
+            // Get price from CoinGecko (supports both USD and EUR directly)
+            ethPrice = await getEthPriceAtTimestamp(parseInt(tx.timeStamp), tracker.currency);
             setCachedPrice(`${dateKey}-${tracker.currency}`, ethPrice);
+            console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Price fetched from CoinGecko (${tracker.currency}): ${ethPrice}`);
+            
             // Small delay to avoid rate limiting (only if not last transaction)
             if (i < etherscanTxs.length - 1) {
               await new Promise((resolve) => setTimeout(resolve, 1200)); // 1.2s to stay under 5/sec
             }
           } catch (error: any) {
-            console.error(`Failed to fetch price from Etherscan for transaction ${i + 1}:`, error);
-            
-            // Fallback to CoinGecko if Etherscan fails (e.g., PRO subscription required)
-            try {
-              console.log(`Falling back to CoinGecko for transaction ${i + 1}...`);
-              const { getEthPriceAtTimestamp: getCoinGeckoPrice } = await import("../api/coingecko");
-              const fallbackPrice = await getCoinGeckoPrice(parseInt(tx.timeStamp), tracker.currency);
-              ethPrice = fallbackPrice;
-              setCachedPrice(`${dateKey}-${tracker.currency}`, ethPrice);
-              console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Using CoinGecko fallback price: ${ethPrice} ${tracker.currency}`);
-              setError(`Warning: Etherscan price API unavailable (may require PRO subscription). Using CoinGecko prices instead. ${error.message || ""}`);
-            } catch (fallbackError: any) {
-              console.error(`Failed to fetch price from CoinGecko fallback for transaction ${i + 1}:`, fallbackError);
-              setError(`Warning: Could not fetch price for some transactions. Etherscan: ${error.message || ""}. CoinGecko: ${fallbackError.message || ""}`);
-              // Continue with 0 price if both fail
-            }
+            console.error(`Failed to fetch price from CoinGecko for transaction ${i + 1}:`, error);
+            setError(`Warning: Could not fetch price for some transactions. ${error.message || ""}`);
+            // Continue with 0 price if fetch fails
           }
         }
         
