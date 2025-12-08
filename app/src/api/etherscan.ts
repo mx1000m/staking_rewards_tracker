@@ -90,3 +90,113 @@ export async function getTransactions(
   return incomingTxs;
 }
 
+/**
+ * Get ETH daily price from Etherscan for a specific date
+ * This matches the "Estimated Value on Day of Txn" shown on Etherscan's website
+ * @param timestamp Unix timestamp (seconds)
+ * @param apiKey Etherscan API key
+ * @returns ETH price in USD for that date
+ */
+export async function getEthPriceAtTimestamp(
+  timestamp: number,
+  apiKey: string
+): Promise<number> {
+  const date = new Date(timestamp * 1000);
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const dateString = `${year}-${month}-${day}`;
+
+  // Etherscan daily price API endpoint
+  const url = `https://api.etherscan.io/v2/api?chainid=1&module=stats&action=ethdailyprice&startdate=${dateString}&enddate=${dateString}&sort=desc&apikey=${apiKey}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+
+  if (data.status === "0") {
+    throw new Error(`Etherscan price API error: ${data.message || data.result || "Unknown error"}`);
+  }
+
+  if (!data.result || !Array.isArray(data.result) || data.result.length === 0) {
+    throw new Error(`No price data found for date ${dateString}`);
+  }
+
+  // Get the price for the specific date (should be the first/only result)
+  const priceData = data.result[0];
+  
+  // Handle different possible response formats
+  let usdPrice: number | null = null;
+  
+  if (priceData.valueUSD) {
+    usdPrice = parseFloat(priceData.valueUSD);
+  } else if (priceData.usd) {
+    usdPrice = parseFloat(priceData.usd);
+  } else if (typeof priceData === "number") {
+    usdPrice = priceData;
+  } else if (priceData.price) {
+    usdPrice = parseFloat(priceData.price);
+  }
+  
+  if (usdPrice === null || isNaN(usdPrice)) {
+    console.error("Etherscan price API response:", JSON.stringify(data, null, 2));
+    throw new Error(`Invalid price data format for date ${dateString}. Response: ${JSON.stringify(priceData)}`);
+  }
+
+  // Return USD price per ETH
+  return usdPrice;
+}
+
+/**
+ * Get EUR/USD exchange rate for a specific date
+ * Uses exchangerate-api.com API (free, no API key required for basic usage)
+ * @param timestamp Unix timestamp (seconds)
+ * @returns EUR/USD exchange rate (USD per 1 EUR, e.g., 1.09 means 1 EUR = 1.09 USD)
+ */
+export async function getEurUsdRateAtTimestamp(timestamp: number): Promise<number> {
+  const date = new Date(timestamp * 1000);
+  const year = date.getFullYear();
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const day = date.getDate().toString().padStart(2, "0");
+  const dateString = `${year}-${month}-${day}`;
+
+  // Use exchangerate-api.com API (free tier, historical data)
+  // This returns USD per 1 EUR (e.g., 1.09 means 1 EUR = 1.09 USD)
+  const url = `https://api.exchangerate-api.com/v4/historical/usd/${dateString}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.rates && data.rates.EUR) {
+      // Return USD per 1 EUR (e.g., 1.09 means 1 EUR = 1.09 USD)
+      return parseFloat(data.rates.EUR);
+    }
+  } catch (error) {
+    console.warn(`Failed to fetch EUR/USD rate from exchangerate-api.com: ${error}`);
+  }
+
+  // Fallback: use exchangerate.host API
+  const fallbackUrl = `https://api.exchangerate.host/${dateString}?base=USD&symbols=EUR`;
+  const fallbackRes = await fetch(fallbackUrl);
+  const fallbackData = await fallbackRes.json();
+
+  if (fallbackData.success && fallbackData.rates && fallbackData.rates.EUR) {
+    // exchangerate.host returns EUR per 1 USD, so we need to invert it
+    // If it returns 0.92 (EUR per 1 USD), then USD per 1 EUR = 1 / 0.92 = 1.087
+    const eurPerUsd = parseFloat(fallbackData.rates.EUR);
+    return 1 / eurPerUsd; // Convert to USD per 1 EUR
+  }
+
+  // Last fallback: try current rate
+  console.warn(`Historical EUR/USD rate not available for ${dateString}, trying current rate`);
+  const currentUrl = `https://api.exchangerate-api.com/v4/latest/USD`;
+  const currentRes = await fetch(currentUrl);
+  const currentData = await currentRes.json();
+  
+  if (currentData.rates && currentData.rates.EUR) {
+    return parseFloat(currentData.rates.EUR);
+  }
+
+  throw new Error(`Failed to fetch EUR/USD rate for date ${dateString}`);
+}
+
