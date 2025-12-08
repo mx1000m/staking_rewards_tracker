@@ -108,13 +108,28 @@ export async function getEthPriceAtTimestamp(
   const dateString = `${year}-${month}-${day}`;
 
   // Etherscan daily price API endpoint
-  const url = `https://api.etherscan.io/v2/api?chainid=1&module=stats&action=ethdailyprice&startdate=${dateString}&enddate=${dateString}&sort=desc&apikey=${apiKey}`;
+  // Use v1 API format (v2 API might not support this endpoint)
+  const url = `https://api.etherscan.io/api?module=stats&action=ethdailyprice&startdate=${dateString}&enddate=${dateString}&sort=desc&apikey=${apiKey}`;
 
   const res = await fetch(url);
   const data = await res.json();
 
-  if (data.status === "0") {
-    throw new Error(`Etherscan price API error: ${data.message || data.result || "Unknown error"}`);
+  // Log full response for debugging
+  console.log(`Etherscan price API response for ${dateString}:`, JSON.stringify(data, null, 2));
+
+  if (data.status === "0" || data.status === 0) {
+    const errorMsg = data.message || data.result || "Unknown error";
+    console.error(`Etherscan price API error details:`, {
+      status: data.status,
+      message: data.message,
+      result: data.result,
+      date: dateString,
+      url: url.replace(apiKey, "***")
+    });
+    
+    // Provide a more helpful error message
+    const detailedError = `Etherscan price API error: ${errorMsg}. This endpoint may require a PRO subscription or the date format may be incorrect. Check your Etherscan API plan.`;
+    throw new Error(detailedError);
   }
 
   if (!data.result || !Array.isArray(data.result) || data.result.length === 0) {

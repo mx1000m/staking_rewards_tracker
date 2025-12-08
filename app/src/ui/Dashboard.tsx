@@ -347,9 +347,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               await new Promise((resolve) => setTimeout(resolve, 1200)); // 1.2s to stay under 5/sec
             }
           } catch (error: any) {
-            console.error(`Failed to fetch price for transaction ${i + 1}:`, error);
-            setError(`Warning: Could not fetch price for some transactions. ${error.message || ""}`);
-            // Continue with 0 price if fetch fails
+            console.error(`Failed to fetch price from Etherscan for transaction ${i + 1}:`, error);
+            
+            // Fallback to CoinGecko if Etherscan fails (e.g., PRO subscription required)
+            try {
+              console.log(`Falling back to CoinGecko for transaction ${i + 1}...`);
+              const { getEthPriceAtTimestamp: getCoinGeckoPrice } = await import("../api/coingecko");
+              const fallbackPrice = await getCoinGeckoPrice(parseInt(tx.timeStamp), tracker.currency);
+              ethPrice = fallbackPrice;
+              setCachedPrice(`${dateKey}-${tracker.currency}`, ethPrice);
+              console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Using CoinGecko fallback price: ${ethPrice} ${tracker.currency}`);
+              setError(`Warning: Etherscan price API unavailable (may require PRO subscription). Using CoinGecko prices instead. ${error.message || ""}`);
+            } catch (fallbackError: any) {
+              console.error(`Failed to fetch price from CoinGecko fallback for transaction ${i + 1}:`, fallbackError);
+              setError(`Warning: Could not fetch price for some transactions. Etherscan: ${error.message || ""}. CoinGecko: ${fallbackError.message || ""}`);
+              // Continue with 0 price if both fail
+            }
           }
         }
         
