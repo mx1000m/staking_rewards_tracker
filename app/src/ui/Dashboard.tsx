@@ -42,7 +42,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [showRefreshWarning, setShowRefreshWarning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [markPaidHash, setMarkPaidHash] = useState<string | null>(null);
   const [swapHashInput, setSwapHashInput] = useState<string>("");
@@ -139,6 +141,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       };
     }
   }, [editPaidHash]);
+
+  // Handle refresh warning modal body overflow
+  useEffect(() => {
+    if (showRefreshWarning) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      const originalOverflow = document.body.style.overflow;
+      const originalPaddingRight = document.body.style.paddingRight;
+
+      document.body.style.overflow = "hidden";
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
+
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [showRefreshWarning]);
 
   // Handle mark sold modal body overflow
   useEffect(() => {
@@ -281,6 +302,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   const fetchTransactions = async (tracker: Tracker, forceRefresh = false) => {
     setLoading(true);
+    setLoadingProgress({ current: 0, total: 0 });
     setError(null);
     try {
       // Always start from Jan 1 of current year (00:01 UTC) to include entire-year history
@@ -289,6 +311,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       console.log("Fetching transactions for:", tracker.walletAddress, "from", new Date(startTimestamp * 1000).toLocaleDateString());
       const etherscanTxs = await getTransactions(tracker.walletAddress, tracker.etherscanKey, startTimestamp);
       console.log("Found transactions:", etherscanTxs.length);
+      
+      // Set total for progress tracking
+      setLoadingProgress({ current: 0, total: etherscanTxs.length });
       
       if (etherscanTxs.length === 0) {
         setError("No incoming transactions found for this wallet address.");
@@ -312,6 +337,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const dateKey = getDateKey(parseInt(tx.timeStamp));
         const cachedPrice = getCachedPrice(`${dateKey}-${tracker.currency}`);
         
+        // Update progress
+        setLoadingProgress({ current: i + 1, total: etherscanTxs.length });
+        
         if (cachedPrice !== null) {
           ethPrice = cachedPrice;
           console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Using cached price: ${ethPrice}`);
@@ -322,9 +350,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             setCachedPrice(`${dateKey}-${tracker.currency}`, ethPrice);
             console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Price fetched from CoinGecko (${tracker.currency}): ${ethPrice}`);
             
-            // Small delay to avoid rate limiting (only if not last transaction)
+            // Small delay to avoid rate limiting (30 calls/min for demo tier = 2s delay)
+            // Only delay if not last transaction
             if (i < etherscanTxs.length - 1) {
-              await new Promise((resolve) => setTimeout(resolve, 1200)); // 1.2s to stay under 5/sec
+              await new Promise((resolve) => setTimeout(resolve, 2000)); // 2s to stay under 30/min
             }
           } catch (error: any) {
             console.error(`Failed to fetch price from CoinGecko for transaction ${i + 1}:`, error);
@@ -1023,7 +1052,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <span style={{ color: "#aaaaaa" }}>Export CSV</span>
                   </button>
                   <button
-                    onClick={() => fetchTransactions(activeTracker, true)}
+                    onClick={() => setShowRefreshWarning(true)}
                     disabled={loading}
                     style={{ background: "#2b2b2b", transition: "all 0.2s", border: "none", borderRadius: "9px", padding: "10px 12px", display: "inline-flex", alignItems: "center", gap: 6, textTransform: "none" }}
                     onMouseEnter={(e) => {
@@ -1317,7 +1346,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
               {/* Incoming rewards table */}
               {loading ? (
-            <p>Loading transactions...</p>
+            <div style={{ padding: "40px 20px", textAlign: "center" }}>
+              <p style={{ color: "#f0f0f0", fontSize: "1rem", marginBottom: "8px" }}>
+                Loading transactions
+                <span style={{ animation: "blink 1.4s infinite" }}>.</span>
+                <span style={{ animation: "blink 1.4s infinite 0.2s" }}>.</span>
+                <span style={{ animation: "blink 1.4s infinite 0.4s" }}>.</span>
+                {loadingProgress.total > 0 && (
+                  <span style={{ marginLeft: "12px", color: "#aaaaaa" }}>
+                    ({loadingProgress.current}/{loadingProgress.total})
+                  </span>
+                )}
+              </p>
+              <p style={{ color: "#aaaaaa", fontSize: "0.9rem", marginTop: "8px" }}>
+                Depending on the number of transactions, this may take a few minutes.
+              </p>
+            </div>
           ) : transactions.length === 0 && !error ? (
             <p>No transactions found.</p>
           ) : filteredTransactions.length > 0 ? (
@@ -2132,6 +2176,142 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     }}
                   >
                     Export
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Refresh warning modal */}
+      {showRefreshWarning && (
+        <div
+          className="modal-overlay modal-overlay-enter"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1200,
+            padding: "20px",
+          }}
+          onClick={() => setShowRefreshWarning(false)}
+        >
+          <div
+            className="modal-card modal-card-enter"
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              position: "relative",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: "#181818",
+                borderRadius: "18px",
+                padding: "1px",
+                border: "1px solid #2b2b2b",
+              }}
+            >
+              <div
+                style={{
+                  background: "#181818",
+                  borderRadius: "17px",
+                  padding: "28px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Refresh Transactions?</h3>
+                  <button
+                    onClick={() => setShowRefreshWarning(false)}
+                    style={{
+                      background: "transparent",
+                      border: "none",
+                      color: "#9aa0b4",
+                      fontSize: "24px",
+                      cursor: "pointer",
+                      padding: "0",
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      position: "absolute",
+                      top: "10px",
+                      right: "10px",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#e8e8f0";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#9aa0b4";
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+                <p style={{ marginTop: 0, marginBottom: "16px", color: "#aaaaaa", lineHeight: "1.6" }}>
+                  Refreshing will fetch all transactions from the current year (up to one year in the past). 
+                  Due to CoinGecko API rate limits (30 calls per minute for demo tier), this process may take a few minutes depending on the number of transactions.
+                </p>
+                <p style={{ marginTop: 0, marginBottom: "24px", color: "#aaaaaa", lineHeight: "1.6" }}>
+                  Do you want to continue?
+                </p>
+
+                <div className="actions" style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+                  <button
+                    onClick={() => setShowRefreshWarning(false)}
+                    style={{
+                      background: "#2b2b2b",
+                      color: "#aaaaaa",
+                      padding: "10px 20px",
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      border: "none",
+                      transition: "background 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#383838";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#2b2b2b";
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowRefreshWarning(false);
+                      fetchTransactions(activeTracker, true);
+                    }}
+                    style={{
+                      background: "#555555",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "10px 20px",
+                      color: "#f0f0f0",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      transition: "background 0.2s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#666666";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#555555";
+                    }}
+                  >
+                    Continue
                   </button>
                 </div>
               </div>

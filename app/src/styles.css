@@ -249,4 +249,14 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   transform: scale(0.96) !important;
 }
 
+/* Loading dots animation */
+@keyframes blink {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 
