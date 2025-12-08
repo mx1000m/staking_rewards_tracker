@@ -91,11 +91,17 @@ export async function getTransactions(
 }
 
 /**
- * Get ETH daily price from Etherscan for a specific date
- * This matches the "Estimated Value on Day of Txn" shown on Etherscan's website
+ * Get ETH daily price from Etherscan for a specific date (V2 API)
+ * Note: This endpoint returns daily average prices, similar to CoinGecko.
+ * The "Estimated Value on Day of Txn" shown on Etherscan's website may use
+ * more precise calculations, but the API endpoint provides daily averages.
+ * 
+ * If this endpoint is not available in V2 or requires PRO subscription,
+ * the Dashboard will automatically fall back to CoinGecko.
+ * 
  * @param timestamp Unix timestamp (seconds)
  * @param apiKey Etherscan API key
- * @returns ETH price in USD for that date
+ * @returns ETH price in USD for that date (daily average)
  */
 export async function getEthPriceAtTimestamp(
   timestamp: number,
@@ -107,19 +113,19 @@ export async function getEthPriceAtTimestamp(
   const day = date.getDate().toString().padStart(2, "0");
   const dateString = `${year}-${month}-${day}`;
 
-  // Etherscan daily price API endpoint
-  // Use v1 API format (v2 API might not support this endpoint)
-  const url = `https://api.etherscan.io/api?module=stats&action=ethdailyprice&startdate=${dateString}&enddate=${dateString}&sort=desc&apikey=${apiKey}`;
+  // Etherscan daily price API endpoint - Using V2 API format
+  // V2 API requires chainid parameter (1 for Ethereum mainnet)
+  const url = `https://api.etherscan.io/v2/api?chainid=1&module=stats&action=ethdailyprice&startdate=${dateString}&enddate=${dateString}&sort=desc&apikey=${apiKey}`;
 
   const res = await fetch(url);
   const data = await res.json();
 
   // Log full response for debugging
-  console.log(`Etherscan price API response for ${dateString}:`, JSON.stringify(data, null, 2));
+  console.log(`Etherscan V2 price API response for ${dateString}:`, JSON.stringify(data, null, 2));
 
   if (data.status === "0" || data.status === 0) {
     const errorMsg = data.message || data.result || "Unknown error";
-    console.error(`Etherscan price API error details:`, {
+    console.error(`Etherscan V2 price API error details:`, {
       status: data.status,
       message: data.message,
       result: data.result,
@@ -127,9 +133,12 @@ export async function getEthPriceAtTimestamp(
       url: url.replace(apiKey, "***")
     });
     
-    // Provide a more helpful error message
-    const detailedError = `Etherscan price API error: ${errorMsg}. This endpoint may require a PRO subscription or the date format may be incorrect. Check your Etherscan API plan.`;
-    throw new Error(detailedError);
+    // Check if the endpoint doesn't exist in V2 - it might be PRO-only or not available
+    if (typeof errorMsg === "string" && errorMsg.includes("deprecated")) {
+      throw new Error(`Etherscan V2 API: ${errorMsg}. The ethdailyprice endpoint may not be available in V2 or may require PRO subscription.`);
+    }
+    
+    throw new Error(`Etherscan V2 price API error: ${errorMsg}`);
   }
 
   if (!data.result || !Array.isArray(data.result) || data.result.length === 0) {
