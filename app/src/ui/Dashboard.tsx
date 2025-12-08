@@ -2291,7 +2291,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <button
                     onClick={() => {
                       setShowRefreshWarning(false);
-                      fetchTransactions(activeTracker, true);
+                      if (activeTracker) {
+                        fetchTransactions(activeTracker, true);
+                      }
                     }}
                     style={{
                       background: "#555555",
