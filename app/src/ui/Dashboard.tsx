@@ -725,7 +725,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* All Nodes Overview */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All nodes overview</h3>
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", minWidth: "1100px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
         <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
             onMouseEnter={() => setVisibleTooltip("rewards")}
