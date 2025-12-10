@@ -146,7 +146,11 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						alignItems: "center", 
 						padding: "16px 24px",
 						background: "#181818",
-						position: "relative",
+						position: "sticky",
+						top: 0,
+						left: 0,
+						right: 0,
+						zIndex: 1000,
 					}}
 				>
 					{/* Bottom border only */}
