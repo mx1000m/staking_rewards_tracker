@@ -2556,8 +2556,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
         </div>
       )}
-        </div>
-      </div>
     </div>
   );
 };
