@@ -11,6 +11,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const menuRef = useRef<HTMLDivElement>(null);
 	const menuAnimationTimeoutRef = useRef<number | null>(null);
 	const headerBackgroundRef = useRef<HTMLDivElement>(null);
+	const headerRef = useRef<HTMLHeaderElement>(null);
 	const USER_MENU_ANIMATION_DURATION = 450;
 
 	const headerStroke = "linear-gradient(45deg, #3788fd, #01e1fd)";
@@ -129,15 +130,16 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 
 	// Update header background width to extend 50px on both sides
 	useEffect(() => {
-		if (!headerBackgroundRef.current) return;
+		if (!headerBackgroundRef.current || !headerRef.current) return;
 
 		const updateBackgroundWidth = () => {
-			if (headerBackgroundRef.current) {
+			if (headerBackgroundRef.current && headerRef.current) {
 				requestAnimationFrame(() => {
-					if (headerBackgroundRef.current) {
-						// Use the content area width (1130px) + 100px for extensions (50px each side)
-						const contentWidth = 1130;
-						const totalWidth = contentWidth + 100; // 50px on each side
+					if (headerBackgroundRef.current && headerRef.current) {
+						// Get the header's actual width
+						const headerWidth = headerRef.current.offsetWidth;
+						// Extend 50px on both sides
+						const totalWidth = headerWidth + 100; // 50px on each side
 						headerBackgroundRef.current.style.width = `${totalWidth}px`;
 						// Center it by offsetting left by 50px
 						headerBackgroundRef.current.style.left = `-50px`;
@@ -170,12 +172,14 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		return (
 			<>
 				<header 
+					ref={headerRef}
 					className="app-header" 
 					style={{ 
 						position: "sticky",
 						top: 0,
 						left: 0,
 						zIndex: 1000,
+						width: "100%",
 						minWidth: "1130px",
 						paddingLeft: "15px",
 						paddingRight: "15px",
