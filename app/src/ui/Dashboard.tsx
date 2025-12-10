@@ -721,7 +721,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
 
   return (
-    <div style={{ width: "100%", minWidth: "1010px" }}>
+    <div style={{ width: "100%", overflowX: "auto" }}>
+      <div style={{ minWidth: "1010px" }}>
       {/* All Nodes Overview */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All nodes overview</h3>
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", minWidth: "1010px" }}>
@@ -2556,6 +2557,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
