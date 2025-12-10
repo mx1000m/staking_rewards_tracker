@@ -1166,6 +1166,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       padding: "2px",
                       gap: 0,
                       alignItems: "center",
+                      minWidth: "760px", // keep all months visible before wrapping
+                      overflowX: "auto",
+                      boxSizing: "border-box",
                     }}
                   >
                     <button
