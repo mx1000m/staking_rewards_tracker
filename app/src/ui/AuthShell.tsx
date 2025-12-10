@@ -11,7 +11,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const menuRef = useRef<HTMLDivElement>(null);
 	const menuAnimationTimeoutRef = useRef<number | null>(null);
 	const headerBackgroundRef = useRef<HTMLDivElement>(null);
-	const headerRef = useRef<HTMLHeaderElement>(null);
+	const headerRef = useRef<HTMLElement>(null);
 	const USER_MENU_ANIMATION_DURATION = 450;
 
 	const headerStroke = "linear-gradient(45deg, #3788fd, #01e1fd)";
