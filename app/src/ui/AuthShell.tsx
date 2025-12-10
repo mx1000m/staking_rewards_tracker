@@ -135,13 +135,10 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 			if (headerBackgroundRef.current) {
 				requestAnimationFrame(() => {
 					if (headerBackgroundRef.current) {
-						const scrollWidth = Math.max(
-							document.documentElement.scrollWidth,
-							document.body.scrollWidth,
-							1130
-						);
-						// Extend 50px on both sides
-						headerBackgroundRef.current.style.width = `${scrollWidth + 100}px`;
+						// Use the content area width (1130px) + 100px for extensions (50px each side)
+						const contentWidth = 1130;
+						const totalWidth = contentWidth + 100; // 50px on each side
+						headerBackgroundRef.current.style.width = `${totalWidth}px`;
 						// Center it by offsetting left by 50px
 						headerBackgroundRef.current.style.left = `-50px`;
 					}
@@ -153,12 +150,10 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		updateBackgroundWidth();
 
 		window.addEventListener("resize", updateBackgroundWidth);
-		window.addEventListener("scroll", updateBackgroundWidth);
 
 		return () => {
 			clearTimeout(timeoutId);
 			window.removeEventListener("resize", updateBackgroundWidth);
-			window.removeEventListener("scroll", updateBackgroundWidth);
 		};
 	}, [user]);
 
