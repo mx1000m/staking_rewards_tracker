@@ -151,6 +151,8 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						left: 0,
 						right: 0,
 						zIndex: 1000,
+						width: "100%",
+						boxSizing: "border-box",
 					}}
 				>
 					{/* Bottom border only */}

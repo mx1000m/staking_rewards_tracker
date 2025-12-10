@@ -721,12 +721,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
 
   return (
-    <div style={{ width: "100%", overflowX: "hidden" }}>
-      <div style={{ overflowX: "auto" }}>
-        <div style={{ minWidth: "1010px" }}>
+    <div style={{ width: "100%", minWidth: "1010px" }}>
       {/* All Nodes Overview */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All nodes overview</h3>
-      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", minWidth: "1010px" }}>
+      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
         <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
@@ -862,7 +860,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
       {/* Your Nodes */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your nodes</h3>
-      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", minWidth: "1010px" }}>
+      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px" }}>
         <div style={{ borderRadius: "13px", padding: "24px" }}>
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
           {trackers.map((tracker) => (
@@ -934,7 +932,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {activeTracker && (
         <>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Node selected:</h3>
-          <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", minWidth: "1010px" }}>
+          <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px" }}>
             <div style={{ borderRadius: "13px", padding: "24px" }}>
               {/* Header row: node name, wallet + copy, action buttons */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
