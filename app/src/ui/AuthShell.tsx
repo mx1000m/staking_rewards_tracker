@@ -10,6 +10,7 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const [userMenuAnimation, setUserMenuAnimation] = useState<"enter" | "exit">("exit");
 	const menuRef = useRef<HTMLDivElement>(null);
 	const menuAnimationTimeoutRef = useRef<number | null>(null);
+	const headerBackgroundRef = useRef<HTMLDivElement>(null);
 	const USER_MENU_ANIMATION_DURATION = 450;
 
 	const headerStroke = "linear-gradient(45deg, #3788fd, #01e1fd)";
@@ -126,6 +127,41 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 		};
 	}, []);
 
+	// Update header background width to extend 50px on both sides
+	useEffect(() => {
+		if (!headerBackgroundRef.current) return;
+
+		const updateBackgroundWidth = () => {
+			if (headerBackgroundRef.current) {
+				requestAnimationFrame(() => {
+					if (headerBackgroundRef.current) {
+						const scrollWidth = Math.max(
+							document.documentElement.scrollWidth,
+							document.body.scrollWidth,
+							1130
+						);
+						// Extend 50px on both sides
+						headerBackgroundRef.current.style.width = `${scrollWidth + 100}px`;
+						// Center it by offsetting left by 50px
+						headerBackgroundRef.current.style.left = `-50px`;
+					}
+				});
+			}
+		};
+
+		const timeoutId = setTimeout(updateBackgroundWidth, 100);
+		updateBackgroundWidth();
+
+		window.addEventListener("resize", updateBackgroundWidth);
+		window.addEventListener("scroll", updateBackgroundWidth);
+
+		return () => {
+			clearTimeout(timeoutId);
+			window.removeEventListener("resize", updateBackgroundWidth);
+			window.removeEventListener("scroll", updateBackgroundWidth);
+		};
+	}, [user]);
+
 	if (loading) {
 		return null;
 	}
@@ -141,7 +177,6 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 				<header 
 					className="app-header" 
 					style={{ 
-						background: "#181818",
 						position: "sticky",
 						top: 0,
 						left: 0,
@@ -150,22 +185,37 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						paddingLeft: "15px",
 						paddingRight: "15px",
 						boxSizing: "border-box",
+						overflow: "visible",
 					}}
 				>
-					{/* Bottom border only */}
-					<div style={{
-						position: "absolute",
-						bottom: 0,
-						left: 0,
-						right: 0,
-						height: "1px",
-						background: "#2b2b2b",
-					}}></div>
+					{/* Background that extends 50px on both sides */}
+					<div 
+						ref={headerBackgroundRef}
+						style={{
+							position: "absolute",
+							top: 0,
+							background: "#181818",
+							height: "100%",
+							zIndex: -1,
+						}}
+					>
+						{/* Bottom border only */}
+						<div style={{
+							position: "absolute",
+							bottom: 0,
+							left: "50px",
+							right: "50px",
+							height: "1px",
+							background: "#2b2b2b",
+						}}></div>
+					</div>
 					<div style={{
 						display: "flex", 
 						justifyContent: "space-between", 
 						alignItems: "center", 
-						padding: "16px 24px",
+						padding: "12px 24px",
+						position: "relative",
+						zIndex: 1,
 					}}>
 						<div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
 							{/* Logo plain white */}
