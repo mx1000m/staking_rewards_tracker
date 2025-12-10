@@ -198,8 +198,8 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 						<div style={{
 							position: "absolute",
 							bottom: 0,
-							left: "50px",
-							right: "50px",
+							left: 0,
+							right: 0,
 							height: "1px",
 							background: "#2b2b2b",
 						}}></div>
