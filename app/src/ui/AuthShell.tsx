@@ -136,13 +136,21 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 			if (headerBackgroundRef.current && headerRef.current) {
 				requestAnimationFrame(() => {
 					if (headerBackgroundRef.current && headerRef.current) {
-						// Get the header's actual width
-						const headerWidth = headerRef.current.offsetWidth;
-						// Extend 50px on both sides
-						const totalWidth = headerWidth + 100; // 50px on each side
-						headerBackgroundRef.current.style.width = `${totalWidth}px`;
-						// Center it by offsetting left by 50px
-						headerBackgroundRef.current.style.left = `-50px`;
+						const viewportWidth = window.innerWidth;
+						const minContentWidth = 1130;
+						
+						// Only extend 50px on both sides when window is smaller than content width
+						// When window is wider, just match the viewport width
+						if (viewportWidth < minContentWidth) {
+							// Extend 50px on both sides
+							const totalWidth = minContentWidth + 100; // 50px on each side
+							headerBackgroundRef.current.style.width = `${totalWidth}px`;
+							headerBackgroundRef.current.style.left = `-50px`;
+						} else {
+							// Match viewport width, no extension needed
+							headerBackgroundRef.current.style.width = `${viewportWidth}px`;
+							headerBackgroundRef.current.style.left = `0px`;
+						}
 					}
 				});
 			}
