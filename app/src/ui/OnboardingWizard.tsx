@@ -107,7 +107,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           ×
         </button>
       </div>
-      <div className="steps" style={{ marginBottom: "16px" }}>Step {step + 1} of 5</div>
+      <div className="steps" style={{ marginBottom: "32px" }}>Step {step + 1} of 5</div>
       {step === 0 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
@@ -252,7 +252,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           justifyContent: "space-between",
           alignItems: "center",
           gap: "12px",
-          marginTop: "28px",
+          marginTop: "56px",
         }}
       >
         <button
