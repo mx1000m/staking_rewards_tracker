@@ -381,15 +381,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       } as CachedTransaction);
     }
     
-    // Get existing cached transactions to merge
+    // Get existing cached transactions and merge, preferring freshly-processed data
     const existingCached = await getCachedTransactions(tracker.id);
-    const existingHashes = new Set(existingCached.map((t) => t.transactionHash));
-    
-    // Filter out duplicates
-    const newTxs = processedTxs.filter((tx) => !existingHashes.has(tx.transactionHash));
-    
-    // Merge with existing cache
-    const allTransactions = [...existingCached, ...newTxs];
+    const mergedMap = new Map<string, CachedTransaction>();
+    existingCached.forEach((t) => mergedMap.set(t.transactionHash, t));
+    processedTxs.forEach((t) => mergedMap.set(t.transactionHash, t)); // override stale entries
+    const allTransactions = Array.from(mergedMap.values());
     
     // Sort by timestamp (newest first)
     allTransactions.sort((a, b) => b.timestamp - a.timestamp);
