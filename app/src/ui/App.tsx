@@ -24,15 +24,34 @@ export const App: React.FC = () => {
   return (
     <div className="app-root">
       <AuthShell>
-        {showWizard ? (
-          <OnboardingWizard
-            onComplete={() => setShowWizard(false)}
-          />
-        ) : (
-          <div style={{ width: "100%" }}>
-            <Dashboard onAddTracker={() => setShowWizard(true)} />
-          </div>
-        )}
+        <div style={{ width: "100%", position: "relative" }}>
+          <Dashboard onAddTracker={() => setShowWizard(true)} />
+
+          {showWizard && (
+            <div
+              className="modal-overlay modal-overlay-enter"
+              style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.6)",
+                backdropFilter: "blur(3px)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                zIndex: 2000,
+                padding: "16px",
+              }}
+              onClick={() => setShowWizard(false)}
+            >
+              <div
+                style={{ maxWidth: "760px", width: "100%" }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <OnboardingWizard onComplete={() => setShowWizard(false)} />
+              </div>
+            </div>
+          )}
+        </div>
       </AuthShell>
     </div>
   );
