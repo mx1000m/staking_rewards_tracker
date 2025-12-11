@@ -107,7 +107,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           ×
         </button>
       </div>
-      <div className="steps">Step {step + 1} of 5</div>
+      <div className="steps" style={{ marginBottom: "16px" }}>Step {step + 1} of 5</div>
       {step === 0 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
@@ -202,7 +202,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 3 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Country and tax rate:
+            Country income tax rate*:
           </label>
           <div className="row">
             <select
@@ -227,8 +227,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             />
             <span style={{ color: "#9aa0b4" }}>%</span>
           </div>
-          <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-            Disclaimer: The country tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
+          <p className="muted" style={{ marginTop: "10px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            *The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
           </p>
         </div>
       )}
@@ -252,7 +252,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           justifyContent: "space-between",
           alignItems: "center",
           gap: "12px",
-          marginTop: "24px",
+          marginTop: "28px",
         }}
       >
         <button

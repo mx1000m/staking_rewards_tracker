@@ -333,7 +333,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
           <div>
             <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Country and tax rate:
+              Country income tax rate*:
             </label>
             <div className="row">
               <select
@@ -361,7 +361,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               <span style={{ color: "#9aa0b4" }}>%</span>
             </div>
             <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-              Disclaimer: The country tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
+              *The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
             </p>
           </div>
 
