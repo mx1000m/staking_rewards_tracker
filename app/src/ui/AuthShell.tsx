@@ -149,9 +149,9 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 							headerBackgroundRef.current.style.width = `${totalWidth}px`;
 							headerBackgroundRef.current.style.left = `-50px`;
 						} else {
-							// Match viewport width exactly, accounting for header padding
-							// Position at -15px to extend from viewport edge, accounting for header's left padding
-							headerBackgroundRef.current.style.width = `${viewportWidth}px`;
+							// Match viewport width, but include header padding on both sides
+							const totalWidth = viewportWidth + headerPadding * 2;
+							headerBackgroundRef.current.style.width = `${totalWidth}px`;
 							headerBackgroundRef.current.style.left = `-${headerPadding}px`;
 						}
 					}
