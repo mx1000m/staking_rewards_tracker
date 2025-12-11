@@ -140,22 +140,23 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               style={{
                 flex: 1,
                 padding: "12px 20px",
-                background: currency === "EUR" ? "#6b6bff" : "#2a2a44",
-                border: currency === "EUR" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
+                background: currency === "EUR" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
                 borderRadius: "10px",
-                color: "white",
+                color: currency === "EUR" ? "#f0f0f0" : "#aaaaaa",
+                textTransform: "none",
                 cursor: "pointer",
                 fontWeight: currency === "EUR" ? 600 : 400,
-                transition: "all 0.2s",
+                transition: "background 0.2s, color 0.2s",
               }}
               onMouseEnter={(e) => {
                 if (currency !== "EUR") {
-                  e.currentTarget.style.background = "#3a3a54";
+                  e.currentTarget.style.background = "#383838";
                 }
               }}
               onMouseLeave={(e) => {
                 if (currency !== "EUR") {
-                  e.currentTarget.style.background = "#2a2a44";
+                  e.currentTarget.style.background = "#1f1f1f";
                 }
               }}
             >
@@ -167,22 +168,23 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               style={{
                 flex: 1,
                 padding: "12px 20px",
-                background: currency === "USD" ? "#6b6bff" : "#2a2a44",
-                border: currency === "USD" ? "1px solid #6b6bff" : "1px solid #1a1a2e",
+                background: currency === "USD" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
                 borderRadius: "10px",
-                color: "white",
+                color: currency === "USD" ? "#f0f0f0" : "#aaaaaa",
+                textTransform: "none",
                 cursor: "pointer",
                 fontWeight: currency === "USD" ? 600 : 400,
-                transition: "all 0.2s",
+                transition: "background 0.2s, color 0.2s",
               }}
               onMouseEnter={(e) => {
                 if (currency !== "USD") {
-                  e.currentTarget.style.background = "#3a3a54";
+                  e.currentTarget.style.background = "#383838";
                 }
               }}
               onMouseLeave={(e) => {
                 if (currency !== "USD") {
-                  e.currentTarget.style.background = "#2a2a44";
+                  e.currentTarget.style.background = "#1f1f1f";
                 }
               }}
             >
