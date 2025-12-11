@@ -225,9 +225,91 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           />
         </div>
       )}
-      <div className="actions">
-        {step > 0 && <button onClick={back}>Back</button>}
-        <button disabled={!canNext} onClick={next}>Next</button>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "12px",
+          marginTop: "24px",
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleCancel}
+          style={{
+            background: "#ef4444",
+            border: "none",
+            borderRadius: "10px",
+            padding: "10px 20px",
+            color: "#f0f0f0",
+            textTransform: "none",
+            fontWeight: 600,
+            transition: "background 0.2s",
+            cursor: "pointer",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#dc2626";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#ef4444";
+          }}
+        >
+          Cancel
+        </button>
+
+        <div style={{ display: "flex", gap: "10px" }}>
+          {step > 0 && (
+            <button
+              type="button"
+              onClick={back}
+              style={{
+                background: "#2b2b2b",
+                color: "#aaaaaa",
+                padding: "10px 20px",
+                borderRadius: "10px",
+                textTransform: "none",
+                border: "none",
+                transition: "background 0.2s",
+                fontWeight: 400,
+                cursor: "pointer",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "#383838";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#2b2b2b";
+              }}
+            >
+              Back
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={!canNext}
+            onClick={next}
+            style={{
+              background: canNext ? "#555555" : "#3a3a3a",
+              border: "none",
+              borderRadius: "10px",
+              padding: "10px 20px",
+              color: "#f0f0f0",
+              textTransform: "none",
+              fontWeight: 600,
+              transition: "background 0.2s, opacity 0.2s",
+              opacity: canNext ? 1 : 0.6,
+              cursor: canNext ? "pointer" : "not-allowed",
+            }}
+            onMouseEnter={(e) => {
+              if (canNext) e.currentTarget.style.background = "#666666";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = canNext ? "#555555" : "#3a3a3a";
+            }}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </section>
   );
