@@ -1274,14 +1274,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 gap: 8,
                               }}
                             >
-                              <span
-                                style={{
-                                  width: 8,
-                                  height: 8,
-                                  borderRadius: "50%",
-                                  background: dotColor,
-                                }}
-                              />
+                              <span style={dotStyle} />
                               <span style={{ 
                                 fontWeight: selectedMonth === month ? 600 : 400,
                                 visibility: "hidden",
