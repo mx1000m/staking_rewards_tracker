@@ -506,9 +506,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       });
   }, [filteredTransactions]);
 
-  // Month payment status for the selected year (used for month dots)
+  // Month CGT status for the selected year (used for month dots)
   const monthPaymentStatus = React.useMemo(() => {
-    const stats: { [month: number]: { total: number; paid: number } } = {};
+    const stats: { [month: number]: { taxable: number; taxFree: number } } = {};
+    const now = new Date();
 
     transactions.forEach((tx) => {
       const date = new Date(tx.timestamp * 1000);
@@ -517,28 +518,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       const month = date.getMonth(); // 0-11
 
       if (!stats[month]) {
-        stats[month] = { total: 0, paid: 0 };
+        stats[month] = { taxable: 0, taxFree: 0 };
       }
-      stats[month].total += 1;
-      if (tx.status === "✓ Paid") {
-        stats[month].paid += 1;
+
+      const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
+      // Determine CGT tax-free eligibility (Croatia rule: held >= 2 years and not sold)
+      const rewardDate = new Date(tx.timestamp * 1000);
+      const taxableUntil = new Date(rewardDate);
+      taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+      const isTaxFree = holding !== "Sold" && now >= taxableUntil;
+
+      if (isTaxFree) {
+        stats[month].taxFree += 1;
+      } else {
+        stats[month].taxable += 1;
       }
     });
 
-    const statusMap: { [month: number]: "none" | "partial" | "allPaid" } = {};
+    type MonthStatus = "none" | "taxable" | "taxFree" | "mixed";
+    const statusMap: { [month: number]: MonthStatus } = {};
     for (let m = 0; m < 12; m++) {
       const s = stats[m];
-      if (!s || s.total === 0) {
+      if (!s || (s.taxable === 0 && s.taxFree === 0)) {
         statusMap[m] = "none";
-      } else if (s.paid === s.total) {
-        statusMap[m] = "allPaid";
+      } else if (s.taxable > 0 && s.taxFree > 0) {
+        statusMap[m] = "mixed";
+      } else if (s.taxable > 0) {
+        statusMap[m] = "taxable";
       } else {
-        statusMap[m] = "partial";
+        statusMap[m] = "taxFree";
       }
     }
 
     return statusMap;
-  }, [transactions, selectedYear]);
+  }, [transactions, selectedYear, holdingStatusMap]);
 
   // Calculate totals for ALL trackers (for All nodes overview)
   const [allTrackersTotals, setAllTrackersTotals] = React.useState({
@@ -1211,12 +1224,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((month) => {
                       const monthName = new Date(2024, month, 1).toLocaleDateString("en-US", { month: "short" });
                       const status = monthPaymentStatus[month] || "none";
-                      const dotColor =
-                        status === "allPaid"
-                          ? "#00c853" // green
-                          : status === "partial"
-                          ? "#ff5252" // red
-                          : "#777777"; // grey
+                      let dotStyle: React.CSSProperties = { width: 8, height: 8, borderRadius: "50%", display: "inline-block" };
+                      if (status === "taxFree") {
+                        dotStyle = { ...dotStyle, background: "#00c853" };
+                      } else if (status === "taxable") {
+                        dotStyle = { ...dotStyle, background: "#ff5252" };
+                      } else if (status === "mixed") {
+                        dotStyle = { ...dotStyle, background: "linear-gradient(90deg, #00c853 50%, #ff5252 50%)" };
+                      } else {
+                        dotStyle = { ...dotStyle, background: "#777777" };
+                      }
                       return (
                         <React.Fragment key={month}>
                           <div style={{ width: "1px", background: "#4b4b4b", margin: "4px 0" }}></div>
