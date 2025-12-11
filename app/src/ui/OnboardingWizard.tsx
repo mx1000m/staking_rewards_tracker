@@ -76,7 +76,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
 
   return (
-    <section className="card" style={{ position: "relative" }}>
+    <section style={{ position: "relative", width: "100%", boxSizing: "border-box" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>
           {isFirstTracker ? "Set up your first node tracker" : "Set up your next node tracker"}

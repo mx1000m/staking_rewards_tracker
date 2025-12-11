@@ -33,21 +33,43 @@ export const App: React.FC = () => {
               style={{
                 position: "fixed",
                 inset: 0,
-                background: "rgba(0,0,0,0.6)",
+                background: "rgba(0,0,0,0.7)",
                 backdropFilter: "blur(3px)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 zIndex: 2000,
-                padding: "16px",
+                padding: "20px",
               }}
               onClick={() => setShowWizard(false)}
             >
               <div
-                style={{ maxWidth: "760px", width: "100%" }}
+                className="modal-card modal-card-enter"
+                style={{ width: "100%", maxWidth: "760px", position: "relative" }}
                 onClick={(e) => e.stopPropagation()}
               >
-                <OnboardingWizard onComplete={() => setShowWizard(false)} />
+                <div
+                  style={{
+                    background: "#181818",
+                    borderRadius: "18px",
+                    padding: "1px",
+                    border: "1px solid #2b2b2b",
+                  }}
+                >
+                  <div
+                    style={{
+                      background: "#181818",
+                      borderRadius: "17px",
+                      padding: "28px",
+                      maxHeight: "90vh",
+                      overflowY: "auto",
+                      overflowX: "hidden",
+                      position: "relative",
+                    }}
+                  >
+                    <OnboardingWizard onComplete={() => setShowWizard(false)} />
+                  </div>
+                </div>
               </div>
             </div>
           )}
