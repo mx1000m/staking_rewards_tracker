@@ -27,7 +27,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const isFirstTracker = trackers.length === 0;
 
   const canNext = useMemo(() => {
-    if (step === 0) return name.trim().length > 0;
+    if (step === 0) return true; // Allow empty name, will use default
     if (step === 1) return /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
     if (step === 2) return currency === "EUR" || currency === "USD";
     if (step === 3) return taxRate >= 0 && taxRate <= 100;
@@ -110,10 +110,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       <div className="steps">Step {step + 1} of 5</div>
       {step === 0 && (
         <div>
-          <h2>Name</h2>
+          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Name:
+          </label>
           <input
             className="input"
-            placeholder="Node Tracker 1"
+            placeholder={`Node Tracker ${trackers.length + 1}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
@@ -121,7 +123,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
       {step === 1 && (
         <div>
-          <h2>Wallet receiving staking rewards</h2>
+          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Wallet receiving staking rewards:
+          </label>
           <input
             className="input"
             placeholder="0x..."
@@ -132,7 +136,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
       {step === 2 && (
         <div>
-          <h2>Currency preference</h2>
+          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Currency preference:
+          </label>
           <div style={{ display: "flex", gap: "12px" }}>
             <button
               type="button"
@@ -195,9 +201,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
       {step === 3 && (
         <div>
-          <h2>Country and tax rate</h2>
+          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Country and tax rate:
+          </label>
           <div className="row">
-            <select value={country} onChange={(e) => onChangeCountry(e.target.value)}>
+            <select
+              className="gradient-select"
+              value={country}
+              onChange={(e) => onChangeCountry(e.target.value)}
+              style={{ flex: 1 }}
+            >
               {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -210,15 +223,21 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               step={0.1}
               value={taxRate}
               onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+              style={{ width: "120px" }}
             />
-            <span>%</span>
+            <span style={{ color: "#9aa0b4" }}>%</span>
           </div>
+          <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            Disclaimer: The country tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
+          </p>
         </div>
       )}
       {step === 4 && (
         <div>
-          <h2>Your Etherscan API key</h2>
-          <p className="muted">Each user should bring their own Etherscan API key.</p>
+          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Your Etherscan API key:
+          </label>
+          <p className="muted" style={{ marginTop: 0, marginBottom: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>Each user should bring their own Etherscan API key.</p>
           <input
             className="input"
             placeholder="ETHERSCAN_API_KEY"
