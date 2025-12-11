@@ -367,7 +367,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
           <div>
             <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Etherscan API Key:
+              Etherscan API key*:
             </label>
             <div style={{ position: "relative" }}>
               <input
@@ -411,7 +411,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               </button>
             </div>
             <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-              Get a free{" "}
+              *Get a free{" "}
               <a
                 href="https://etherscan.io/apidashboard"
                 target="_blank"

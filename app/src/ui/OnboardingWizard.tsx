@@ -235,7 +235,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 4 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Your Etherscan API key:
+            Your Etherscan API key*:
           </label>
           <input
             className="input"
@@ -244,7 +244,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             onChange={(e) => setEtherscanKey(e.target.value)}
           />
           <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-            Get a free{" "}
+            *Get a free{" "}
             <a
               href="https://etherscan.io/apidashboard"
               target="_blank"
