@@ -330,7 +330,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         return;
       }
       
-      // Process each transaction
+      // Batch price fetching by date to reduce API calls
+      // Step 1: Collect all unique dates that need price fetching
+      const datePriceMap = new Map<string, number>(); // dateKey -> price
+      const uniqueDates = new Set<string>();
+      
+      for (const tx of etherscanTxs) {
+        const dateKey = getDateKey(parseInt(tx.timeStamp));
+        const cacheKey = `${dateKey}-${tracker.currency}`;
+        const cachedPrice = getCachedPrice(cacheKey);
+        
+        if (cachedPrice !== null) {
+          // Use cached price
+          datePriceMap.set(dateKey, cachedPrice);
+        } else {
+          // Need to fetch this date
+          uniqueDates.add(dateKey);
+        }
+      }
+      
+      console.log(`Fetching prices for ${uniqueDates.size} unique dates (${etherscanTxs.length} total transactions)`);
+      
+      // Step 2: Fetch prices for all unique dates (batched)
+      const uniqueDatesArray = Array.from(uniqueDates);
+      for (let i = 0; i < uniqueDatesArray.length; i++) {
+        const dateKey = uniqueDatesArray[i];
+        setLoadingProgress({ 
+          current: i + 1, 
+          total: uniqueDatesArray.length
+        });
+        
+        try {
+          // Parse dateKey back to timestamp (dateKey format: YYYY-MM-DD)
+          const [year, month, day] = dateKey.split('-').map(Number);
+          const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Noon UTC
+          const timestamp = Math.floor(date.getTime() / 1000);
+          
+          const price = await getEthPriceAtTimestamp(timestamp, tracker.currency);
+          const cacheKey = `${dateKey}-${tracker.currency}`;
+          setCachedPrice(cacheKey, price);
+          datePriceMap.set(dateKey, price);
+          console.log(`Fetched price for ${dateKey}: ${price} ${tracker.currency}`);
+        } catch (error: any) {
+          console.error(`Failed to fetch price for date ${dateKey}:`, error);
+          setError(`Warning: Could not fetch price for some dates. ${error.message || ""}`);
+          // Set price to 0 for failed dates
+          datePriceMap.set(dateKey, 0);
+        }
+      }
+      
+      // Step 3: Process all transactions using the fetched prices
       const processedTxs: Transaction[] = [];
       
       for (let i = 0; i < etherscanTxs.length; i++) {
@@ -339,51 +388,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const date = new Date(timestamp);
         const ethAmount = parseFloat(tx.value) / 1e18;
         
-        // Get ETH price at transaction time using CoinGecko (daily average price)
-        // CoinGecko provides daily average prices for both USD and EUR
-        let ethPrice = 0;
+        // Get price from our date price map
         const dateKey = getDateKey(parseInt(tx.timeStamp));
-        const cachedPrice = getCachedPrice(`${dateKey}-${tracker.currency}`);
+        const ethPrice = datePriceMap.get(dateKey) || 0;
         
-        // Update progress
-        setLoadingProgress({ current: i + 1, total: etherscanTxs.length });
+        // Update progress for transaction processing
+        setLoadingProgress({ 
+          current: i + 1, 
+          total: etherscanTxs.length
+        });
         
-        if (cachedPrice !== null) {
-          ethPrice = cachedPrice;
-          console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Using cached price: ${ethPrice}`);
-        } else {
-          try {
-            // Get price from CoinGecko (supports both USD and EUR directly)
-            // Rate limiting is handled inside getEthPriceAtTimestamp
-            ethPrice = await getEthPriceAtTimestamp(parseInt(tx.timeStamp), tracker.currency);
-            setCachedPrice(`${dateKey}-${tracker.currency}`, ethPrice);
-            console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Price fetched from CoinGecko (${tracker.currency}): ${ethPrice}`);
-          } catch (error: any) {
-            console.error(`Failed to fetch price from CoinGecko for transaction ${i + 1}:`, error);
-            setError(`Warning: Could not fetch price for some transactions. ${error.message || ""}`);
-            // Continue with 0 price if fetch fails
-          }
-        }
+        const rewardsInCurrency = ethAmount * ethPrice;
+        const taxesInEth = ethAmount * (tracker.taxRate / 100);
+        const taxesInCurrency = rewardsInCurrency * (tracker.taxRate / 100);
         
-      const rewardsInCurrency = ethAmount * ethPrice;
-      const taxesInEth = ethAmount * (tracker.taxRate / 100);
-      const taxesInCurrency = rewardsInCurrency * (tracker.taxRate / 100);
-      
-      processedTxs.push({
-        date: date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" }),
-        time: date.toLocaleTimeString("en-GB", { timeZone: "Europe/Zagreb", hour12: false }),
-        ethAmount,
-        ethPrice,
-        rewardsInCurrency,
-        taxRate: tracker.taxRate,
-        taxesInEth,
-        taxesInCurrency,
-        transactionHash: tx.hash,
-        status: "Unpaid", // TODO: Track swap status
-        timestamp: parseInt(tx.timeStamp),
-        rewardType: tx.rewardType || "EVM", // Default to EVM for backward compatibility
-      } as CachedTransaction);
-    }
+        processedTxs.push({
+          date: date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" }),
+          time: date.toLocaleTimeString("en-GB", { timeZone: "Europe/Zagreb", hour12: false }),
+          ethAmount,
+          ethPrice,
+          rewardsInCurrency,
+          taxRate: tracker.taxRate,
+          taxesInEth,
+          taxesInCurrency,
+          transactionHash: tx.hash,
+          status: "Unpaid", // TODO: Track swap status
+          timestamp: parseInt(tx.timeStamp),
+          rewardType: tx.rewardType || "EVM", // Default to EVM for backward compatibility
+        } as CachedTransaction);
+      }
     
     // Get existing cached transactions and merge, preferring freshly-processed data
     // If forceRefresh is true, don't merge with old cache (wallet address changed)
