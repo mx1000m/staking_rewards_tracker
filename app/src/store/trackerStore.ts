@@ -6,7 +6,8 @@ export type Currency = "EUR" | "USD";
 
 export interface Tracker {
   id: string;
-  walletAddress: string;
+  walletAddress: string; // Withdrawal address (Consensus Layer) - required
+  feeRecipientAddress?: string; // Fee recipient (Execution Layer) - optional, defaults to walletAddress
   currency: Currency;
   country: string;
   taxRate: number;

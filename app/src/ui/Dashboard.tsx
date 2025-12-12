@@ -31,6 +31,7 @@ interface Transaction {
   status: string;
   timestamp: number;
   swapHash?: string;
+  rewardType?: "CL" | "EVM";
 }
 
 interface DashboardProps {
@@ -308,8 +309,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // Always start from Jan 1 of current year (00:01 UTC) to include entire-year history
       const startTimestamp = Math.floor(Date.UTC(new Date().getUTCFullYear(), 0, 1, 0, 1, 0) / 1000);
       
-      console.log("Fetching transactions for:", tracker.walletAddress, "from", new Date(startTimestamp * 1000).toLocaleDateString());
-      const etherscanTxs = await getTransactions(tracker.walletAddress, tracker.etherscanKey, startTimestamp);
+      // Use fee recipient address if provided, otherwise default to withdrawal address
+      const feeRecipientAddress = tracker.feeRecipientAddress || tracker.walletAddress;
+      
+      console.log("Fetching transactions for:", {
+        withdrawalAddress: tracker.walletAddress,
+        feeRecipientAddress: feeRecipientAddress,
+        from: new Date(startTimestamp * 1000).toLocaleDateString()
+      });
+      const etherscanTxs = await getTransactions(tracker.walletAddress, feeRecipientAddress, tracker.etherscanKey, startTimestamp);
       console.log("Found transactions:", etherscanTxs.length);
       
       // Set total for progress tracking
@@ -378,6 +386,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         transactionHash: tx.hash,
         status: "Unpaid", // TODO: Track swap status
         timestamp: parseInt(tx.timeStamp),
+        rewardType: tx.rewardType || "EVM", // Default to EVM for backward compatibility
       } as CachedTransaction);
     }
     
@@ -693,6 +702,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const headers = [
       "Date",
       "Time",
+      "Reward Type",
       "ETH Amount",
       `ETH Price (${currency})`,
       `Rewards (${currency})`,
@@ -706,6 +716,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const rows = yearTransactions.map((tx) => [
       tx.date,
       tx.time,
+      tx.rewardType || "EVM",
       tx.ethAmount.toFixed(6),
       tx.ethPrice.toFixed(2),
       tx.rewardsInCurrency.toFixed(2),
@@ -1382,6 +1393,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 <thead>
                   <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Received</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Reward Type</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Reward (ETH)</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{valueLabel}</th>
@@ -1397,7 +1409,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {/* Month separator row */}
                       <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                       <td 
-                          colSpan={8} 
+                          colSpan={9} 
                           style={{ 
                             padding: "12px 12px 8px 12px", 
                             color: "#aaaaaa", 
@@ -1413,12 +1425,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {monthGroup.transactions.map((tx, idx) => (
                         <React.Fragment key={`${monthGroup.monthKey}-${idx}`}>
                       <tr>
-                            <td colSpan={8} style={{ padding: 0, height: "1px" }}>
+                            <td colSpan={9} style={{ padding: 0, height: "1px" }}>
                               <div style={{ height: "1px", background: "#383838" }}></div>
                             </td>
                           </tr>
                           <tr>
                       <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "left" }}>{tx.date}, {tx.time}</td>
+                      <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "center", whiteSpace: "nowrap" }}>
+                        <span style={{ 
+                          padding: "4px 8px", 
+                          borderRadius: "4px", 
+                          background: tx.rewardType === "CL" ? "#2d55ac" : "#0c86ab",
+                          color: "#f0f0f0",
+                          fontSize: "0.8rem",
+                          fontWeight: 600
+                        }}>
+                          {tx.rewardType === "CL" ? "CL" : "EVM"}
+                        </span>
+                      </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{tx.ethAmount.toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>

@@ -22,6 +22,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const { user } = useAuth();
   const [name, setName] = useState(tracker.name);
   const [walletAddress, setWalletAddress] = useState(tracker.walletAddress);
+  const [feeRecipientAddress, setFeeRecipientAddress] = useState(tracker.feeRecipientAddress || "");
   const [currency, setCurrency] = useState<Currency>(tracker.currency);
   const [country, setCountry] = useState(tracker.country);
   const [taxRate, setTaxRate] = useState<number>(tracker.taxRate);
@@ -74,7 +75,12 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       return;
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-      alert("Please enter a valid Ethereum wallet address.");
+      alert("Please enter a valid Ethereum withdrawal address.");
+      return;
+    }
+    // Validate fee recipient address if provided
+    if (feeRecipientAddress.trim() && !/^0x[a-fA-F0-9]{40}$/.test(feeRecipientAddress.trim())) {
+      alert("Please enter a valid Ethereum fee recipient address or leave it empty.");
       return;
     }
     if (taxRate < 0 || taxRate > 100) {
@@ -87,15 +93,20 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     }
 
     const walletChanged = walletAddress.toLowerCase() !== tracker.walletAddress.toLowerCase();
+    const feeRecipientChanged = (feeRecipientAddress.trim() || undefined) !== (tracker.feeRecipientAddress || undefined);
     
-    // Clear cache if wallet changed
-    if (walletChanged) {
+    // Clear cache if wallet or fee recipient changed
+    if (walletChanged || feeRecipientChanged) {
       await clearCache(tracker.id);
     }
 
+    // Normalize fee recipient address: if empty, don't store it (will default to walletAddress)
+    const normalizedFeeRecipient = feeRecipientAddress.trim() || undefined;
+    
     updateTracker(tracker.id, {
       name: name.trim(),
       walletAddress,
+      feeRecipientAddress: normalizedFeeRecipient,
       currency,
       country,
       taxRate,
@@ -121,7 +132,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
   const handleSave = () => {
     const walletChanged = walletAddress.toLowerCase() !== tracker.walletAddress.toLowerCase();
-    if (walletChanged) {
+    const feeRecipientChanged = (feeRecipientAddress.trim() || undefined) !== (tracker.feeRecipientAddress || undefined);
+    if (walletChanged || feeRecipientChanged) {
       setConfirmChange(true);
       return;
     }
@@ -257,7 +269,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
           <div>
             <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Wallet address (receiving the staking rewards):
+              Withdrawal address (Consensus Layer)*:
             </label>
             <input
               className="input"
@@ -265,6 +277,24 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               value={walletAddress}
               onChange={(e) => setWalletAddress(e.target.value.trim())}
             />
+            <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+              Receives staking rewards (partial withdrawals) directly from the beacon chain.
+            </p>
+          </div>
+
+          <div>
+            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+              Fee recipient (Execution Layer) — optional:
+            </label>
+            <input
+              className="input"
+              placeholder="0x... (leave empty if same as withdrawal address)"
+              value={feeRecipientAddress}
+              onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
+            />
+            <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+              Receives MEV and priority fee rewards. Leave empty if same as withdrawal address.
+            </p>
           </div>
 
           <div>

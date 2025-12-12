@@ -19,6 +19,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [feeRecipientAddress, setFeeRecipientAddress] = useState("");
   const [currency, setCurrency] = useState<Currency>("EUR");
   const [country, setCountry] = useState("Croatia");
   const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
@@ -28,12 +29,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
   const canNext = useMemo(() => {
     if (step === 0) return true; // Allow empty name, will use default
-    if (step === 1) return /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
+    if (step === 1) {
+      const walletValid = /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
+      const feeRecipientValid = !feeRecipientAddress.trim() || /^0x[a-fA-F0-9]{40}$/.test(feeRecipientAddress.trim());
+      return walletValid && feeRecipientValid;
+    }
     if (step === 2) return currency === "EUR" || currency === "USD";
     if (step === 3) return taxRate >= 0 && taxRate <= 100;
     if (step === 4) return etherscanKey.trim().length > 0;
     return true;
-  }, [step, name, walletAddress, currency, taxRate, etherscanKey]);
+  }, [step, name, walletAddress, feeRecipientAddress, currency, taxRate, etherscanKey]);
 
   const next = async () => {
     if (!canNext) return;
@@ -41,6 +46,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       // Save tracker and complete
       addTracker({
         walletAddress,
+        feeRecipientAddress: feeRecipientAddress.trim() || undefined,
         currency,
         country,
         taxRate,
@@ -124,7 +130,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 1 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Wallet receiving staking rewards:
+            Withdrawal address (Consensus Layer)*:
           </label>
           <input
             className="input"
@@ -132,6 +138,21 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             value={walletAddress}
             onChange={(e) => setWalletAddress(e.target.value.trim())}
           />
+          <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            Receives staking rewards (partial withdrawals) directly from the beacon chain.
+          </p>
+          <label style={{ display: "block", marginTop: "20px", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Fee recipient (Execution Layer) — optional:
+          </label>
+          <input
+            className="input"
+            placeholder="0x... (leave empty if same as withdrawal address)"
+            value={feeRecipientAddress}
+            onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
+          />
+          <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            Receives MEV and priority fee rewards. Leave empty if same as withdrawal address.
+          </p>
         </div>
       )}
       {step === 2 && (

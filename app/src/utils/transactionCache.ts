@@ -16,6 +16,7 @@ export interface CachedTransaction {
   status: string;
   timestamp: number; // Unix timestamp for sorting
   swapHash?: string; // Optional: transaction hash of the swap
+  rewardType?: "CL" | "EVM"; // Consensus Layer (beacon withdrawals) or Execution Layer (fee recipient)
 }
 
 interface CacheMetadata {

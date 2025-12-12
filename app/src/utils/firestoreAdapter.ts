@@ -46,6 +46,7 @@ const transactionToFirestore = (tx: CachedTransaction): any => ({
   status: tx.status,
   timestamp: Timestamp.fromMillis(tx.timestamp * 1000),
   swapHash: (tx as any).swapHash || null,
+  rewardType: tx.rewardType || null,
   updatedAt: serverTimestamp(),
 });
 
@@ -63,6 +64,7 @@ const firestoreToTransaction = (data: any, txHash: string): CachedTransaction =>
   status: data.status || "Unpaid",
   timestamp: timestampToNumber(data.timestamp),
   swapHash: data.swapHash || undefined,
+  rewardType: data.rewardType || undefined,
 });
 
 /**
@@ -186,6 +188,7 @@ export async function saveFirestoreTracker(
     await setDoc(trackerRef, {
       name: tracker.name,
       walletAddress: tracker.walletAddress,
+      feeRecipientAddress: tracker.feeRecipientAddress || null,
       currency: tracker.currency,
       country: tracker.country,
       taxRate: tracker.taxRate,
@@ -214,6 +217,7 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
         id: docSnap.id,
         name: data.name || "",
         walletAddress: data.walletAddress || "",
+        feeRecipientAddress: data.feeRecipientAddress || undefined,
         currency: data.currency || "EUR",
         country: data.country || "Croatia",
         taxRate: data.taxRate || 24,
