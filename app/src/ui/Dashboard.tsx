@@ -354,15 +354,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         } else {
           try {
             // Get price from CoinGecko (supports both USD and EUR directly)
+            // Rate limiting is handled inside getEthPriceAtTimestamp
             ethPrice = await getEthPriceAtTimestamp(parseInt(tx.timeStamp), tracker.currency);
             setCachedPrice(`${dateKey}-${tracker.currency}`, ethPrice);
             console.log(`Transaction ${i + 1}/${etherscanTxs.length}: Price fetched from CoinGecko (${tracker.currency}): ${ethPrice}`);
-            
-            // Small delay to avoid rate limiting (30 calls/min for demo tier = 2s delay)
-            // Only delay if not last transaction
-            if (i < etherscanTxs.length - 1) {
-              await new Promise((resolve) => setTimeout(resolve, 2000)); // 2s to stay under 30/min
-            }
           } catch (error: any) {
             console.error(`Failed to fetch price from CoinGecko for transaction ${i + 1}:`, error);
             setError(`Warning: Could not fetch price for some transactions. ${error.message || ""}`);
