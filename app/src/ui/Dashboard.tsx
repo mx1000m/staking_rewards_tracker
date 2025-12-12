@@ -391,14 +391,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
     
     // Get existing cached transactions and merge, preferring freshly-processed data
-    const existingCached = await getCachedTransactions(tracker.id);
-    const existingHashes = new Set(existingCached.map((t) => t.transactionHash));
-    const newTxs = processedTxs.filter((tx) => !existingHashes.has(tx.transactionHash));
+    // If forceRefresh is true, don't merge with old cache (wallet address changed)
+    let allTransactions: CachedTransaction[];
+    if (forceRefresh) {
+      // Force refresh: use only the newly fetched transactions
+      allTransactions = processedTxs;
+    } else {
+      // Normal refresh: merge with existing cache
+      const existingCached = await getCachedTransactions(tracker.id);
+      const existingHashes = new Set(existingCached.map((t) => t.transactionHash));
+      const newTxs = processedTxs.filter((tx) => !existingHashes.has(tx.transactionHash));
 
-    const mergedMap = new Map<string, CachedTransaction>();
-    existingCached.forEach((t) => mergedMap.set(t.transactionHash, t));
-    processedTxs.forEach((t) => mergedMap.set(t.transactionHash, t)); // override stale entries
-    const allTransactions = Array.from(mergedMap.values());
+      const mergedMap = new Map<string, CachedTransaction>();
+      existingCached.forEach((t) => mergedMap.set(t.transactionHash, t));
+      processedTxs.forEach((t) => mergedMap.set(t.transactionHash, t)); // override stale entries
+      allTransactions = Array.from(mergedMap.values());
+    }
     
     // Sort by timestamp (newest first)
     allTransactions.sort((a, b) => b.timestamp - a.timestamp);
@@ -1675,7 +1683,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         <TrackerSettingsModal
           tracker={activeTracker}
           onClose={() => setShowSettings(false)}
-          onSaved={() => loadTransactions(activeTracker)}
+          onSaved={async () => {
+            // Get the updated tracker from the store (with new wallet address)
+            const { trackers } = useTrackerStore.getState();
+            const updatedTracker = trackers.find((t) => t.id === activeTracker.id);
+            if (updatedTracker) {
+              // Clear transactions state immediately
+              setTransactions([]);
+              // Force a fresh fetch (don't load from cache)
+              await fetchTransactions(updatedTracker, true);
+            }
+          }}
         />
       )}
 

@@ -9,7 +9,7 @@ export async function getEthPriceAtTimestamp(
   const year = date.getFullYear();
   const dateString = `${day}-${month}-${year}`;
 
-  const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
+  const baseUrl = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   
   const headers: HeadersInit = {
     accept: "application/json",
@@ -19,11 +19,29 @@ export async function getEthPriceAtTimestamp(
     headers["x-cg-demo-api-key"] = apiKey;
   }
 
-  const res = await fetch(url, { headers });
+  // Try direct fetch first
+  let res: Response;
+  try {
+    res = await fetch(baseUrl, { headers });
+  } catch (error: any) {
+    // If CORS error, try with CORS proxy
+    if (error.message?.includes("CORS") || error.message?.includes("Failed to fetch")) {
+      console.warn("Direct CoinGecko fetch failed (CORS?), trying with proxy...");
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(baseUrl)}`;
+      try {
+        res = await fetch(proxyUrl, { headers: { accept: "application/json" } });
+      } catch (proxyError) {
+        throw new Error(`Failed to fetch ETH price (CORS error): ${error.message}`);
+      }
+    } else {
+      throw error;
+    }
+  }
 
   if (!res.ok) {
     if (res.status === 429) {
       // Rate limited, wait and retry
+      console.warn("CoinGecko rate limited, waiting 60s before retry...");
       await new Promise((resolve) => setTimeout(resolve, 60000));
       return getEthPriceAtTimestamp(timestamp, currency, apiKey);
     }
