@@ -393,14 +393,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     // Get existing cached transactions and merge, preferring freshly-processed data
     // If forceRefresh is true, don't merge with old cache (wallet address changed)
     let allTransactions: CachedTransaction[];
+    let newTxs: CachedTransaction[];
+    
     if (forceRefresh) {
       // Force refresh: use only the newly fetched transactions
       allTransactions = processedTxs;
+      newTxs = processedTxs; // All are new when force refreshing
     } else {
       // Normal refresh: merge with existing cache
       const existingCached = await getCachedTransactions(tracker.id);
       const existingHashes = new Set(existingCached.map((t) => t.transactionHash));
-      const newTxs = processedTxs.filter((tx) => !existingHashes.has(tx.transactionHash));
+      newTxs = processedTxs.filter((tx) => !existingHashes.has(tx.transactionHash));
 
       const mergedMap = new Map<string, CachedTransaction>();
       existingCached.forEach((t) => mergedMap.set(t.transactionHash, t));
