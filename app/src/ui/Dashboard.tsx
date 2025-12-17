@@ -1546,7 +1546,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                   </>
                                 ) : (
                                   <>
-                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Taxable until</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>Taxable&nbsp;until</span>
                                       <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
                                     <div
                                       style={{

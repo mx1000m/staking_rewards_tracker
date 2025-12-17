@@ -130,7 +130,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 1 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Withdrawal address (Consensus Layer)*:
+            Consensus layer withdrawal address
           </label>
           <input
             className="input"
@@ -142,7 +142,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             Receives staking rewards (partial withdrawals) directly from the beacon chain.
           </p>
           <label style={{ display: "block", marginTop: "20px", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Fee recipient (Execution Layer) — optional:
+            Execution layer withdrawal address (optional)
           </label>
           <input
             className="input"
@@ -158,7 +158,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 2 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Currency preference:
+            Currency preference
           </label>
           <div style={{ display: "flex", gap: "12px" }}>
             <button
@@ -223,7 +223,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 3 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Country income tax rate*:
+            Country
           </label>
           <div className="row">
             <select
@@ -236,46 +236,51 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
-            <input
-              className="input"
-              type="number"
-              min={0}
-              max={100}
-              step={0.1}
-              value={taxRate}
-              onChange={(e) => setTaxRate(parseFloat(e.target.value))}
-              style={{ width: "120px" }}
-            />
-            <span style={{ color: "#9aa0b4" }}>%</span>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+              <span style={{ marginBottom: "4px", color: "#aaaaaa", fontSize: "0.8rem" }}>Income tax rate</span>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                  style={{ width: "120px" }}
+                />
+                <span style={{ color: "#9aa0b4" }}>%</span>
+              </div>
+            </div>
           </div>
           <p className="muted" style={{ marginTop: "10px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-            *The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
+            The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
           </p>
         </div>
       )}
       {step === 4 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Your Etherscan API key*:
+            Etherscan API key
           </label>
-          <input
-            className="input"
-            placeholder="Etherscan API key"
-            value={etherscanKey}
-            onChange={(e) => setEtherscanKey(e.target.value)}
-          />
-          <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-            *Get a free{" "}
+          <p className="muted" style={{ marginBottom: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            Create an account on{" "}
             <a
               href="https://etherscan.io/apidashboard"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "#aaaaaa", textDecoration: "underline" }}
             >
-              Etherscan API key
+              Etherscan
             </a>{" "}
-            by creating an account.
+            for free to get an API key.
           </p>
+          <input
+            className="input"
+            placeholder="Etherscan API key"
+            value={etherscanKey}
+            onChange={(e) => setEtherscanKey(e.target.value)}
+          />
         </div>
       )}
       <div
