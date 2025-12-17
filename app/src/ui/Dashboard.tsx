@@ -387,7 +387,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const tx = etherscanTxs[i];
         const timestamp = parseInt(tx.timeStamp) * 1000;
         const date = new Date(timestamp);
-        const ethAmount = parseFloat(tx.value) / 1e18;
+
+        // IMPORTANT: value units differ by reward type
+        // - EVM rewards: value is in WEI  -> ETH = value / 1e18
+        // - CL beacon withdrawals: value is in GWEI -> ETH = value / 1e9
+        const rawValue = parseFloat(tx.value);
+        const ethAmount =
+          tx.rewardType === "CL"
+            ? rawValue / 1e9 // Gwei → ETH
+            : rawValue / 1e18; // Wei → ETH
         
         // Get price from our date price map
         const dateKey = getDateKey(parseInt(tx.timeStamp));
