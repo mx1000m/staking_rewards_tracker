@@ -132,27 +132,27 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Consensus layer withdrawal address
           </label>
+          <p className="muted" style={{ marginBottom: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            Receives staking rewards (partial withdrawals) directly from the beacon chain.
+          </p>
           <input
             className="input"
             placeholder="0x..."
             value={walletAddress}
             onChange={(e) => setWalletAddress(e.target.value.trim())}
           />
-          <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-            Receives staking rewards (partial withdrawals) directly from the beacon chain.
-          </p>
           <label style={{ display: "block", marginTop: "20px", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Execution layer withdrawal address (optional)
           </label>
+          <p className="muted" style={{ marginBottom: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            Receives MEV and priority fee rewards. Leave empty if same as withdrawal address.
+          </p>
           <input
             className="input"
             placeholder="0x... (leave empty if same as withdrawal address)"
             value={feeRecipientAddress}
             onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
           />
-          <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-            Receives MEV and priority fee rewards. Leave empty if same as withdrawal address.
-          </p>
         </div>
       )}
       {step === 2 && (
