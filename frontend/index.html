@@ -1,162 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ethereum Staking Rewards</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>Ethereum staking reward</h1>
-        </header>
-
-        <!-- GitHub Token Setup -->
-        <div id="tokenSetup" class="token-setup">
-            <div class="token-card">
-                <h3><i class="fab fa-github"></i> GitHub Token Setup</h3>
-                <p>Enter your GitHub Personal Access Token to enable "Mark as Paid" functionality:</p>
-                <div class="token-input-group">
-                    <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-                    <button onclick="saveToken()">Save Token</button>
-                </div>
-                <small>Your token is stored locally in your browser and never shared.</small>
-            </div>
-        </div>
-
-        <!-- Loading State -->
-        <div id="loading" class="loading">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Loading staking rewards data...</p>
-        </div>
-
-        <!-- Main Dashboard -->
-        <div id="dashboard" class="dashboard" style="display: none;">
-            <!-- Summary Cards -->
-            <div class="summary-cards">
-                <div class="card total-rewards">
-                    <div class="card-icon"><i class="fas fa-chart-line"></i></div>
-                    <div class="card-content">
-                        <h3>Total Rewards</h3>
-                        <div class="amount" id="totalRewards">€0.00</div>
-                    </div>
-                </div>
-                
-                <div class="card total-taxes">
-                    <div class="card-icon"><i class="fas fa-coins"></i></div>
-                    <div class="card-content">
-                        <h3>Total Taxes</h3>
-                        <div class="amount" id="totalTaxes">€0.00</div>
-                    </div>
-                </div>
-                
-                <div class="card unpaid-taxes">
-                    <div class="card-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                    <div class="card-content">
-                        <h3>Total Left To Swap</h3>
-                        <div class="amount" id="unpaidTaxes">€0.00</div>
-                    </div>
-                </div>
-
-<div class="card total-swapped">
-        <div class="card-icon"><i class="fas fa-exchange-alt"></i></div>
-        <div class="card-content">
-            <h3>Total Swapped To EURC</h3>
-            <div class="amount" id="totalSwapped">€0.00</div>
-        </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solobeam – Maintenance</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="maintenance-page">
+      <div class="maintenance-logo">
+        <!-- Simple text logo for now; can be replaced with an SVG/PNG later -->
+        <span>SOLOBEAM</span>
+      </div>
+      <p class="maintenance-text">
+        Hold tight node warrior! Solobeam is getting a quick upgrade. Your solo staking rewards dashboard will be back before the next block.
+      </p>
     </div>
-
-                
-            </div>
-
-            <!-- Node Tabs -->
-            <div class="node-tabs">
-                <button class="tab-button active" onclick="showNode(1)">
-                    <i class="fas fa-server"></i> Node Operator 1
-                </button>
-                <button class="tab-button" onclick="showNode(2)">
-                    <i class="fas fa-server"></i> Node Operator 2
-                </button>
-            </div>
-
-            <!-- Node Content -->
-            <div id="node1" class="node-content active">
-                <div class="node-header">
-                    <div class="node-title">
-                        <i class="fas fa-server"></i>
-                        <h2>Node Operator 1</h2>
-                    </div>
-                    <div class="node-stats">
-                        <div class="stat">
-                            <span class="label">Total Rewards</span>
-                            <span class="value" id="node1TotalRewards">€0.00</span>
-                        </div>
-                        <div class="stat">
-                            <span class="label">Total Taxes</span>
-                            <span class="value" id="node1TotalTaxes">€0.00</span>
-                        </div>
-                        <div class="stat">
-                            <span class="label">Total Left To Swap</span>
-                            <span class="value unpaid" id="node1UnpaidTaxes">€0.00</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="transactions-table" id="node1Table"></div>
-            </div>
-
-            <div id="node2" class="node-content">
-                <div class="node-header">
-                    <div class="node-title">
-                        <i class="fas fa-server"></i>
-                        <h2>Node Operator 2</h2>
-                    </div>
-                    <div class="node-stats">
-                        <div class="stat">
-                            <span class="label">Total Rewards</span>
-                            <span class="value" id="node2TotalRewards">€0.00</span>
-                        </div>
-                        <div class="stat">
-                            <span class="label">Total Taxes</span>
-                            <span class="value" id="node2TotalTaxes">€0.00</span>
-                        </div>
-                        <div class="stat">
-                            <span class="label">Total Left To Swap</span>
-                            <span class="value unpaid" id="node2UnpaidTaxes">€0.00</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="transactions-table" id="node2Table"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal for Tax Payment -->
-    <div id="taxModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Record Tax Payment</h3>
-                <button class="close-btn" onclick="closeTaxModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="reward-info">
-    <p style="color: #4b9f53;"><strong>Reward:</strong> <span id="modalReward"></span> <span id="modalRewardEur"></span></p>
-    <p style="color: #e8a23b;"><strong>Tax Amount:</strong> <span id="modalTaxAmount"></span> <span id="modalTaxAmountEur"></span></p>
-</div>
-                <div class="input-group">
-                    <label for="taxTxHash">Swap Transaction Hash (Optional)</label>
-                    <input type="text" id="taxTxHash" placeholder="0x...">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-secondary" onclick="closeTaxModal()">Cancel</button>
-                <button class="btn-primary" onclick="markAsPaid()">Mark as Swapped</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
+  </body>
 </html>
