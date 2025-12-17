@@ -29,6 +29,8 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_COINBASE_CLIENT_KEY: ${{ secrets.VITE_COINBASE_CLIENT_KEY }}
+          VITE_COINGECKO_API_KEY: ${{ secrets.VITE_COINGECKO_API_KEY }}
         run: npm run build
       - name: Upload artifact (dist)
         uses: actions/upload-pages-artifact@v3
