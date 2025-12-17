@@ -353,6 +353,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       
       // Step 2: Fetch prices for all unique dates (batched)
       const uniqueDatesArray = Array.from(uniqueDates);
+      const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
       for (let i = 0; i < uniqueDatesArray.length; i++) {
         const dateKey = uniqueDatesArray[i];
         setLoadingProgress({ 
@@ -366,7 +367,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Noon UTC
           const timestamp = Math.floor(date.getTime() / 1000);
           
-          const price = await getEthPriceAtTimestamp(timestamp, tracker.currency);
+          const price = await getEthPriceAtTimestamp(timestamp, tracker.currency, coingeckoApiKey);
           const cacheKey = `${dateKey}-${tracker.currency}`;
           setCachedPrice(cacheKey, price);
           datePriceMap.set(dateKey, price);
