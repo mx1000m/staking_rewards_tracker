@@ -746,20 +746,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       return;
     }
     
-    const currency = activeTracker.currency === "EUR" ? "€" : "$";
+    const currencySymbol = activeTracker.currency === "EUR" ? "€" : "$";
+    const currencyCode = activeTracker.currency === "EUR" ? "EUR" : "USD";
     const headers = [
       "Date",
       "Time",
       "Reward Type",
-      "ETH Amount",
-      `ETH Price (${currency})`,
-      `Rewards (${currency})`,
+      "Reward (ETH)",
+      `ETH Price (${currencySymbol})`,
+      `Value in ${currencyCode} (${currencySymbol})`,
       "Tax Rate (%)",
-      "Taxes in ETH",
-      `Taxes (${currency})`,
+      `Income tax (${currencyCode})`,
       "Transaction Hash",
-      "Status",
-      "Swap Hash",
     ];
     const rows = yearTransactions.map((tx) => [
       tx.date,
@@ -769,11 +767,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       tx.ethPrice.toFixed(2),
       tx.rewardsInCurrency.toFixed(2),
       tx.taxRate.toString(),
-      tx.taxesInEth.toFixed(6),
       tx.taxesInCurrency.toFixed(2),
-      tx.transactionHash,
-      tx.status,
-      tx.swapHash || "",
+      tx.rewardType === "CL" ? "" : tx.transactionHash,
     ]);
     const csv = [headers, ...rows]
       .map((r) => r.map((c) => `"${c}"`).join(","))
@@ -1638,59 +1633,64 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       </td>
                       {/* Reward Tx column */}
                       <td style={{ padding: "12px", textAlign: "center" }}>
-                        <div 
-                          style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center" }}
-                          onMouseEnter={(e) => {
-                            const links = e.currentTarget.querySelectorAll("a");
-                            links.forEach(link => {
-                              (link as HTMLAnchorElement).style.color = "#aaaaaa";
-                              (link as HTMLAnchorElement).style.textDecoration = "underline";
-                            });
-                            const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
-                            if (img) {
-                              // Light grey close to #aaaaaa so it visually matches the hash color
-                              img.style.filter = "brightness(0) saturate(100%) invert(67%)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            const links = e.currentTarget.querySelectorAll("a");
-                            links.forEach(link => {
-                              (link as HTMLAnchorElement).style.color = "#555555";
-                              (link as HTMLAnchorElement).style.textDecoration = "none";
-                            });
-                            const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
-                            if (img) img.style.filter = "brightness(0.9) saturate(100%) invert(33%)";
-                          }}
-                        >
-                          <a
-                            href={`https://etherscan.io/tx/${tx.transactionHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ color: "#555555", textDecoration: "none", transition: "all 0.2s", fontSize: "0.85rem" }}
-                          >
-                            {tx.transactionHash.slice(0, 6)}...{tx.transactionHash.slice(-4)}
-                          </a>
-                          <a
-                            href={`https://etherscan.io/tx/${tx.transactionHash}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ 
-                              color: "#555555", 
-                              textDecoration: "none",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              fontSize: "0.85rem",
-                              transition: "all 0.2s",
+                        {tx.rewardType === "CL" ? (
+                          // Consensus Layer withdrawals don't have a real EVM tx hash
+                          <span style={{ color: "#555555", fontSize: "0.85rem" }}>—</span>
+                        ) : (
+                          <div 
+                            style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center" }}
+                            onMouseEnter={(e) => {
+                              const links = e.currentTarget.querySelectorAll("a");
+                              links.forEach(link => {
+                                (link as HTMLAnchorElement).style.color = "#aaaaaa";
+                                (link as HTMLAnchorElement).style.textDecoration = "underline";
+                              });
+                              const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
+                              if (img) {
+                                // Light grey close to #aaaaaa so it visually matches the hash color
+                                img.style.filter = "brightness(0) saturate(100%) invert(67%)";
+                              }
                             }}
-                            title="View on Etherscan"
+                            onMouseLeave={(e) => {
+                              const links = e.currentTarget.querySelectorAll("a");
+                              links.forEach(link => {
+                                (link as HTMLAnchorElement).style.color = "#555555";
+                                (link as HTMLAnchorElement).style.textDecoration = "none";
+                              });
+                              const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
+                              if (img) img.style.filter = "brightness(0.9) saturate(100%) invert(33%)";
+                            }}
                           >
-                            <img 
-                              src="/staking_rewards_tracker/icons/link_icon.svg" 
-                              alt="View on Etherscan" 
-                              style={{ width: "16px", height: "16px", filter: "brightness(0.9) saturate(100%) invert(33%)", transition: "filter 0.2s" }}
-                            />
-                          </a>
-                        </div>
+                            <a
+                              href={`https://etherscan.io/tx/${tx.transactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: "#555555", textDecoration: "none", transition: "all 0.2s", fontSize: "0.85rem" }}
+                            >
+                              {tx.transactionHash.slice(0, 6)}...{tx.transactionHash.slice(-4)}
+                            </a>
+                            <a
+                              href={`https://etherscan.io/tx/${tx.transactionHash}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ 
+                                color: "#555555", 
+                                textDecoration: "none",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                fontSize: "0.85rem",
+                                transition: "all 0.2s",
+                              }}
+                              title="View on Etherscan"
+                            >
+                              <img 
+                                src="/staking_rewards_tracker/icons/link_icon.svg" 
+                                alt="View on Etherscan" 
+                                style={{ width: "16px", height: "16px", filter: "brightness(0.9) saturate(100%) invert(33%)", transition: "filter 0.2s" }}
+                              />
+                            </a>
+                          </div>
+                        )}
                       </td>
                     </tr>
                         </React.Fragment>
