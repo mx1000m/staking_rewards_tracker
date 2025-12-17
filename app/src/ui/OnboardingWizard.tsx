@@ -129,10 +129,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
       {step === 1 && (
         <div>
-          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+          <label style={{ display: "block", marginBottom: "4px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Consensus layer withdrawal address
           </label>
-          <p className="muted" style={{ marginBottom: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ marginBottom: "4px", fontSize: "1rem", color: "#aaaaaa" }}>
             Receives staking rewards (partial withdrawals) directly from the beacon chain.
           </p>
           <input
@@ -141,10 +141,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             value={walletAddress}
             onChange={(e) => setWalletAddress(e.target.value.trim())}
           />
-          <label style={{ display: "block", marginTop: "20px", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+          <label style={{ display: "block", marginTop: "20px", marginBottom: "4px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Execution layer withdrawal address (optional)
           </label>
-          <p className="muted" style={{ marginBottom: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ marginBottom: "4px", fontSize: "1rem", color: "#aaaaaa" }}>
             Receives MEV and priority fee rewards. Leave empty if same as withdrawal address.
           </p>
           <input
@@ -260,10 +260,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
       {step === 4 && (
         <div>
-          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+          <label style={{ display: "block", marginBottom: "4px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Etherscan API key
           </label>
-          <p className="muted" style={{ marginBottom: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ marginBottom: "4px", fontSize: "1rem", color: "#aaaaaa" }}>
             Create an account on{" "}
             <a
               href="https://etherscan.io/apidashboard"
