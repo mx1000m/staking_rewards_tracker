@@ -133,7 +133,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             Consensus layer withdrawal address
           </label>
           <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-            Receives staking rewards (partial withdrawals) directly from the beacon chain.
+            Receives staking rewards directly from the beacon chain (partial withdrawals).
           </p>
           <input
             className="input"
@@ -145,7 +145,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             Execution layer withdrawal address (optional)
           </label>
           <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-            Receives MEV and priority fee rewards. Leave empty if same as withdrawal address.
+            Receives MEV and priority fee rewards.
           </p>
           <input
             className="input"

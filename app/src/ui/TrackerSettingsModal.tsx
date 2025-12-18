@@ -272,7 +272,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               Consensus layer withdrawal address
             </label>
             <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-              Receives staking rewards (partial withdrawals) directly from the beacon chain.
+              Receives staking rewards directly from the beacon chain (partial withdrawals).
             </p>
             <input
               className="input"
@@ -287,7 +287,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               Execution layer withdrawal address (optional)
             </label>
             <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-              Receives MEV and priority fee rewards. Leave empty if same as withdrawal address.
+              Receives MEV and priority fee rewards.
             </p>
             <input
               className="input"
@@ -362,14 +362,9 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                Country
-              </label>
-              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                Income tax rate
-              </label>
-            </div>
+            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+              Country
+            </label>
             <div className="row">
               <select
                 className="gradient-select"
@@ -383,18 +378,23 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                   </option>
                 ))}
               </select>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.1}
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(parseFloat(e.target.value))}
-                  style={{ width: "120px" }}
-                />
-                <span style={{ color: "#9aa0b4" }}>%</span>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                <span style={{ marginBottom: "4px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                  Income tax rate
+                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <input
+                    className="input"
+                    type="number"
+                    min={0}
+                    max={100}
+                    step={0.1}
+                    value={taxRate}
+                    onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                    style={{ width: "120px" }}
+                  />
+                  <span style={{ color: "#9aa0b4" }}>%</span>
+                </div>
               </div>
             </div>
             <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
