@@ -254,7 +254,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </button>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
           <div>
             <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Name
@@ -271,7 +271,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Consensus layer withdrawal address
             </label>
-            <p className="muted" style={{ margin: "2px 0 2px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            <p className="muted" style={{ margin: "2px 0 3px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
               Receives staking rewards directly from the beacon chain (partial withdrawals).
             </p>
             <input
@@ -286,7 +286,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Execution layer withdrawal address (optional)
             </label>
-            <p className="muted" style={{ margin: "2px 0 2px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            <p className="muted" style={{ margin: "2px 0 3px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
               Receives MEV and priority fee rewards.
             </p>
             <input
@@ -399,7 +399,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 <span style={{ color: "#9aa0b4" }}>%</span>
               </div>
             </div>
-            <p className="muted" style={{ margin: "2px 0 2px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            <p className="muted" style={{ margin: "2px 0 3px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
               The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
             </p>
           </div>
@@ -408,7 +408,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Etherscan API key
             </label>
-            <p className="muted" style={{ margin: "2px 0 2px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+            <p className="muted" style={{ margin: "2px 0 3px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
               Create an account on{" "}
               <a
                 href="https://etherscan.io/apidashboard"
