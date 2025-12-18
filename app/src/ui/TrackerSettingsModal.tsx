@@ -464,7 +464,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
         </div>
 
-        <div style={{ marginTop: "32px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ marginTop: "40px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <button
               onClick={() => {
                 setShowDeleteConfirm(true);
