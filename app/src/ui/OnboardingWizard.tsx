@@ -132,7 +132,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Consensus layer withdrawal address
           </label>
-          <p className="muted" style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
             Receives staking rewards (partial withdrawals) directly from the beacon chain.
           </p>
           <input
@@ -144,7 +144,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Execution layer withdrawal address (optional)
           </label>
-          <p className="muted" style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
             Receives MEV and priority fee rewards. Leave empty if same as withdrawal address.
           </p>
           <input
@@ -263,7 +263,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Etherscan API key
           </label>
-          <p className="muted" style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
             Create an account on{" "}
             <a
               href="https://etherscan.io/apidashboard"
