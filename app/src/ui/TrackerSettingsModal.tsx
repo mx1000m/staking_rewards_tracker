@@ -367,7 +367,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 Country
               </label>
               <div style={{ width: "120px", display: "flex", justifyContent: "flex-start" }}>
-                <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-10px" }}>
+                <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-20px" }}>
                   Income tax rate
                 </label>
               </div>
