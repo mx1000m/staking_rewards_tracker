@@ -132,7 +132,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Consensus layer withdrawal address
           </label>
-          <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
             Receives staking rewards directly from the beacon chain (partial withdrawals).
           </p>
           <input
@@ -144,7 +144,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Execution layer withdrawal address (optional)
           </label>
-          <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
             Receives MEV and priority fee rewards.
           </p>
           <input
@@ -253,7 +253,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               </div>
             </div>
           </div>
-          <p className="muted" style={{ marginTop: "10px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ margin: "4px 0 3px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
             The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
           </p>
         </div>
@@ -263,7 +263,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Etherscan API key
           </label>
-          <p className="muted" style={{ margin: "0 0 1px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
             Create an account on{" "}
             <a
               href="https://etherscan.io/apidashboard"
