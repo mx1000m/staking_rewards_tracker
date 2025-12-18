@@ -362,9 +362,16 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Country
-            </label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "8px" }}>
+              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                Country
+              </label>
+              <div style={{ width: "120px", display: "flex", justifyContent: "flex-start" }}>
+                <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                  Income tax rate
+                </label>
+              </div>
+            </div>
             <div className="row">
               <select
                 className="gradient-select"
@@ -378,23 +385,18 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                   </option>
                 ))}
               </select>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                <span style={{ marginBottom: "4px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                  Income tax rate
-                </span>
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <input
-                    className="input"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.1}
-                    value={taxRate}
-                    onChange={(e) => setTaxRate(parseFloat(e.target.value))}
-                    style={{ width: "120px" }}
-                  />
-                  <span style={{ color: "#9aa0b4" }}>%</span>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <input
+                  className="input"
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                  style={{ width: "120px" }}
+                />
+                <span style={{ color: "#9aa0b4" }}>%</span>
               </div>
             </div>
             <p className="muted" style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
