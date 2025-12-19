@@ -1753,6 +1753,69 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         Not tax advice · Use at your own risk · Verify everything with a professional
       </div>
 
+      {/* Loading Overlay */}
+      {loading && (
+        <div
+          className="modal-overlay modal-overlay-enter"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(3px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1500,
+            padding: "20px",
+          }}
+        >
+          <div
+            className="modal-card modal-card-enter"
+            style={{
+              width: "100%",
+              maxWidth: "400px",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                background: "#181818",
+                borderRadius: "18px",
+                padding: "1px",
+                border: "1px solid #2b2b2b",
+              }}
+            >
+              <div
+                style={{
+                  background: "#181818",
+                  borderRadius: "17px",
+                  padding: "28px",
+                  textAlign: "center",
+                }}
+              >
+                <p style={{ color: "#f0f0f0", fontSize: "1rem", marginBottom: "8px", marginTop: 0 }}>
+                  Loading transactions
+                  <span style={{ animation: "blink 1.4s infinite" }}>.</span>
+                  <span style={{ animation: "blink 1.4s infinite 0.2s" }}>.</span>
+                  <span style={{ animation: "blink 1.4s infinite 0.4s" }}>.</span>
+                  {loadingProgress.total > 0 && (
+                    <span style={{ marginLeft: "12px", color: "#aaaaaa" }}>
+                      ({loadingProgress.current}/{loadingProgress.total})
+                    </span>
+                  )}
+                </p>
+                <p style={{ color: "#aaaaaa", fontSize: "0.9rem", marginTop: "8px", marginBottom: 0 }}>
+                  Depending on the number of transactions, this may take a few minutes.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Settings Modal */}
       {showSettings && activeTracker && (
         <TrackerSettingsModal
@@ -1783,6 +1846,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             right: 0,
             bottom: 0,
             background: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(3px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -2171,6 +2235,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             right: 0,
             bottom: 0,
             background: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(3px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -2462,6 +2527,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             right: 0,
             bottom: 0,
             background: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(3px)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
