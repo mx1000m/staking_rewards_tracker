@@ -70,18 +70,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   // Helper functions to calculate rewards and taxes on-the-fly based on currency preference
   // Handles backward compatibility with old transactions that only have ethPrice
   const getRewardsInCurrency = (tx: CachedTransaction, currency: "EUR" | "USD"): number => {
+    if (!tx || !tx.ethAmount) return 0;
     let ethPrice: number;
     if (currency === "EUR") {
       ethPrice = tx.ethPriceEUR ?? tx.ethPrice ?? 0;
     } else {
       ethPrice = tx.ethPriceUSD ?? tx.ethPrice ?? 0;
     }
-    return tx.ethAmount * ethPrice;
+    const result = tx.ethAmount * ethPrice;
+    return isNaN(result) ? 0 : result;
   };
 
   const getTaxesInCurrency = (tx: CachedTransaction, currency: "EUR" | "USD"): number => {
+    if (!tx || !tx.taxRate) return 0;
     const rewardsInCurrency = getRewardsInCurrency(tx, currency);
-    return rewardsInCurrency * (tx.taxRate / 100);
+    const result = rewardsInCurrency * (tx.taxRate / 100);
+    return isNaN(result) ? 0 : result;
+  };
+
+  // Helper to safely get ETH price for display
+  const getEthPriceForDisplay = (tx: CachedTransaction, currency: "EUR" | "USD"): number => {
+    if (!tx) return 0;
+    const price = currency === "EUR" 
+      ? (tx.ethPriceEUR ?? tx.ethPrice ?? 0)
+      : (tx.ethPriceUSD ?? tx.ethPrice ?? 0);
+    return isNaN(price) ? 0 : price;
   };
 
   useEffect(() => {
@@ -706,10 +719,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
       for (const tracker of trackers) {
         const cached = await getCachedTransactions(tracker.id);
-        allRewards += cached.reduce((sum, tx) => sum + getRewardsInCurrency(tx, tracker.currency), 0);
-        allTaxes += cached.reduce((sum, tx) => sum + getTaxesInCurrency(tx, tracker.currency), 0);
-        allEthRewards += cached.reduce((sum, tx) => sum + tx.ethAmount, 0);
-        allEthTaxes += cached.reduce((sum, tx) => sum + tx.taxesInEth, 0);
+        allRewards += cached.reduce((sum, tx) => {
+          const value = getRewardsInCurrency(tx, tracker.currency);
+          return sum + (isNaN(value) ? 0 : value);
+        }, 0);
+        allTaxes += cached.reduce((sum, tx) => {
+          const value = getTaxesInCurrency(tx, tracker.currency);
+          return sum + (isNaN(value) ? 0 : value);
+        }, 0);
+        allEthRewards += cached.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
+        allEthTaxes += cached.reduce((sum, tx) => sum + (tx.taxesInEth || 0), 0);
 
         // Capital gains tax‑free (currently implemented for Croatia: rewards held ≥ 2 years)
         if (tracker.country === "Croatia") {
@@ -721,8 +740,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             const taxableUntil = new Date(rewardDate);
             taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
             if (now >= taxableUntil) {
-              allCgtFreeRewards += getRewardsInCurrency(tx, tracker.currency);
-              allCgtFreeEth += tx.ethAmount;
+              const cgtRewards = getRewardsInCurrency(tx, tracker.currency);
+              allCgtFreeRewards += isNaN(cgtRewards) ? 0 : cgtRewards;
+              allCgtFreeEth += tx.ethAmount || 0;
             }
           });
         }
@@ -745,10 +765,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   // Calculate totals based on filtered transactions (for selected node)
   const activeCurrency = activeTracker?.currency || "EUR";
-  const totalRewards = filteredTransactions.reduce((sum, tx) => sum + getRewardsInCurrency(tx, activeCurrency), 0);
-  const totalTaxes = filteredTransactions.reduce((sum, tx) => sum + getTaxesInCurrency(tx, activeCurrency), 0);
-  const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + tx.ethAmount, 0);
-  const totalEthTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInEth, 0);
+  const totalRewards = filteredTransactions.reduce((sum, tx) => {
+    const value = getRewardsInCurrency(tx, activeCurrency);
+    return sum + (isNaN(value) ? 0 : value);
+  }, 0);
+  const totalTaxes = filteredTransactions.reduce((sum, tx) => {
+    const value = getTaxesInCurrency(tx, activeCurrency);
+    return sum + (isNaN(value) ? 0 : value);
+  }, 0);
+  const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
+  const totalEthTaxes = filteredTransactions.reduce((sum, tx) => sum + (tx.taxesInEth || 0), 0);
   
   // Capital gains tax‑free amounts for the active tracker (Croatia: rewards held ≥ 2 years)
   const nowForCgt = new Date();
@@ -760,7 +786,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const rewardDate = new Date(tx.timestamp * 1000);
         const taxableUntil = new Date(rewardDate);
         taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
-        return nowForCgt >= taxableUntil ? sum + tx.ethAmount : sum;
+        return nowForCgt >= taxableUntil ? sum + (tx.ethAmount || 0) : sum;
       }, 0)
     : 0;
   const totalCgtFreeRewards = isCroatia
@@ -770,7 +796,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const rewardDate = new Date(tx.timestamp * 1000);
         const taxableUntil = new Date(rewardDate);
         taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
-        return nowForCgt >= taxableUntil ? sum + getRewardsInCurrency(tx, activeCurrency) : sum;
+        if (nowForCgt >= taxableUntil) {
+          const cgtRewards = getRewardsInCurrency(tx, activeCurrency);
+          return sum + (isNaN(cgtRewards) ? 0 : cgtRewards);
+        }
+        return sum;
       }, 0)
     : 0;
 
@@ -834,19 +864,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       "Transaction Hash",
     ];
     const rows = yearTransactions.map((tx) => {
-      const ethPrice = activeTracker.currency === "EUR" ? tx.ethPriceEUR : tx.ethPriceUSD;
+      const ethPrice = getEthPriceForDisplay(tx, activeTracker.currency);
       const rewardsInCurrency = getRewardsInCurrency(tx, activeTracker.currency);
       const taxesInCurrency = getTaxesInCurrency(tx, activeTracker.currency);
       return [
-        tx.date,
-        tx.time,
+        tx.date || "",
+        tx.time || "",
         tx.rewardType || "EVM",
-        tx.ethAmount.toFixed(6),
+        (tx.ethAmount || 0).toFixed(6),
         ethPrice.toFixed(2),
         rewardsInCurrency.toFixed(2),
-        tx.taxRate.toString(),
+        (tx.taxRate || 0).toString(),
         taxesInCurrency.toFixed(2),
-        tx.rewardType === "CL" ? "" : tx.transactionHash,
+        tx.rewardType === "CL" ? "" : (tx.transactionHash || ""),
       ];
     });
     const csv = [headers, ...rows]
@@ -1565,9 +1595,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           {tx.rewardType === "CL" ? "CL" : "EVM"}
                         </span>
                       </td>
-                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{tx.ethAmount.toFixed(6)}</td>
+                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{(tx.ethAmount || 0).toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>
-                        {currencySymbol} {(activeTracker?.currency === "EUR" ? tx.ethPriceEUR : tx.ethPriceUSD).toFixed(2)}
+                        {currencySymbol} {getEthPriceForDisplay(tx, activeTracker?.currency || "EUR").toFixed(2)}
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>
                         {currencySymbol} {getRewardsInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}
