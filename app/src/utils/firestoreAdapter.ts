@@ -37,35 +37,44 @@ const transactionToFirestore = (tx: CachedTransaction): any => ({
   date: tx.date,
   time: tx.time,
   ethAmount: tx.ethAmount,
-  ethPrice: tx.ethPrice,
-  rewardsInCurrency: tx.rewardsInCurrency,
+  ethPriceEUR: tx.ethPriceEUR,
+  ethPriceUSD: tx.ethPriceUSD,
+  // Keep legacy ethPrice for backward compatibility during migration
+  ethPrice: tx.ethPrice || tx.ethPriceEUR || 0,
   taxRate: tx.taxRate,
   taxesInEth: tx.taxesInEth,
-  taxesInCurrency: tx.taxesInCurrency,
   transactionHash: tx.transactionHash,
   status: tx.status,
   timestamp: Timestamp.fromMillis(tx.timestamp * 1000),
   swapHash: (tx as any).swapHash || null,
   rewardType: tx.rewardType || null,
   updatedAt: serverTimestamp(),
+  // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly
 });
 
 // Convert Firestore document to transaction
-const firestoreToTransaction = (data: any, txHash: string): CachedTransaction => ({
-  date: data.date || "",
-  time: data.time || "",
-  ethAmount: data.ethAmount || 0,
-  ethPrice: data.ethPrice || 0,
-  rewardsInCurrency: data.rewardsInCurrency || 0,
-  taxRate: data.taxRate || 0,
-  taxesInEth: data.taxesInEth || 0,
-  taxesInCurrency: data.taxesInCurrency || 0,
-  transactionHash: txHash,
-  status: data.status || "Unpaid",
-  timestamp: timestampToNumber(data.timestamp),
-  swapHash: data.swapHash || undefined,
-  rewardType: data.rewardType || undefined,
-});
+const firestoreToTransaction = (data: any, txHash: string): CachedTransaction => {
+  // Handle backward compatibility: if ethPriceEUR/USD don't exist, use legacy ethPrice
+  const ethPriceEUR = data.ethPriceEUR ?? data.ethPrice ?? 0;
+  const ethPriceUSD = data.ethPriceUSD ?? data.ethPrice ?? 0;
+  
+  return {
+    date: data.date || "",
+    time: data.time || "",
+    ethAmount: data.ethAmount || 0,
+    ethPriceEUR,
+    ethPriceUSD,
+    ethPrice: data.ethPrice || ethPriceEUR, // Keep for backward compatibility
+    taxRate: data.taxRate || 0,
+    taxesInEth: data.taxesInEth || 0,
+    transactionHash: txHash,
+    status: data.status || "Unpaid",
+    timestamp: timestampToNumber(data.timestamp),
+    swapHash: data.swapHash || undefined,
+    rewardType: data.rewardType || undefined,
+    // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly
+  };
+};
 
 /**
  * Get all transactions for a tracker from Firestore

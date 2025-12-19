@@ -7,16 +7,17 @@ export interface CachedTransaction {
   date: string;
   time: string;
   ethAmount: number;
-  ethPrice: number;
-  rewardsInCurrency: number;
+  ethPriceEUR: number; // ETH price in EUR at transaction time
+  ethPriceUSD: number; // ETH price in USD at transaction time
+  ethPrice?: number; // Legacy field for backward compatibility (deprecated)
   taxRate: number;
   taxesInEth: number;
-  taxesInCurrency: number;
   transactionHash: string;
   status: string;
   timestamp: number; // Unix timestamp for sorting
   swapHash?: string; // Optional: transaction hash of the swap
   rewardType?: "CL" | "EVM"; // Consensus Layer (beacon withdrawals) or Execution Layer (fee recipient)
+  // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly based on currency preference
 }
 
 interface CacheMetadata {
@@ -181,11 +182,10 @@ export async function updateTransactionStatus(
           date: "",
           time: "",
           ethAmount: 0,
-          ethPrice: 0,
-          rewardsInCurrency: 0,
+          ethPriceEUR: 0,
+          ethPriceUSD: 0,
           taxRate: 0,
           taxesInEth: 0,
-          taxesInCurrency: 0,
           status,
           timestamp: now,
           swapHash,

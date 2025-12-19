@@ -18,20 +18,12 @@ import {
   updateFirestoreTransactionStatus,
 } from "../utils/firestoreAdapter";
 
-interface Transaction {
-  date: string;
-  time: string;
-  ethAmount: number;
-  ethPrice: number;
-  rewardsInCurrency: number;
-  taxRate: number;
-  taxesInEth: number;
-  taxesInCurrency: number;
-  transactionHash: string;
-  status: string;
-  timestamp: number;
-  swapHash?: string;
-  rewardType?: "CL" | "EVM";
+// Transaction interface matches CachedTransaction
+// rewardsInCurrency and taxesInCurrency are calculated on-the-fly based on currency preference
+interface Transaction extends Omit<CachedTransaction, 'rewardsInCurrency' | 'taxesInCurrency'> {
+  // These are calculated on-the-fly, not stored
+  rewardsInCurrency?: number;
+  taxesInCurrency?: number;
 }
 
 interface DashboardProps {
@@ -74,6 +66,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
+
+  // Helper functions to calculate rewards and taxes on-the-fly based on currency preference
+  // Handles backward compatibility with old transactions that only have ethPrice
+  const getRewardsInCurrency = (tx: CachedTransaction, currency: "EUR" | "USD"): number => {
+    let ethPrice: number;
+    if (currency === "EUR") {
+      ethPrice = tx.ethPriceEUR ?? tx.ethPrice ?? 0;
+    } else {
+      ethPrice = tx.ethPriceUSD ?? tx.ethPrice ?? 0;
+    }
+    return tx.ethAmount * ethPrice;
+  };
+
+  const getTaxesInCurrency = (tx: CachedTransaction, currency: "EUR" | "USD"): number => {
+    const rewardsInCurrency = getRewardsInCurrency(tx, currency);
+    return rewardsInCurrency * (tx.taxRate / 100);
+  };
 
   useEffect(() => {
     if (activeTracker) {
@@ -331,34 +340,41 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       }
       
       // Batch price fetching by date to reduce API calls
-      // Step 1: Collect all unique dates that need price fetching
-      const datePriceMap = new Map<string, number>(); // dateKey -> price
+      // Step 1: Collect all unique dates that need price fetching (for both EUR and USD)
+      const datePriceMapEUR = new Map<string, number>(); // dateKey -> EUR price
+      const datePriceMapUSD = new Map<string, number>(); // dateKey -> USD price
       const uniqueDates = new Set<string>();
       
       for (const tx of etherscanTxs) {
         const dateKey = getDateKey(parseInt(tx.timeStamp));
-        const cacheKey = `${dateKey}-${tracker.currency}`;
-        const cachedPrice = getCachedPrice(cacheKey);
+        const cacheKeyEUR = `${dateKey}-EUR`;
+        const cacheKeyUSD = `${dateKey}-USD`;
+        const cachedPriceEUR = getCachedPrice(cacheKeyEUR);
+        const cachedPriceUSD = getCachedPrice(cacheKeyUSD);
         
-        if (cachedPrice !== null) {
-          // Use cached price
-          datePriceMap.set(dateKey, cachedPrice);
+        if (cachedPriceEUR !== null) {
+          datePriceMapEUR.set(dateKey, cachedPriceEUR);
         } else {
-          // Need to fetch this date
+          uniqueDates.add(dateKey);
+        }
+        
+        if (cachedPriceUSD !== null) {
+          datePriceMapUSD.set(dateKey, cachedPriceUSD);
+        } else {
           uniqueDates.add(dateKey);
         }
       }
       
       console.log(`Fetching prices for ${uniqueDates.size} unique dates (${etherscanTxs.length} total transactions)`);
       
-      // Step 2: Fetch prices for all unique dates (batched)
+      // Step 2: Fetch prices for all unique dates (batched) - both EUR and USD
       const uniqueDatesArray = Array.from(uniqueDates);
       const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
       for (let i = 0; i < uniqueDatesArray.length; i++) {
         const dateKey = uniqueDatesArray[i];
         setLoadingProgress({ 
           current: i + 1, 
-          total: uniqueDatesArray.length
+          total: uniqueDatesArray.length * 2 // EUR + USD
         });
         
         try {
@@ -367,21 +383,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Noon UTC
           const timestamp = Math.floor(date.getTime() / 1000);
           
-          const price = await getEthPriceAtTimestamp(timestamp, tracker.currency, coingeckoApiKey);
-          const cacheKey = `${dateKey}-${tracker.currency}`;
-          setCachedPrice(cacheKey, price);
-          datePriceMap.set(dateKey, price);
-          console.log(`Fetched price for ${dateKey}: ${price} ${tracker.currency}`);
+          // Fetch EUR price
+          if (!datePriceMapEUR.has(dateKey)) {
+            const priceEUR = await getEthPriceAtTimestamp(timestamp, "EUR", coingeckoApiKey);
+            const cacheKeyEUR = `${dateKey}-EUR`;
+            setCachedPrice(cacheKeyEUR, priceEUR);
+            datePriceMapEUR.set(dateKey, priceEUR);
+            console.log(`Fetched EUR price for ${dateKey}: ${priceEUR}`);
+            
+            // Small delay to respect rate limits
+            await new Promise(resolve => setTimeout(resolve, 2100));
+          }
+          
+          setLoadingProgress({ 
+            current: uniqueDatesArray.length + i + 1, 
+            total: uniqueDatesArray.length * 2
+          });
+          
+          // Fetch USD price
+          if (!datePriceMapUSD.has(dateKey)) {
+            const priceUSD = await getEthPriceAtTimestamp(timestamp, "USD", coingeckoApiKey);
+            const cacheKeyUSD = `${dateKey}-USD`;
+            setCachedPrice(cacheKeyUSD, priceUSD);
+            datePriceMapUSD.set(dateKey, priceUSD);
+            console.log(`Fetched USD price for ${dateKey}: ${priceUSD}`);
+            
+            // Small delay to respect rate limits
+            await new Promise(resolve => setTimeout(resolve, 2100));
+          }
         } catch (error: any) {
           console.error(`Failed to fetch price for date ${dateKey}:`, error);
           setError(`Warning: Could not fetch price for some dates. ${error.message || ""}`);
-          // Set price to 0 for failed dates
-          datePriceMap.set(dateKey, 0);
+          // Set prices to 0 for failed dates
+          if (!datePriceMapEUR.has(dateKey)) datePriceMapEUR.set(dateKey, 0);
+          if (!datePriceMapUSD.has(dateKey)) datePriceMapUSD.set(dateKey, 0);
         }
       }
       
-      // Step 3: Process all transactions using the fetched prices
-      const processedTxs: Transaction[] = [];
+      // Step 3: Process all transactions using the fetched prices (both EUR and USD)
+      const processedTxs: CachedTransaction[] = [];
       
       for (let i = 0; i < etherscanTxs.length; i++) {
         const tx = etherscanTxs[i];
@@ -397,29 +437,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             ? rawValue / 1e9 // Gwei → ETH
             : rawValue / 1e18; // Wei → ETH
         
-        // Get price from our date price map
+        // Get prices from our date price maps
         const dateKey = getDateKey(parseInt(tx.timeStamp));
-        const ethPrice = datePriceMap.get(dateKey) || 0;
+        const ethPriceEUR = datePriceMapEUR.get(dateKey) || 0;
+        const ethPriceUSD = datePriceMapUSD.get(dateKey) || 0;
         
         // Update progress for transaction processing
         setLoadingProgress({ 
-          current: i + 1, 
-          total: etherscanTxs.length
+          current: uniqueDatesArray.length * 2 + i + 1, 
+          total: uniqueDatesArray.length * 2 + etherscanTxs.length
         });
         
-        const rewardsInCurrency = ethAmount * ethPrice;
         const taxesInEth = ethAmount * (tracker.taxRate / 100);
-        const taxesInCurrency = rewardsInCurrency * (tracker.taxRate / 100);
         
         processedTxs.push({
           date: date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" }),
           time: date.toLocaleTimeString("en-GB", { timeZone: "Europe/Zagreb", hour12: false }),
           ethAmount,
-          ethPrice,
-          rewardsInCurrency,
+          ethPriceEUR,
+          ethPriceUSD,
           taxRate: tracker.taxRate,
           taxesInEth,
-          taxesInCurrency,
           transactionHash: tx.hash,
           status: "Unpaid", // TODO: Track swap status
           timestamp: parseInt(tx.timeStamp),
@@ -668,8 +706,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
       for (const tracker of trackers) {
         const cached = await getCachedTransactions(tracker.id);
-        allRewards += cached.reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
-        allTaxes += cached.reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
+        allRewards += cached.reduce((sum, tx) => sum + getRewardsInCurrency(tx, tracker.currency), 0);
+        allTaxes += cached.reduce((sum, tx) => sum + getTaxesInCurrency(tx, tracker.currency), 0);
         allEthRewards += cached.reduce((sum, tx) => sum + tx.ethAmount, 0);
         allEthTaxes += cached.reduce((sum, tx) => sum + tx.taxesInEth, 0);
 
@@ -683,7 +721,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             const taxableUntil = new Date(rewardDate);
             taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
             if (now >= taxableUntil) {
-              allCgtFreeRewards += tx.rewardsInCurrency;
+              allCgtFreeRewards += getRewardsInCurrency(tx, tracker.currency);
               allCgtFreeEth += tx.ethAmount;
             }
           });
@@ -706,8 +744,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   }, [trackers, transactions, holdingStatusMap]); // Recalculate when trackers, transactions or holding status change
 
   // Calculate totals based on filtered transactions (for selected node)
-  const totalRewards = filteredTransactions.reduce((sum, tx) => sum + tx.rewardsInCurrency, 0);
-  const totalTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInCurrency, 0);
+  const activeCurrency = activeTracker?.currency || "EUR";
+  const totalRewards = filteredTransactions.reduce((sum, tx) => sum + getRewardsInCurrency(tx, activeCurrency), 0);
+  const totalTaxes = filteredTransactions.reduce((sum, tx) => sum + getTaxesInCurrency(tx, activeCurrency), 0);
   const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + tx.ethAmount, 0);
   const totalEthTaxes = filteredTransactions.reduce((sum, tx) => sum + tx.taxesInEth, 0);
   
@@ -731,7 +770,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const rewardDate = new Date(tx.timestamp * 1000);
         const taxableUntil = new Date(rewardDate);
         taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
-        return nowForCgt >= taxableUntil ? sum + tx.rewardsInCurrency : sum;
+        return nowForCgt >= taxableUntil ? sum + getRewardsInCurrency(tx, activeCurrency) : sum;
       }, 0)
     : 0;
 
@@ -794,17 +833,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       `Income tax (${currencyCode})`,
       "Transaction Hash",
     ];
-    const rows = yearTransactions.map((tx) => [
-      tx.date,
-      tx.time,
-      tx.rewardType || "EVM",
-      tx.ethAmount.toFixed(6),
-      tx.ethPrice.toFixed(2),
-      tx.rewardsInCurrency.toFixed(2),
-      tx.taxRate.toString(),
-      tx.taxesInCurrency.toFixed(2),
-      tx.rewardType === "CL" ? "" : tx.transactionHash,
-    ]);
+    const rows = yearTransactions.map((tx) => {
+      const ethPrice = activeTracker.currency === "EUR" ? tx.ethPriceEUR : tx.ethPriceUSD;
+      const rewardsInCurrency = getRewardsInCurrency(tx, activeTracker.currency);
+      const taxesInCurrency = getTaxesInCurrency(tx, activeTracker.currency);
+      return [
+        tx.date,
+        tx.time,
+        tx.rewardType || "EVM",
+        tx.ethAmount.toFixed(6),
+        ethPrice.toFixed(2),
+        rewardsInCurrency.toFixed(2),
+        tx.taxRate.toString(),
+        taxesInCurrency.toFixed(2),
+        tx.rewardType === "CL" ? "" : tx.transactionHash,
+      ];
+    });
     const csv = [headers, ...rows]
       .map((r) => r.map((c) => `"${c}"`).join(","))
       .join("\n");
@@ -1522,9 +1566,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         </span>
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{tx.ethAmount.toFixed(6)}</td>
-                      <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>{currencySymbol} {tx.ethPrice.toFixed(2)}</td>
-                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{currencySymbol} {tx.rewardsInCurrency.toFixed(2)}</td>
-                      <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>{currencySymbol} {tx.taxesInCurrency.toFixed(2)}</td>
+                      <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>
+                        {currencySymbol} {(activeTracker?.currency === "EUR" ? tx.ethPriceEUR : tx.ethPriceUSD).toFixed(2)}
+                      </td>
+                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>
+                        {currencySymbol} {getRewardsInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}
+                      </td>
+                      <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>
+                        {currencySymbol} {getTaxesInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}
+                      </td>
                       {/* CGT Status column */}
                       <td style={{ padding: "12px 8px", textAlign: "center" }}>
                         {isCroatia ? (() => {
