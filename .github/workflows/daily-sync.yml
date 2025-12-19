@@ -22,7 +22,7 @@ jobs:
       
       - name: Install sync script dependencies
         run: |
-          npm init -y
+          echo '{}' > package.json
           npm install firebase-admin --save
       
       - name: Run daily sync
