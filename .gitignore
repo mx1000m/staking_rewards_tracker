@@ -8,5 +8,7 @@ staking Firebase/
 # Node / build artifacts (safe to ignore if not already handled elsewhere)
 node_modules
 dist
+app/dist
+**/dist
 
 
