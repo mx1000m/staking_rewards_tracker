@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useTrackerStore, Currency } from "../store/trackerStore";
 import { useAuth } from "../hooks/useAuth";
 
@@ -25,6 +25,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
   const [etherscanKey, setEtherscanKey] = useState("");
 
+  // Pre-fill Etherscan API key from existing tracker if available
+  useEffect(() => {
+    if (trackers.length > 0 && trackers[0].etherscanKey) {
+      setEtherscanKey(trackers[0].etherscanKey);
+    }
+  }, [trackers]);
+
   const isFirstTracker = trackers.length === 0;
 
   const canNext = useMemo(() => {
@@ -44,6 +51,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     if (!canNext) return;
     if (step === 4) {
       // Save tracker and complete
+      // Use placeholder name if name is empty
+      const defaultName = name.trim() || `Node Tracker ${trackers.length + 1}`;
       addTracker({
         walletAddress,
         feeRecipientAddress: feeRecipientAddress.trim() || undefined,
@@ -51,7 +60,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         country,
         taxRate,
         etherscanKey,
-        name: name.trim() || `Node ${walletAddress.slice(0, 6)}...`,
+        name: defaultName,
       });
       
       // Sync to Firestore if authenticated
