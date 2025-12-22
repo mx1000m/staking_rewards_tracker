@@ -24,6 +24,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [country, setCountry] = useState("Croatia");
   const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
   const [etherscanKey, setEtherscanKey] = useState("");
+  const [showApiKey, setShowApiKey] = useState(false);
 
   // Pre-fill Etherscan API key from existing tracker if available
   useEffect(() => {
@@ -284,12 +285,47 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             </a>{" "}
             for free to get an API key.
           </p>
-          <input
-            className="input"
-            placeholder="Etherscan API key"
-            value={etherscanKey}
-            onChange={(e) => setEtherscanKey(e.target.value)}
-          />
+          <div style={{ position: "relative" }}>
+            <input
+              className="input"
+              placeholder="Etherscan API key"
+              type={showApiKey ? "text" : "password"}
+              value={etherscanKey}
+              onChange={(e) => setEtherscanKey(e.target.value)}
+              style={{ paddingRight: "40px" }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey(!showApiKey)}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#9aa0b4",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#e8e8f0";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#9aa0b4";
+              }}
+            >
+              <img
+                src={showApiKey ? "/staking_rewards_tracker/icons/eye_off_icon.svg" : "/staking_rewards_tracker/icons/eye_icon.svg"}
+                alt={showApiKey ? "Hide" : "Show"}
+                style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+              />
+            </button>
+          </div>
         </div>
       )}
       <div
