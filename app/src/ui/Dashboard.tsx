@@ -35,7 +35,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0 });
+  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0, progressPercent: 0 });
   const [error, setError] = useState<string | null>(null);
   const [showRefreshWarning, setShowRefreshWarning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -325,7 +325,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   const fetchTransactions = async (tracker: Tracker, forceRefresh = false) => {
     setLoading(true);
-    setLoadingProgress({ current: 0, total: 0 });
+    setLoadingProgress({ current: 0, total: 0, progressPercent: 0 });
     setError(null);
     try {
       // Always start from Jan 1 of current year (00:01 UTC) to include entire-year history
@@ -342,8 +342,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       const etherscanTxs = await getTransactions(tracker.walletAddress, feeRecipientAddress, tracker.etherscanKey, startTimestamp);
       console.log("Found transactions:", etherscanTxs.length);
       
-      // Set total for progress tracking
-      setLoadingProgress({ current: 0, total: etherscanTxs.length });
+      // Set initial progress (will be updated during price fetching and transaction processing)
+      // Total represents transactions, but progress includes price fetches too
+      setLoadingProgress({ current: 0, total: etherscanTxs.length, progressPercent: 0 });
       
       if (etherscanTxs.length === 0) {
         setError("No incoming transactions found for this wallet address.");
@@ -381,12 +382,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       console.log(`Fetching prices for ${uniqueDates.size} unique dates (${etherscanTxs.length} total transactions)`);
       
       // Step 2: Fetch prices for all unique dates (batched) - both EUR and USD
-      // Progress: We'll show progress based on transactions, not price fetches
-      // So we'll update progress as we process transactions, not during price fetching
+      // Progress tracking: price fetches + transaction processing
       const uniqueDatesArray = Array.from(uniqueDates);
       const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
       
-      // Fetch all prices first (without updating progress counter)
+      // Calculate total work: price fetches (EUR + USD for each unique date) + transaction processing
+      const priceFetchesNeeded = uniqueDatesArray.length * 2; // EUR + USD
+      const totalWork = priceFetchesNeeded + etherscanTxs.length;
+      let completedWork = 0;
+      
+      // Fetch all prices with progress tracking
       for (let i = 0; i < uniqueDatesArray.length; i++) {
         const dateKey = uniqueDatesArray[i];
         
@@ -403,9 +408,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             setCachedPrice(cacheKeyEUR, priceEUR);
             datePriceMapEUR.set(dateKey, priceEUR);
             console.log(`Fetched EUR price for ${dateKey}: ${priceEUR}`);
+            completedWork++;
+            setLoadingProgress({ 
+              current: etherscanTxs.length, // Show transaction count in text
+              total: etherscanTxs.length,
+              progressPercent: (completedWork / totalWork) * 100
+            });
             
             // Small delay to respect rate limits
             await new Promise(resolve => setTimeout(resolve, 2100));
+          } else {
+            completedWork++;
+            setLoadingProgress({ 
+              current: etherscanTxs.length,
+              total: etherscanTxs.length,
+              progressPercent: (completedWork / totalWork) * 100
+            });
           }
           
           // Fetch USD price
@@ -415,9 +433,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             setCachedPrice(cacheKeyUSD, priceUSD);
             datePriceMapUSD.set(dateKey, priceUSD);
             console.log(`Fetched USD price for ${dateKey}: ${priceUSD}`);
+            completedWork++;
+            setLoadingProgress({ 
+              current: etherscanTxs.length,
+              total: etherscanTxs.length,
+              progressPercent: (completedWork / totalWork) * 100
+            });
             
             // Small delay to respect rate limits
             await new Promise(resolve => setTimeout(resolve, 2100));
+          } else {
+            completedWork++;
+            setLoadingProgress({ 
+              current: etherscanTxs.length,
+              total: etherscanTxs.length,
+              progressPercent: (completedWork / totalWork) * 100
+            });
           }
         } catch (error: any) {
           console.error(`Failed to fetch price for date ${dateKey}:`, error);
@@ -425,11 +456,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           // Set prices to 0 for failed dates
           if (!datePriceMapEUR.has(dateKey)) datePriceMapEUR.set(dateKey, 0);
           if (!datePriceMapUSD.has(dateKey)) datePriceMapUSD.set(dateKey, 0);
+          // Still count as completed even if failed
+          completedWork += 2;
+          setLoadingProgress({ 
+            current: etherscanTxs.length,
+            total: etherscanTxs.length,
+            progressPercent: (completedWork / totalWork) * 100
+          });
         }
       }
       
       // Step 3: Process all transactions using the fetched prices (both EUR and USD)
-      // This is where we update progress - counting transactions, not price fetches
       const processedTxs: CachedTransaction[] = [];
       
       for (let i = 0; i < etherscanTxs.length; i++) {
@@ -451,10 +488,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const ethPriceEUR = datePriceMapEUR.get(dateKey) || 0;
         const ethPriceUSD = datePriceMapUSD.get(dateKey) || 0;
         
-        // Update progress: count transactions, not price fetches
+        // Update progress: count both price fetches and transaction processing
+        completedWork++;
         setLoadingProgress({ 
-          current: i + 1, 
-          total: etherscanTxs.length
+          current: i + 1, // Show current transaction being processed
+          total: etherscanTxs.length,
+          progressPercent: (completedWork / totalWork) * 100
         });
         
         const taxesInEth = ethAmount * (tracker.taxRate / 100);
@@ -1872,18 +1911,40 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   textAlign: "center",
                 }}
               >
-                <p style={{ color: "#f0f0f0", fontSize: "1rem", marginBottom: "8px", marginTop: 0 }}>
-                  Loading transactions
-                  <span style={{ animation: "blink 1.4s infinite" }}>.</span>
-                  <span style={{ animation: "blink 1.4s infinite 0.2s" }}>.</span>
-                  <span style={{ animation: "blink 1.4s infinite 0.4s" }}>.</span>
-                  {loadingProgress.total > 0 && (
-                    <span style={{ marginLeft: "12px", color: "#aaaaaa" }}>
-                      ({loadingProgress.current}/{loadingProgress.total})
-                    </span>
+                <p style={{ color: "#f0f0f0", fontSize: "1rem", marginBottom: "16px", marginTop: 0 }}>
+                  {loadingProgress.total > 0 ? (
+                    <>Loading {loadingProgress.total} transactions<span style={{ animation: "blink 1.4s infinite" }}>.</span>
+                    <span style={{ animation: "blink 1.4s infinite 0.2s" }}>.</span>
+                    <span style={{ animation: "blink 1.4s infinite 0.4s" }}>.</span></>
+                  ) : (
+                    <>Loading transactions<span style={{ animation: "blink 1.4s infinite" }}>.</span>
+                    <span style={{ animation: "blink 1.4s infinite 0.2s" }}>.</span>
+                    <span style={{ animation: "blink 1.4s infinite 0.4s" }}>.</span></>
                   )}
                 </p>
-                <p style={{ color: "#aaaaaa", fontSize: "0.9rem", marginTop: "8px", marginBottom: 0 }}>
+                {loadingProgress.total > 0 && (
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "4px",
+                      background: "#2b2b2b",
+                      borderRadius: "2px",
+                      overflow: "hidden",
+                      marginBottom: "16px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: `${(loadingProgress as any).progressPercent || 0}%`,
+                        height: "100%",
+                        background: "linear-gradient(90deg, #01e1fd, #6b6bff)",
+                        borderRadius: "2px",
+                        transition: "width 0.3s ease",
+                      }}
+                    />
+                  </div>
+                )}
+                <p style={{ color: "#aaaaaa", fontSize: "0.9rem", marginTop: 0, marginBottom: 0 }}>
                   Depending on the number of transactions, this may take a few minutes.
                 </p>
               </div>
