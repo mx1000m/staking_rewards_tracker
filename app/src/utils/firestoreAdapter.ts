@@ -14,6 +14,7 @@ import {
   Timestamp,
   writeBatch,
   serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { CachedTransaction } from "./transactionCache";
@@ -222,6 +223,11 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
     
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
+      // Skip trackers marked as deleted (backward compatibility)
+      if (data.deleted === true) {
+        return;
+      }
+      
       trackers.push({
         id: docSnap.id,
         name: data.name || "",
@@ -243,16 +249,38 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
 }
 
 /**
- * Delete tracker from Firestore
+ * Delete tracker and all its transactions from Firestore
+ * This frees up storage space by actually removing the data
  */
 export async function deleteFirestoreTracker(
   uid: string,
   trackerId: string
 ): Promise<void> {
   try {
+    // First, delete all transactions in the subcollection
+    const transactionsRef = collection(db, getTrackerTransactionsPath(uid, trackerId));
+    const transactionsSnapshot = await getDocs(transactionsRef);
+    
+    // Delete transactions in batches (Firestore batch limit is 500)
+    const batchSize = 500;
+    const transactionDocs = transactionsSnapshot.docs;
+    
+    for (let i = 0; i < transactionDocs.length; i += batchSize) {
+      const batch = writeBatch(db);
+      const chunk = transactionDocs.slice(i, i + batchSize);
+      
+      chunk.forEach((docSnap) => {
+        batch.delete(docSnap.ref);
+      });
+      
+      await batch.commit();
+    }
+    
+    // Finally, delete the tracker document itself
     const trackerRef = doc(db, getUserTrackersPath(uid), trackerId);
-    await setDoc(trackerRef, { deleted: true, updatedAt: serverTimestamp() }, { merge: true });
-    // Note: We mark as deleted rather than actually deleting to preserve transaction history
+    await deleteDoc(trackerRef);
+    
+    console.log(`Deleted tracker ${trackerId} and ${transactionDocs.length} transactions from Firestore`);
   } catch (error) {
     console.error("Error deleting Firestore tracker:", error);
     throw error;
