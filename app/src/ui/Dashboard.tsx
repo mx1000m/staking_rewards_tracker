@@ -37,7 +37,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [loading, setLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0, progressPercent: 0 });
   const [error, setError] = useState<string | null>(null);
-  const [showRefreshWarning, setShowRefreshWarning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [markPaidHash, setMarkPaidHash] = useState<string | null>(null);
   const [swapHashInput, setSwapHashInput] = useState<string>("");
@@ -165,24 +164,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [editPaidHash]);
 
-  // Handle refresh warning modal body overflow
-  useEffect(() => {
-    if (showRefreshWarning) {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-      const originalOverflow = document.body.style.overflow;
-      const originalPaddingRight = document.body.style.paddingRight;
-
-      document.body.style.overflow = "hidden";
-      if (scrollbarWidth > 0) {
-        document.body.style.paddingRight = `${scrollbarWidth}px`;
-      }
-
-      return () => {
-        document.body.style.overflow = originalOverflow;
-        document.body.style.paddingRight = originalPaddingRight;
-      };
-    }
-  }, [showRefreshWarning]);
 
   // Handle mark sold modal body overflow
   useEffect(() => {
@@ -354,28 +335,76 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       }
       
       // Batch price fetching by date to reduce API calls
-      // Step 1: Collect all unique dates that need price fetching (for both EUR and USD)
+      // Step 1: Get existing transactions to check for prices already stored
+      const existingCached = await getCachedTransactions(tracker.id);
+      const existingPriceMapEUR = new Map<string, number>(); // dateKey -> EUR price from existing transactions
+      const existingPriceMapUSD = new Map<string, number>(); // dateKey -> USD price from existing transactions
+      
+      // Check existing transactions for prices (from Firestore or cache)
+      if (user) {
+        try {
+          const firestoreTxs = await getFirestoreTransactions(user.uid, tracker.id);
+          firestoreTxs.forEach((ftx) => {
+            const dateKey = getDateKey(ftx.timestamp);
+            if (ftx.ethPriceEUR && ftx.ethPriceEUR > 0) {
+              existingPriceMapEUR.set(dateKey, ftx.ethPriceEUR);
+            }
+            if (ftx.ethPriceUSD && ftx.ethPriceUSD > 0) {
+              existingPriceMapUSD.set(dateKey, ftx.ethPriceUSD);
+            }
+          });
+        } catch (error) {
+          console.warn("Failed to check Firestore for existing prices:", error);
+        }
+      }
+      
+      // Also check cached transactions
+      existingCached.forEach((ctx) => {
+        const dateKey = getDateKey(ctx.timestamp);
+        if (ctx.ethPriceEUR && ctx.ethPriceEUR > 0) {
+          existingPriceMapEUR.set(dateKey, ctx.ethPriceEUR);
+        }
+        if (ctx.ethPriceUSD && ctx.ethPriceUSD > 0) {
+          existingPriceMapUSD.set(dateKey, ctx.ethPriceUSD);
+        }
+      });
+      
+      // Step 2: Collect all unique dates that need price fetching (for both EUR and USD)
       const datePriceMapEUR = new Map<string, number>(); // dateKey -> EUR price
       const datePriceMapUSD = new Map<string, number>(); // dateKey -> USD price
       const uniqueDates = new Set<string>();
       
       for (const tx of etherscanTxs) {
         const dateKey = getDateKey(parseInt(tx.timeStamp));
-        const cacheKeyEUR = `${dateKey}-EUR`;
-        const cacheKeyUSD = `${dateKey}-USD`;
-        const cachedPriceEUR = getCachedPrice(cacheKeyEUR);
-        const cachedPriceUSD = getCachedPrice(cacheKeyUSD);
         
-        if (cachedPriceEUR !== null) {
-          datePriceMapEUR.set(dateKey, cachedPriceEUR);
+        // First check if price exists in existing transactions (Firestore/cache)
+        const existingEUR = existingPriceMapEUR.get(dateKey);
+        const existingUSD = existingPriceMapUSD.get(dateKey);
+        
+        if (existingEUR) {
+          datePriceMapEUR.set(dateKey, existingEUR);
         } else {
-          uniqueDates.add(dateKey);
+          // Check localStorage cache as fallback
+          const cacheKeyEUR = `${dateKey}-EUR`;
+          const cachedPriceEUR = getCachedPrice(cacheKeyEUR);
+          if (cachedPriceEUR !== null) {
+            datePriceMapEUR.set(dateKey, cachedPriceEUR);
+          } else {
+            uniqueDates.add(dateKey);
+          }
         }
         
-        if (cachedPriceUSD !== null) {
-          datePriceMapUSD.set(dateKey, cachedPriceUSD);
+        if (existingUSD) {
+          datePriceMapUSD.set(dateKey, existingUSD);
         } else {
-          uniqueDates.add(dateKey);
+          // Check localStorage cache as fallback
+          const cacheKeyUSD = `${dateKey}-USD`;
+          const cachedPriceUSD = getCachedPrice(cacheKeyUSD);
+          if (cachedPriceUSD !== null) {
+            datePriceMapUSD.set(dateKey, cachedPriceUSD);
+          } else {
+            uniqueDates.add(dateKey);
+          }
         }
       }
       
@@ -518,14 +547,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     let allTransactions: CachedTransaction[];
     let newTxs: CachedTransaction[];
     
+    // Check Firestore for existing transactions to determine which are actually new
+    const existingFirestoreHashes = new Set<string>();
+    if (user && !forceRefresh) {
+      try {
+        const firestoreTxs = await getFirestoreTransactions(user.uid, tracker.id);
+        firestoreTxs.forEach((ftx) => {
+          existingFirestoreHashes.add(ftx.transactionHash);
+        });
+      } catch (error) {
+        console.warn("Failed to check Firestore for existing transactions:", error);
+      }
+    }
+    
     if (forceRefresh) {
       // Force refresh: use only the newly fetched transactions
       allTransactions = processedTxs;
       newTxs = processedTxs; // All are new when force refreshing
     } else {
-      // Normal refresh: merge with existing cache
+      // Normal refresh: merge with existing cache and check Firestore
       const existingCached = await getCachedTransactions(tracker.id);
-      const existingHashes = new Set(existingCached.map((t) => t.transactionHash));
+      const existingHashes = new Set([
+        ...existingCached.map((t) => t.transactionHash),
+        ...Array.from(existingFirestoreHashes)
+      ]);
+      
+      // Only transactions that don't exist in cache OR Firestore are truly new
       newTxs = processedTxs.filter((tx) => !existingHashes.has(tx.transactionHash));
 
       const mergedMap = new Map<string, CachedTransaction>();
@@ -1262,25 +1309,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     </svg>
                     <span style={{ color: "#aaaaaa" }}>Export CSV</span>
                   </button>
-                  <button
-                    onClick={() => setShowRefreshWarning(true)}
-                    disabled={loading}
-                    style={{ background: "#2b2b2b", transition: "all 0.2s", border: "none", borderRadius: "9px", padding: "10px 12px", display: "inline-flex", alignItems: "center", gap: 6, textTransform: "none" }}
-                    onMouseEnter={(e) => {
-                      if (!e.currentTarget.disabled) {
-                        e.currentTarget.style.background = "#383838";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#2b2b2b";
-                    }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 67.6 67.5" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M0,60c0,2.1,1.7,3.8,3.8,3.8s3.8-1.7,3.8-3.8v-4.7c6.5,7.7,16.1,12.2,26.2,12.2,17,0,31.3-12.6,33.5-29.5.3-2.1-1.1-3.9-3.2-4.2s-3.9,1.1-4.2,3.2v.1c-1.7,13.1-12.8,22.9-26,22.9-8.7,0-16.9-4.2-21.9-11.2h6.8c2.1,0,3.8-1.7,3.8-3.8s-1.7-3.8-3.8-3.8H3.8C1.7,41.2,0,42.9,0,45H0s0,15,0,15Z" fill="#aaaaaa" />
-                      <path d="M45,22.5c0,2.1,1.7,3.8,3.8,3.8h15c2.1,0,3.8-1.7,3.8-3.8h0V7.5c0-2.1-1.7-3.8-3.8-3.8s-3.8,1.7-3.8,3.8v4.7C53.5,4.5,43.9,0,33.8,0,16.8,0,2.4,12.7.3,29.5c-.2,2.1,1.3,3.9,3.4,4.1,2,.2,3.8-1.2,4.1-3.2,1.6-13.1,12.8-23,26-23,8.7,0,16.9,4.2,21.9,11.3h-6.9c-2.1.1-3.8,1.8-3.8,3.8h0Z" fill="#aaaaaa" />
-                    </svg>
-                    <span style={{ color: "#aaaaaa" }}>{loading ? "Loading..." : "Refresh"}</span>
-                  </button>
                 </div>
               </div>
 
@@ -1959,14 +1987,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           tracker={activeTracker}
           onClose={() => setShowSettings(false)}
           onSaved={async () => {
-            // Get the updated tracker from the store (with new wallet address)
+            // Get the updated tracker from the store
             const { trackers } = useTrackerStore.getState();
             const updatedTracker = trackers.find((t) => t.id === activeTracker.id);
             if (updatedTracker) {
-              // Clear transactions state immediately
-              setTransactions([]);
-              // Force a fresh fetch (don't load from cache)
-              await fetchTransactions(updatedTracker, true);
+              // Check if wallet address or fee recipient changed (requires refetch)
+              const walletChanged = updatedTracker.walletAddress.toLowerCase() !== activeTracker.walletAddress.toLowerCase();
+              const feeRecipientChanged = (updatedTracker.feeRecipientAddress || "") !== (activeTracker.feeRecipientAddress || "");
+              
+              if (walletChanged || feeRecipientChanged) {
+                // Wallet or fee recipient changed - need to refetch transactions
+                setTransactions([]);
+                await fetchTransactions(updatedTracker, true);
+              } else {
+                // Only currency or other settings changed - just reload from cache
+                // Prices are already stored in transactions (ethPriceEUR, ethPriceUSD)
+                await loadTransactions(updatedTracker);
+              }
             }
           }}
         />
@@ -2515,143 +2552,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         </div>
       )}
 
-      {/* Refresh warning modal */}
-      {showRefreshWarning && (
-        <div
-          className="modal-overlay modal-overlay-enter"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 1200,
-            padding: "20px",
-          }}
-          onClick={() => setShowRefreshWarning(false)}
-        >
-          <div
-            className="modal-card modal-card-enter"
-            style={{
-              width: "100%",
-              maxWidth: "520px",
-              position: "relative",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
-              style={{
-                background: "#181818",
-                borderRadius: "18px",
-                padding: "1px",
-                border: "1px solid #2b2b2b",
-              }}
-            >
-              <div
-                style={{
-                  background: "#181818",
-                  borderRadius: "17px",
-                  padding: "28px",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Refresh Transactions?</h3>
-                  <button
-                    onClick={() => setShowRefreshWarning(false)}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: "#9aa0b4",
-                      fontSize: "24px",
-                      cursor: "pointer",
-                      padding: "0",
-                      width: "32px",
-                      height: "32px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                      transition: "color 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#e8e8f0";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "#9aa0b4";
-                    }}
-                  >
-                    ×
-                  </button>
-                </div>
-                <p style={{ marginTop: 0, marginBottom: "16px", color: "#aaaaaa", lineHeight: "1.6" }}>
-                  Refreshing will fetch all transactions from the current year (up to one year in the past). 
-                  Due to CoinGecko API rate limits (30 calls per minute for demo tier), this process may take a few minutes depending on the number of transactions.
-                </p>
-                <p style={{ marginTop: 0, marginBottom: "24px", color: "#aaaaaa", lineHeight: "1.6" }}>
-                  Do you want to continue?
-                </p>
-
-                <div className="actions" style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-                  <button
-                    onClick={() => setShowRefreshWarning(false)}
-                    style={{
-                      background: "#2b2b2b",
-                      color: "#aaaaaa",
-                      padding: "10px 20px",
-                      borderRadius: "10px",
-                      textTransform: "none",
-                      border: "none",
-                      transition: "background 0.2s",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#383838";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#2b2b2b";
-                    }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowRefreshWarning(false);
-                      if (activeTracker) {
-                        fetchTransactions(activeTracker, true);
-                      }
-                    }}
-                    style={{
-                      background: "#555555",
-                      border: "none",
-                      borderRadius: "10px",
-                      padding: "10px 20px",
-                      color: "#f0f0f0",
-                      textTransform: "none",
-                      fontWeight: 600,
-                      transition: "background 0.2s",
-                      cursor: "pointer",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "#666666";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "#555555";
-                    }}
-                  >
-                    Continue
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Mark rewards as sold modal */}
       {showMarkSoldModal && (
