@@ -381,14 +381,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       console.log(`Fetching prices for ${uniqueDates.size} unique dates (${etherscanTxs.length} total transactions)`);
       
       // Step 2: Fetch prices for all unique dates (batched) - both EUR and USD
+      // Progress: We'll show progress based on transactions, not price fetches
+      // So we'll update progress as we process transactions, not during price fetching
       const uniqueDatesArray = Array.from(uniqueDates);
       const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
+      
+      // Fetch all prices first (without updating progress counter)
       for (let i = 0; i < uniqueDatesArray.length; i++) {
         const dateKey = uniqueDatesArray[i];
-        setLoadingProgress({ 
-          current: i + 1, 
-          total: uniqueDatesArray.length * 2 // EUR + USD
-        });
         
         try {
           // Parse dateKey back to timestamp (dateKey format: YYYY-MM-DD)
@@ -407,11 +407,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             // Small delay to respect rate limits
             await new Promise(resolve => setTimeout(resolve, 2100));
           }
-          
-          setLoadingProgress({ 
-            current: uniqueDatesArray.length + i + 1, 
-            total: uniqueDatesArray.length * 2
-          });
           
           // Fetch USD price
           if (!datePriceMapUSD.has(dateKey)) {
@@ -434,6 +429,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       }
       
       // Step 3: Process all transactions using the fetched prices (both EUR and USD)
+      // This is where we update progress - counting transactions, not price fetches
       const processedTxs: CachedTransaction[] = [];
       
       for (let i = 0; i < etherscanTxs.length; i++) {
@@ -455,10 +451,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const ethPriceEUR = datePriceMapEUR.get(dateKey) || 0;
         const ethPriceUSD = datePriceMapUSD.get(dateKey) || 0;
         
-        // Update progress for transaction processing
+        // Update progress: count transactions, not price fetches
         setLoadingProgress({ 
-          current: uniqueDatesArray.length * 2 + i + 1, 
-          total: uniqueDatesArray.length * 2 + etherscanTxs.length
+          current: i + 1, 
+          total: etherscanTxs.length
         });
         
         const taxesInEth = ethAmount * (tracker.taxRate / 100);
