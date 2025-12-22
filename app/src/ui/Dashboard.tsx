@@ -1935,7 +1935,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   >
                     <div
                       style={{
-                        width: `${(loadingProgress as any).progressPercent || 0}%`,
+                        width: `${loadingProgress.progressPercent || 0}%`,
                         height: "100%",
                         background: "linear-gradient(90deg, #01e1fd, #6b6bff)",
                         borderRadius: "2px",
