@@ -608,24 +608,24 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             >
               <div
                 style={{
-                  background: "#181818",
+                  background: "#2a0808",
                   borderRadius: "18px",
                   padding: "1px",
-                  border: "1px solid #2b2b2b",
+                  border: "1px solid #ca3a32",
                 }}
               >
                 <div
                   style={{
-                    background: "#181818",
+                    background: "#2a0808",
                     borderRadius: "17px",
                     padding: "28px",
                   }}
                 >
                   <h2 style={{ margin: 0, marginBottom: "16px", color: "#f0f0f0" }}>
-                    Are you sure you want to delete "{tracker.name}"?
+                    Are you sure you want to delete {tracker.name}?
                   </h2>
                   <p style={{ margin: "0 0 16px", color: "#e8e8f0" }}>
-                    This action cannot be undone.
+                    ⚠ This action cannot be undone.
                   </p>
                   <p style={{ margin: "0 0 8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
                     Type the exact name of your node to confirm deletion:
