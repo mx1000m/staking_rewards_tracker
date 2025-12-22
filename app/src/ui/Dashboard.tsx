@@ -230,6 +230,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     try {
       // Load cached transactions first (instant display)
       const cached = await getCachedTransactions(tracker.id);
+      const metadata = await getCacheMetadata(tracker.id);
+      
       if (cached.length > 0) {
         setTransactions(cached);
         setLoading(false);
@@ -239,15 +241,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // Sync with Firestore if user is authenticated
       if (user) {
         try {
-          const metadata = await getCacheMetadata(tracker.id);
+          // If cache is empty but metadata exists (cache was cleared), fetch ALL transactions from Firestore
+          // Otherwise, do delta sync (only new transactions since lastFetchedTimestamp)
+          const shouldFetchAll = cached.length === 0 && metadata !== null;
           const firestoreTxs = await getFirestoreTransactions(
             user.uid,
             tracker.id,
-            metadata?.lastFetchedTimestamp
+            shouldFetchAll ? undefined : metadata?.lastFetchedTimestamp
           );
           
           if (firestoreTxs.length > 0) {
-            console.log(`Synced ${firestoreTxs.length} transactions from Firestore`);
+            if (shouldFetchAll) {
+              console.log(`Restored ${firestoreTxs.length} transactions from Firestore (cache was cleared)`);
+            } else {
+              console.log(`Synced ${firestoreTxs.length} new transactions from Firestore`);
+            }
             // Merge Firestore data with cached data (Firestore takes precedence for status)
             const cachedMap = new Map(cached.map((t) => [t.transactionHash, t]));
             firestoreTxs.forEach((ftx) => {
@@ -263,7 +271,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       }
 
       // Check if we need to fetch new transactions from Etherscan
-      const metadata = await getCacheMetadata(tracker.id);
+      // (metadata was already fetched above)
       const now = Math.floor(Date.now() / 1000);
       const oneDayAgo = now - 24 * 60 * 60;
 
