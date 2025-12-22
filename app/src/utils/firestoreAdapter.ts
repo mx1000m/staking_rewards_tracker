@@ -249,15 +249,14 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
 }
 
 /**
- * Delete tracker and all its transactions from Firestore
- * This frees up storage space by actually removing the data
+ * Delete all transactions for a tracker from Firestore
+ * Used when wallet address changes to clear old transaction data
  */
-export async function deleteFirestoreTracker(
+export async function deleteFirestoreTransactions(
   uid: string,
   trackerId: string
 ): Promise<void> {
   try {
-    // First, delete all transactions in the subcollection
     const transactionsRef = collection(db, getTrackerTransactionsPath(uid, trackerId));
     const transactionsSnapshot = await getDocs(transactionsRef);
     
@@ -276,11 +275,30 @@ export async function deleteFirestoreTracker(
       await batch.commit();
     }
     
+    console.log(`Deleted ${transactionDocs.length} transactions for tracker ${trackerId} from Firestore`);
+  } catch (error) {
+    console.error("Error deleting Firestore transactions:", error);
+    throw error;
+  }
+}
+
+/**
+ * Delete tracker and all its transactions from Firestore
+ * This frees up storage space by actually removing the data
+ */
+export async function deleteFirestoreTracker(
+  uid: string,
+  trackerId: string
+): Promise<void> {
+  try {
+    // First, delete all transactions in the subcollection
+    await deleteFirestoreTransactions(uid, trackerId);
+    
     // Finally, delete the tracker document itself
     const trackerRef = doc(db, getUserTrackersPath(uid), trackerId);
     await deleteDoc(trackerRef);
     
-    console.log(`Deleted tracker ${trackerId} and ${transactionDocs.length} transactions from Firestore`);
+    console.log(`Deleted tracker ${trackerId} from Firestore`);
   } catch (error) {
     console.error("Error deleting Firestore tracker:", error);
     throw error;

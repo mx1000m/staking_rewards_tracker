@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useTrackerStore, Tracker, Currency } from "../store/trackerStore";
 import { clearCache } from "../utils/transactionCache";
 import { useAuth } from "../hooks/useAuth";
-import { deleteFirestoreTracker } from "../utils/firestoreAdapter";
+import { deleteFirestoreTracker, deleteFirestoreTransactions } from "../utils/firestoreAdapter";
 
 const COUNTRY_DEFAULT_TAX: Record<string, number> = {
   Croatia: 24,
@@ -95,6 +95,15 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     const walletChanged = walletAddress.toLowerCase() !== tracker.walletAddress.toLowerCase();
     const feeRecipientChanged = (feeRecipientAddress.trim() || undefined) !== (tracker.feeRecipientAddress || undefined);
     
+    // If wallet address changed, delete all transactions from Firestore and clear cache
+    if (walletChanged && user) {
+      try {
+        await deleteFirestoreTransactions(user.uid, tracker.id);
+      } catch (error) {
+        console.error("Failed to delete transactions from Firestore:", error);
+      }
+    }
+    
     // Clear cache if wallet or fee recipient changed
     if (walletChanged || feeRecipientChanged) {
       await clearCache(tracker.id);
@@ -132,8 +141,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
   const handleSave = () => {
     const walletChanged = walletAddress.toLowerCase() !== tracker.walletAddress.toLowerCase();
-    const feeRecipientChanged = (feeRecipientAddress.trim() || undefined) !== (tracker.feeRecipientAddress || undefined);
-    if (walletChanged || feeRecipientChanged) {
+    // Only show confirmation for wallet address changes (not fee recipient)
+    if (walletChanged) {
       setConfirmChange(true);
       return;
     }
@@ -542,38 +551,75 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.6)",
+              background: "rgba(0, 0, 0, 0.7)",
+              backdropFilter: "blur(3px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               zIndex: 1100,
+              padding: "20px",
             }}
             onClick={() => setConfirmChange(false)}
           >
-            <div className="card" style={{ maxWidth: "520px" }} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{ marginTop: 0 }}>Change wallet address?</h3>
-              <p style={{ margin: "8px 0 16px", color: "#e8e8f0" }}>
-                Are you sure you want to change the wallet address?
-              </p>
-              <p className="muted" style={{ marginTop: 0 }}>
-                This will erase all data from your previous node/wallet.
-              </p>
-              <div className="actions">
-                <button
-                  style={{ background: "#2a2a44" }}
-                  onClick={() => setConfirmChange(false)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#3a3a54";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#2a2a44";
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "520px",
+                position: "relative",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                style={{
+                  background: "#2a0808",
+                  borderRadius: "18px",
+                  padding: "1px",
+                  border: "1px solid #ca3a32",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#2a0808",
+                    borderRadius: "17px",
+                    padding: "28px",
                   }}
                 >
-                  Cancel
-                </button>
-                <button onClick={() => { setConfirmChange(false); doSave(); }}>
-                  Confirm
-                </button>
+                  <h2 style={{ margin: 0, marginBottom: "16px", color: "#f0f0f0" }}>
+                    Are you sure you want to change the consensus layer wallet address?
+                  </h2>
+                  <p style={{ margin: "0 0 16px", color: "#e8e8f0" }}>
+                    ⚠ This will erase all data related to your previous wallet address. This action cannot be undone.
+                  </p>
+                  <div className="actions" style={{ marginTop: "24px" }}>
+                    <button
+                      style={{ background: "#2b2b2b" }}
+                      onClick={() => setConfirmChange(false)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#383838";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#2b2b2b";
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => { setConfirmChange(false); doSave(); }}
+                      style={{
+                        background: "#ef4444",
+                        color: "white",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#dc2626";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#ef4444";
+                      }}
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
