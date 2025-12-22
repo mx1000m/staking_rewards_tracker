@@ -584,11 +584,13 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.6)",
+              background: "rgba(0, 0, 0, 0.7)",
+              backdropFilter: "blur(3px)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               zIndex: 1100,
+              padding: "20px",
             }}
             onClick={() => {
               setShowDeleteConfirm(false);
@@ -596,67 +598,93 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               setDeleteNameError(false);
             }}
           >
-            <div className="card" style={{ maxWidth: "520px" }} onClick={(e) => e.stopPropagation()}>
-              <h3 style={{ marginTop: 0 }}>Delete {tracker.name}?</h3>
-              <p style={{ margin: "8px 0 16px", color: "#e8e8f0" }}>
-                Are you sure you want to delete "{tracker.name}"? This action cannot be undone.
-              </p>
-              <p style={{ margin: "8px 0 8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-                Type the exact name of your node to confirm deletion:
-              </p>
-              <input
-                id="delete-name-input"
-                className="input"
-                value={deleteNameInput}
-                placeholder="Enter node name"
-                onChange={(e) => {
-                  setDeleteNameInput(e.target.value);
-                  setDeleteNameError(false);
-                }}
+            <div
+              style={{
+                width: "100%",
+                maxWidth: "520px",
+                position: "relative",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
                 style={{
-                  width: "calc(100% - 24px)",
-                  marginBottom: "16px",
-                  borderColor: deleteNameError ? "#ef4444" : undefined,
-                  color: deleteNameError ? "#ef4444" : "#e8e8f0",
+                  background: "#181818",
+                  borderRadius: "18px",
+                  padding: "1px",
+                  border: "1px solid #2b2b2b",
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleDelete();
-                  }
-                }}
-              />
-              <div className="actions">
-                <button
-                  style={{ background: "#2a2a44" }}
-                  onClick={() => {
-                    setShowDeleteConfirm(false);
-                    setDeleteNameInput("");
-                    setDeleteNameError(false);
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#3a3a54";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#2a2a44";
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDelete}
+              >
+                <div
                   style={{
-                    background: "#ef4444",
-                    color: "white",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#dc2626";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#ef4444";
+                    background: "#181818",
+                    borderRadius: "17px",
+                    padding: "28px",
                   }}
                 >
-                  Delete
-                </button>
+                  <h2 style={{ margin: 0, marginBottom: "16px", color: "#f0f0f0" }}>
+                    Are you sure you want to delete "{tracker.name}"?
+                  </h2>
+                  <p style={{ margin: "0 0 16px", color: "#e8e8f0" }}>
+                    This action cannot be undone.
+                  </p>
+                  <p style={{ margin: "0 0 8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
+                    Type the exact name of your node to confirm deletion:
+                  </p>
+                  <input
+                    id="delete-name-input"
+                    className="input"
+                    value={deleteNameInput}
+                    placeholder="Enter node name"
+                    onChange={(e) => {
+                      setDeleteNameInput(e.target.value);
+                      setDeleteNameError(false);
+                    }}
+                    style={{
+                      width: "100%",
+                      marginBottom: "16px",
+                      borderColor: deleteNameError ? "#ef4444" : undefined,
+                      color: deleteNameError ? "#ef4444" : "#e8e8f0",
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleDelete();
+                      }
+                    }}
+                  />
+                  <div className="actions" style={{ marginTop: "24px" }}>
+                    <button
+                      style={{ background: "#2b2b2b" }}
+                      onClick={() => {
+                        setShowDeleteConfirm(false);
+                        setDeleteNameInput("");
+                        setDeleteNameError(false);
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#383838";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#2b2b2b";
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      style={{
+                        background: "#ef4444",
+                        color: "white",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#dc2626";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#ef4444";
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
