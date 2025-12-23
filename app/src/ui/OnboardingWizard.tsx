@@ -255,7 +255,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               </label>
             </div>
             <div>
-              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-35px" }}>
+              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-60px" }}>
                 Income tax rate
               </label>
             </div>
