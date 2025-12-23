@@ -41,7 +41,6 @@ export const App: React.FC = () => {
                 zIndex: 2000,
                 padding: "20px",
               }}
-              onClick={() => setShowWizard(false)}
             >
               <div
                 className="modal-card modal-card-enter"
