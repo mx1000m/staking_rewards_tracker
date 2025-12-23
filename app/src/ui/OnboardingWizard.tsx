@@ -232,9 +232,25 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
       {step === 3 && (
         <div>
-          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Country
-          </label>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              marginBottom: "8px",
+            }}
+          >
+            <div>
+              <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                Country
+              </label>
+            </div>
+            <div>
+              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-20px" }}>
+                Income tax rate
+              </label>
+            </div>
+          </div>
           <div className="row">
             <select
               className="gradient-select"
@@ -243,24 +259,23 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               style={{ flex: 1 }}
             >
               {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c}
+                </option>
               ))}
             </select>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-              <span style={{ marginBottom: "4px", color: "#aaaaaa", fontSize: "0.8rem" }}>Income tax rate</span>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <input
-                  className="input"
-                  type="number"
-                  min={0}
-                  max={100}
-                  step={0.1}
-                  value={taxRate}
-                  onChange={(e) => setTaxRate(parseFloat(e.target.value))}
-                  style={{ width: "120px" }}
-                />
-                <span style={{ color: "#9aa0b4" }}>%</span>
-              </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                max={100}
+                step={0.1}
+                value={taxRate}
+                onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                style={{ width: "120px" }}
+              />
+              <span style={{ color: "#9aa0b4" }}>%</span>
             </div>
           </div>
           <p className="muted" style={{ margin: "4px 0 3px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
