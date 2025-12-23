@@ -26,6 +26,15 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [etherscanKey, setEtherscanKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
 
+  // Prevent background scrolling while the wizard is open
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
   // Pre-fill Etherscan API key from existing tracker if available
   useEffect(() => {
     if (trackers.length > 0 && trackers[0].etherscanKey) {
@@ -246,7 +255,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               </label>
             </div>
             <div>
-              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-20px" }}>
+              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-35px" }}>
                 Income tax rate
               </label>
             </div>
