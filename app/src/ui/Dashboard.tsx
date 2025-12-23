@@ -2451,7 +2451,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Export CSV?</h3>
+                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Export staking rewards to CSV?</h3>
                   <button
                     onClick={requestExportModalClose}
                     style={{
@@ -2482,7 +2482,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   </button>
                 </div>
                 <p className="muted" style={{ marginTop: 0, marginBottom: "16px", color: "#aaaaaa" }}>
-                  Select the year you wish to export transactions for:
+                  Select the year to export:
                 </p>
                 <div style={{ marginTop: 16 }}>
                   <select
