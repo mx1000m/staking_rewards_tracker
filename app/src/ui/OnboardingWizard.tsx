@@ -241,21 +241,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
       {step === 3 && (
         <div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-              marginBottom: "8px",
-            }}
-          >
-            <div>
+          <div className="row" style={{ marginBottom: "8px", alignItems: "flex-end" }}>
+            <div style={{ flex: 1 }}>
               <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
                 Country
               </label>
             </div>
             <div>
-              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-60px" }}>
+              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem" }}>
                 Income tax rate
               </label>
             </div>
