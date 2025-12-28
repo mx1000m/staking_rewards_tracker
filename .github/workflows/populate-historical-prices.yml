@@ -4,13 +4,15 @@ on:
   workflow_dispatch: # Manual trigger only (one-time migration)
 
 permissions:
-  contents: read
+  contents: write # Need write to commit price JSON file
 
 jobs:
   populate-prices:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }} # Use default token with write permissions
       
       - uses: actions/setup-node@v4
         with:
@@ -18,11 +20,18 @@ jobs:
       
       - name: Install dependencies
         run: |
-          echo '{}' > package.json
-          npm install firebase-admin --save
+          # No dependencies needed - script uses Node.js built-ins only
+          echo "No dependencies required"
       
       - name: Populate historical ETH prices
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           COINGECKO_API_KEY: ${{ secrets.VITE_COINGECKO_API_KEY }}
         run: node scripts/populate-historical-prices.js
+      
+      - name: Commit and push price updates
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add data/eth-prices.json
+          git diff --staged --quiet || git commit -m "Populate historical ETH prices"
+          git push origin main
