@@ -8,8 +8,11 @@
  */
 
 const admin = require('firebase-admin');
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
 
-// Initialize Firebase Admin
+// Initialize Firebase Admin (still needed for transaction processing)
 if (!admin.apps.length) {
   const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!serviceAccountJson) {
@@ -22,6 +25,9 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
+
+// Path to ETH prices JSON file
+const ETH_PRICES_FILE = path.join(__dirname, '..', 'data', 'eth-prices.json');
 
 // Rate limiting for CoinGecko
 let lastRequestTime = 0;
@@ -242,23 +248,102 @@ async function getExistingTransactionHashes(uid, trackerId) {
 }
 
 /**
- * Get ETH price from centralized storage for a date
+ * Load ETH prices from JSON file
  */
-async function getEthPriceFromStorage(dateKey) {
+function loadEthPrices() {
   try {
-    const pricesRef = db.doc('ethPrices/daily');
-    const pricesDoc = await pricesRef.get();
-    
-    if (!pricesDoc.exists) {
-      return null;
+    if (!fs.existsSync(ETH_PRICES_FILE)) {
+      return {};
+    }
+    const data = fs.readFileSync(ETH_PRICES_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error loading ETH prices from JSON:', error.message);
+    return {};
+  }
+}
+
+/**
+ * Save ETH prices to JSON file
+ */
+function saveEthPrices(prices) {
+  try {
+    // Ensure data directory exists
+    const dataDir = path.dirname(ETH_PRICES_FILE);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
     }
     
-    const data = pricesDoc.data();
-    return data[dateKey] || null; // Returns { eur: number, usd: number } or null
+    // Write JSON file with pretty formatting
+    fs.writeFileSync(ETH_PRICES_FILE, JSON.stringify(prices, null, 2), 'utf8');
+    console.log(`  Saved prices to ${ETH_PRICES_FILE}`);
   } catch (error) {
-    console.error(`Error fetching price from storage for ${dateKey}:`, error.message);
-    return null;
+    console.error('Error saving ETH prices to JSON:', error.message);
+    throw error;
   }
+}
+
+/**
+ * Commit and push the JSON file to GitHub
+ */
+function commitAndPushPrices() {
+  try {
+    // Check if we're in a git repository and if there are changes
+    try {
+      const gitStatus = execSync('git status --porcelain data/eth-prices.json', { 
+        cwd: path.join(__dirname, '..'),
+        encoding: 'utf8'
+      }).trim();
+      
+      if (!gitStatus) {
+        console.log('  No changes to commit (price already up to date)');
+        return;
+      }
+      
+      // Configure git user (required for commits)
+      execSync('git config user.name "GitHub Actions"', { 
+        cwd: path.join(__dirname, '..'),
+        stdio: 'ignore'
+      });
+      execSync('git config user.email "actions@github.com"', { 
+        cwd: path.join(__dirname, '..'),
+        stdio: 'ignore'
+      });
+      
+      // Stage, commit, and push
+      execSync('git add data/eth-prices.json', { 
+        cwd: path.join(__dirname, '..'),
+        stdio: 'inherit'
+      });
+      
+      const today = new Date().toISOString().split('T')[0];
+      execSync(`git commit -m "Update ETH prices for ${today}"`, { 
+        cwd: path.join(__dirname, '..'),
+        stdio: 'inherit'
+      });
+      
+      execSync('git push origin main', { 
+        cwd: path.join(__dirname, '..'),
+        stdio: 'inherit'
+      });
+      
+      console.log('  Successfully committed and pushed price updates to GitHub');
+    } catch (error) {
+      // If git operations fail (e.g., not in a git repo, no permissions), just log a warning
+      console.warn('  Warning: Could not commit/push price updates to GitHub:', error.message);
+      console.warn('  Prices were saved locally but not pushed. This is OK if running locally.');
+    }
+  } catch (error) {
+    console.warn('  Warning: Git operations failed:', error.message);
+  }
+}
+
+/**
+ * Get ETH price from JSON storage for a date
+ */
+function getEthPriceFromStorage(dateKey) {
+  const prices = loadEthPrices();
+  return prices[dateKey] || null; // Returns { eur: number, usd: number } or null
 }
 
 /**
@@ -362,20 +447,22 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
 }
 
 /**
- * Update today's ETH price in centralized storage
+ * Update today's ETH price in JSON file
  * This runs once per day before processing transactions
  */
 async function updateTodaysPrice(coingeckoApiKey) {
-  console.log('Updating today\'s ETH price in centralized storage...');
+  console.log('Updating today\'s ETH price in JSON storage...');
   
   try {
     const today = new Date();
     const todayKey = getDateKey(Math.floor(today.getTime() / 1000));
     
+    // Load existing prices
+    const prices = loadEthPrices();
+    
     // Check if today's price already exists
-    const existingPrice = await getEthPriceFromStorage(todayKey);
-    if (existingPrice && existingPrice.eur && existingPrice.usd) {
-      console.log(`  Today's price (${todayKey}) already exists: EUR ${existingPrice.eur}, USD ${existingPrice.usd}`);
+    if (prices[todayKey] && prices[todayKey].eur && prices[todayKey].usd) {
+      console.log(`  Today's price (${todayKey}) already exists: EUR ${prices[todayKey].eur}, USD ${prices[todayKey].usd}`);
       return;
     }
     
@@ -385,18 +472,14 @@ async function updateTodaysPrice(coingeckoApiKey) {
     await new Promise((resolve) => setTimeout(resolve, 2100));
     const priceUSD = await getEthPriceAtTimestamp(timestamp, 'USD', coingeckoApiKey);
     
-    // Update centralized storage
-    const pricesRef = db.doc('ethPrices/daily');
-    const pricesDoc = await pricesRef.get();
+    // Update prices object
+    prices[todayKey] = { eur: priceEUR, usd: priceUSD };
     
-    const updateData = {};
-    updateData[todayKey] = { eur: priceEUR, usd: priceUSD };
+    // Save to JSON file
+    saveEthPrices(prices);
     
-    if (pricesDoc.exists) {
-      await pricesRef.update(updateData);
-    } else {
-      await pricesRef.set(updateData);
-    }
+    // Commit and push to GitHub (if in git repo with permissions)
+    commitAndPushPrices();
     
     console.log(`  Updated today's price (${todayKey}): EUR ${priceEUR}, USD ${priceUSD}`);
   } catch (error) {

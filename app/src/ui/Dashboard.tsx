@@ -15,9 +15,12 @@ import {
   getFirestoreTransactions,
   saveFirestoreTransactionsBatch,
   updateFirestoreTransactionStatus,
-  getAllEthPrices,
-  EthPricesDocument,
 } from "../utils/firestoreAdapter";
+
+// ETH prices are now stored in GitHub, not Firestore
+export interface EthPricesDocument {
+  [dateKey: string]: { eur: number; usd: number }; // dateKey format: "YYYY-MM-DD"
+}
 
 // Transaction interface matches CachedTransaction
 // rewardsInCurrency and taxesInCurrency are calculated on-the-fly based on currency preference
@@ -70,17 +73,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
 
-  // Load centralized ETH prices on mount
+  // Load centralized ETH prices from GitHub on mount
   useEffect(() => {
     const loadEthPrices = async () => {
       try {
-        const prices = await getAllEthPrices();
+        // Fetch from GitHub raw URL
+        // Using main branch - in production you might want to use a specific version/tag
+        const response = await fetch(
+          'https://raw.githubusercontent.com/mx1000m/staking_rewards_tracker/main/data/eth-prices.json'
+        );
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch prices: ${response.status} ${response.statusText}`);
+        }
+        
+        const prices = await response.json() as EthPricesDocument;
         setEthPrices(prices);
         setEthPricesLoaded(true);
-        console.log(`Loaded ${Object.keys(prices).length} ETH price entries from centralized storage`);
+        console.log(`Loaded ${Object.keys(prices).length} ETH price entries from GitHub`);
       } catch (error) {
-        console.error("Failed to load ETH prices from centralized storage:", error);
+        console.error("Failed to load ETH prices from GitHub:", error);
         setEthPricesLoaded(true); // Still mark as loaded to prevent infinite retries
+        // Set empty prices so app doesn't crash
+        setEthPrices({});
       }
     };
     loadEthPrices();
