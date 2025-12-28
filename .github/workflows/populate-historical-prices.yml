@@ -20,8 +20,8 @@ jobs:
       
       - name: Install dependencies
         run: |
-          # No dependencies needed - script uses Node.js built-ins only
-          echo "No dependencies required"
+          # Create a minimal package.json without "type": "module" to ensure CommonJS
+          echo '{}' > package.json
       
       - name: Populate historical ETH prices
         env:
