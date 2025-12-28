@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
 import { getTransactions } from "../api/etherscan";
-import { getEthPriceAtTimestamp } from "../api/coingecko";
-import { getCachedPrice, setCachedPrice, getDateKey } from "../utils/priceCache";
+import { getDateKey } from "../utils/priceCache";
 import {
   getCachedTransactions,
   saveTransactions,
@@ -16,6 +15,8 @@ import {
   getFirestoreTransactions,
   saveFirestoreTransactionsBatch,
   updateFirestoreTransactionStatus,
+  getAllEthPrices,
+  EthPricesDocument,
 } from "../utils/firestoreAdapter";
 
 // Transaction interface matches CachedTransaction
@@ -62,19 +63,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [markSoldStartMonth, setMarkSoldStartMonth] = useState<number>(0);
   const [markSoldEndMonth, setMarkSoldEndMonth] = useState<number>(0);
   const [walletCopied, setWalletCopied] = useState(false);
+  // Centralized ETH prices storage (dateKey -> { eur: number, usd: number })
+  const [ethPrices, setEthPrices] = useState<EthPricesDocument>({});
+  const [ethPricesLoaded, setEthPricesLoaded] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
 
+  // Load centralized ETH prices on mount
+  useEffect(() => {
+    const loadEthPrices = async () => {
+      try {
+        const prices = await getAllEthPrices();
+        setEthPrices(prices);
+        setEthPricesLoaded(true);
+        console.log(`Loaded ${Object.keys(prices).length} ETH price entries from centralized storage`);
+      } catch (error) {
+        console.error("Failed to load ETH prices from centralized storage:", error);
+        setEthPricesLoaded(true); // Still mark as loaded to prevent infinite retries
+      }
+    };
+    loadEthPrices();
+  }, []);
+
+  // Helper to get ETH price from centralized storage for a date
+  const getEthPriceFromStorage = (dateKey: string, currency: "EUR" | "USD"): number => {
+    const priceEntry = ethPrices[dateKey];
+    if (!priceEntry) return 0;
+    return currency === "EUR" ? (priceEntry.eur || 0) : (priceEntry.usd || 0);
+  };
+
   // Helper functions to calculate rewards and taxes on-the-fly based on currency preference
-  // Handles backward compatibility with old transactions that only have ethPrice
+  // Now uses centralized price storage instead of stored prices in transactions
   const getRewardsInCurrency = (tx: CachedTransaction, currency: "EUR" | "USD"): number => {
     if (!tx || !tx.ethAmount) return 0;
+    const dateKey = getDateKey(tx.timestamp);
+    // Try centralized storage first, then fall back to stored prices (for backward compatibility)
     let ethPrice: number;
     if (currency === "EUR") {
-      ethPrice = tx.ethPriceEUR ?? tx.ethPrice ?? 0;
+      ethPrice = getEthPriceFromStorage(dateKey, "EUR") || tx.ethPriceEUR || tx.ethPrice || 0;
     } else {
-      ethPrice = tx.ethPriceUSD ?? tx.ethPrice ?? 0;
+      ethPrice = getEthPriceFromStorage(dateKey, "USD") || tx.ethPriceUSD || tx.ethPrice || 0;
     }
     const result = tx.ethAmount * ethPrice;
     return isNaN(result) ? 0 : result;
@@ -90,9 +119,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   // Helper to safely get ETH price for display
   const getEthPriceForDisplay = (tx: CachedTransaction, currency: "EUR" | "USD"): number => {
     if (!tx) return 0;
-    const price = currency === "EUR" 
-      ? (tx.ethPriceEUR ?? tx.ethPrice ?? 0)
-      : (tx.ethPriceUSD ?? tx.ethPrice ?? 0);
+    const dateKey = getDateKey(tx.timestamp);
+    // Try centralized storage first, then fall back to stored prices
+    const price = currency === "EUR"
+      ? (getEthPriceFromStorage(dateKey, "EUR") || tx.ethPriceEUR || tx.ethPrice || 0)
+      : (getEthPriceFromStorage(dateKey, "USD") || tx.ethPriceUSD || tx.ethPrice || 0);
     return isNaN(price) ? 0 : price;
   };
 
@@ -342,168 +373,38 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         return;
       }
       
-      // Batch price fetching by date to reduce API calls
-      // Step 1: Get existing transactions to check for prices already stored
-      const existingCached = await getCachedTransactions(tracker.id);
-      const existingPriceMapEUR = new Map<string, number>(); // dateKey -> EUR price from existing transactions
-      const existingPriceMapUSD = new Map<string, number>(); // dateKey -> USD price from existing transactions
-      
-      // Check existing transactions for prices (from Firestore or cache)
-      if (user) {
-        try {
-          const firestoreTxs = await getFirestoreTransactions(user.uid, tracker.id);
-          firestoreTxs.forEach((ftx) => {
-            const dateKey = getDateKey(ftx.timestamp);
-            if (ftx.ethPriceEUR && ftx.ethPriceEUR > 0) {
-              existingPriceMapEUR.set(dateKey, ftx.ethPriceEUR);
-            }
-            if (ftx.ethPriceUSD && ftx.ethPriceUSD > 0) {
-              existingPriceMapUSD.set(dateKey, ftx.ethPriceUSD);
-            }
-          });
-        } catch (error) {
-          console.warn("Failed to check Firestore for existing prices:", error);
-        }
-      }
-      
-      // Also check cached transactions
-      existingCached.forEach((ctx) => {
-        const dateKey = getDateKey(ctx.timestamp);
-        if (ctx.ethPriceEUR && ctx.ethPriceEUR > 0) {
-          existingPriceMapEUR.set(dateKey, ctx.ethPriceEUR);
-        }
-        if (ctx.ethPriceUSD && ctx.ethPriceUSD > 0) {
-          existingPriceMapUSD.set(dateKey, ctx.ethPriceUSD);
-        }
-      });
-      
-      // Step 2: Collect all unique dates that need price fetching (for both EUR and USD)
+      // Get prices from centralized storage (no API calls needed!)
+      // Step 1: Collect all unique dates from transactions
       const datePriceMapEUR = new Map<string, number>(); // dateKey -> EUR price
       const datePriceMapUSD = new Map<string, number>(); // dateKey -> USD price
       const uniqueDates = new Set<string>();
+      const missingDates: string[] = [];
       
       for (const tx of etherscanTxs) {
         const dateKey = getDateKey(parseInt(tx.timeStamp));
+        uniqueDates.add(dateKey);
         
-        // First check if price exists in existing transactions (Firestore/cache)
-        const existingEUR = existingPriceMapEUR.get(dateKey);
-        const existingUSD = existingPriceMapUSD.get(dateKey);
-        
-        if (existingEUR) {
-          datePriceMapEUR.set(dateKey, existingEUR);
+        // Get prices from centralized storage
+        const priceEntry = ethPrices[dateKey];
+        if (priceEntry && priceEntry.eur && priceEntry.usd) {
+          datePriceMapEUR.set(dateKey, priceEntry.eur);
+          datePriceMapUSD.set(dateKey, priceEntry.usd);
         } else {
-          // Check localStorage cache as fallback
-          const cacheKeyEUR = `${dateKey}-EUR`;
-          const cachedPriceEUR = getCachedPrice(cacheKeyEUR);
-          if (cachedPriceEUR !== null) {
-            datePriceMapEUR.set(dateKey, cachedPriceEUR);
-          } else {
-            uniqueDates.add(dateKey);
-          }
-        }
-        
-        if (existingUSD) {
-          datePriceMapUSD.set(dateKey, existingUSD);
-        } else {
-          // Check localStorage cache as fallback
-          const cacheKeyUSD = `${dateKey}-USD`;
-          const cachedPriceUSD = getCachedPrice(cacheKeyUSD);
-          if (cachedPriceUSD !== null) {
-            datePriceMapUSD.set(dateKey, cachedPriceUSD);
-          } else {
-            uniqueDates.add(dateKey);
-          }
+          // Price not found in centralized storage
+          missingDates.push(dateKey);
+          datePriceMapEUR.set(dateKey, 0);
+          datePriceMapUSD.set(dateKey, 0);
         }
       }
       
-      console.log(`Fetching prices for ${uniqueDates.size} unique dates (${etherscanTxs.length} total transactions)`);
-      
-      // Step 2: Fetch prices for all unique dates (batched) - both EUR and USD
-      // Progress tracking: price fetches + transaction processing
-      const uniqueDatesArray = Array.from(uniqueDates);
-      const coingeckoApiKey = import.meta.env.VITE_COINGECKO_API_KEY;
-      
-      // Calculate total work: price fetches (EUR + USD for each unique date) + transaction processing
-      const priceFetchesNeeded = uniqueDatesArray.length * 2; // EUR + USD
-      const totalWork = priceFetchesNeeded + etherscanTxs.length;
-      let completedWork = 0;
-      
-      // Fetch all prices with progress tracking
-      for (let i = 0; i < uniqueDatesArray.length; i++) {
-        const dateKey = uniqueDatesArray[i];
-        
-        try {
-          // Parse dateKey back to timestamp (dateKey format: YYYY-MM-DD)
-          const [year, month, day] = dateKey.split('-').map(Number);
-          const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0)); // Noon UTC
-          const timestamp = Math.floor(date.getTime() / 1000);
-          
-          // Fetch EUR price
-          if (!datePriceMapEUR.has(dateKey)) {
-            const priceEUR = await getEthPriceAtTimestamp(timestamp, "EUR", coingeckoApiKey);
-            const cacheKeyEUR = `${dateKey}-EUR`;
-            setCachedPrice(cacheKeyEUR, priceEUR);
-            datePriceMapEUR.set(dateKey, priceEUR);
-            console.log(`Fetched EUR price for ${dateKey}: ${priceEUR}`);
-            completedWork++;
-            setLoadingProgress({ 
-              current: etherscanTxs.length, // Show transaction count in text
-              total: etherscanTxs.length,
-              progressPercent: (completedWork / totalWork) * 100
-            });
-            
-            // Small delay to respect rate limits
-            await new Promise(resolve => setTimeout(resolve, 2100));
-          } else {
-            completedWork++;
-            setLoadingProgress({ 
-              current: etherscanTxs.length,
-              total: etherscanTxs.length,
-              progressPercent: (completedWork / totalWork) * 100
-            });
-          }
-          
-          // Fetch USD price
-          if (!datePriceMapUSD.has(dateKey)) {
-            const priceUSD = await getEthPriceAtTimestamp(timestamp, "USD", coingeckoApiKey);
-            const cacheKeyUSD = `${dateKey}-USD`;
-            setCachedPrice(cacheKeyUSD, priceUSD);
-            datePriceMapUSD.set(dateKey, priceUSD);
-            console.log(`Fetched USD price for ${dateKey}: ${priceUSD}`);
-            completedWork++;
-            setLoadingProgress({ 
-              current: etherscanTxs.length,
-              total: etherscanTxs.length,
-              progressPercent: (completedWork / totalWork) * 100
-            });
-            
-            // Small delay to respect rate limits
-            await new Promise(resolve => setTimeout(resolve, 2100));
-          } else {
-            completedWork++;
-            setLoadingProgress({ 
-              current: etherscanTxs.length,
-              total: etherscanTxs.length,
-              progressPercent: (completedWork / totalWork) * 100
-            });
-          }
-        } catch (error: any) {
-          console.error(`Failed to fetch price for date ${dateKey}:`, error);
-          setError(`Warning: Could not fetch price for some dates. ${error.message || ""}`);
-          // Set prices to 0 for failed dates
-          if (!datePriceMapEUR.has(dateKey)) datePriceMapEUR.set(dateKey, 0);
-          if (!datePriceMapUSD.has(dateKey)) datePriceMapUSD.set(dateKey, 0);
-          // Still count as completed even if failed
-          completedWork += 2;
-          setLoadingProgress({ 
-            current: etherscanTxs.length,
-            total: etherscanTxs.length,
-            progressPercent: (completedWork / totalWork) * 100
-          });
-        }
+      if (missingDates.length > 0) {
+        console.warn(`Warning: ${missingDates.length} dates missing from centralized price storage:`, missingDates.slice(0, 5));
+        setError(`Warning: Price data missing for ${missingDates.length} date(s). Prices may show as 0.`);
       }
       
-      // Step 3: Process all transactions using the fetched prices (both EUR and USD)
+      console.log(`Loaded prices from centralized storage for ${uniqueDates.size - missingDates.length}/${uniqueDates.size} unique dates`);
+      
+      // Step 2: Process all transactions using prices from centralized storage
       const processedTxs: CachedTransaction[] = [];
       
       for (let i = 0; i < etherscanTxs.length; i++) {
@@ -520,33 +421,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             ? rawValue / 1e9 // Gwei → ETH
             : rawValue / 1e18; // Wei → ETH
         
-        // Get prices from our date price maps
+        // Get prices from centralized storage (prices are no longer stored in transactions)
         const dateKey = getDateKey(parseInt(tx.timeStamp));
         const ethPriceEUR = datePriceMapEUR.get(dateKey) || 0;
         const ethPriceUSD = datePriceMapUSD.get(dateKey) || 0;
         
-        // Update progress: count both price fetches and transaction processing
-        completedWork++;
+        // Update progress
         setLoadingProgress({ 
           current: i + 1, // Show current transaction being processed
           total: etherscanTxs.length,
-          progressPercent: (completedWork / totalWork) * 100
+          progressPercent: ((i + 1) / etherscanTxs.length) * 100
         });
         
         const taxesInEth = ethAmount * (tracker.taxRate / 100);
         
+        // Note: We no longer store ethPriceEUR/ethPriceUSD in transactions
+        // Prices are fetched from centralized storage on-the-fly
         processedTxs.push({
           date: date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" }),
           time: date.toLocaleTimeString("en-GB", { timeZone: "Europe/Zagreb", hour12: false }),
           ethAmount,
-          ethPriceEUR,
-          ethPriceUSD,
+          ethPriceEUR: 0, // Not stored anymore, fetched from centralized storage
+          ethPriceUSD: 0, // Not stored anymore, fetched from centralized storage
           taxRate: tracker.taxRate,
           taxesInEth,
           transactionHash: tx.hash,
-          status: "Unpaid", // TODO: Track swap status
+          status: "Unpaid",
           timestamp: parseInt(tx.timeStamp),
-          rewardType: tx.rewardType || "EVM", // Default to EVM for backward compatibility
+          rewardType: tx.rewardType || "EVM",
         } as CachedTransaction);
       }
     

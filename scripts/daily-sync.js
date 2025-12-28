@@ -242,7 +242,28 @@ async function getExistingTransactionHashes(uid, trackerId) {
 }
 
 /**
+ * Get ETH price from centralized storage for a date
+ */
+async function getEthPriceFromStorage(dateKey) {
+  try {
+    const pricesRef = db.doc('ethPrices/daily');
+    const pricesDoc = await pricesRef.get();
+    
+    if (!pricesDoc.exists) {
+      return null;
+    }
+    
+    const data = pricesDoc.data();
+    return data[dateKey] || null; // Returns { eur: number, usd: number } or null
+  } catch (error) {
+    console.error(`Error fetching price from storage for ${dateKey}:`, error.message);
+    return null;
+  }
+}
+
+/**
  * Process a single tracker
+ * Now uses centralized price storage instead of fetching from CoinGecko per transaction
  */
 async function processTracker(uid, tracker, coingeckoApiKey) {
   console.log(`Processing tracker: ${tracker.name} (${tracker.walletAddress})`);
@@ -269,39 +290,27 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
       return 0;
     }
     
-    // Collect unique dates
+    // Get prices from centralized storage for all unique dates
     const uniqueDates = new Set();
     for (const tx of newTxs) {
       const dateKey = getDateKey(parseInt(tx.timeStamp));
       uniqueDates.add(dateKey);
     }
     
-    // Fetch prices for unique dates
-    console.log(`  Fetching prices for ${uniqueDates.size} unique dates...`);
-    const datePriceMapEUR = new Map();
-    const datePriceMapUSD = new Map();
+    console.log(`  Fetching prices from centralized storage for ${uniqueDates.size} unique dates...`);
+    const datePriceMap = new Map(); // dateKey -> { eur: number, usd: number }
     
     for (const dateKey of uniqueDates) {
-      const [year, month, day] = dateKey.split('-').map(Number);
-      const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-      const timestamp = Math.floor(date.getTime() / 1000);
-      
-      try {
-        const priceEUR = await getEthPriceAtTimestamp(timestamp, 'EUR', coingeckoApiKey);
-        datePriceMapEUR.set(dateKey, priceEUR);
-        await new Promise((resolve) => setTimeout(resolve, 2100));
-        
-        const priceUSD = await getEthPriceAtTimestamp(timestamp, 'USD', coingeckoApiKey);
-        datePriceMapUSD.set(dateKey, priceUSD);
-        await new Promise((resolve) => setTimeout(resolve, 2100));
-      } catch (error) {
-        console.error(`  Failed to fetch prices for ${dateKey}:`, error.message);
-        datePriceMapEUR.set(dateKey, 0);
-        datePriceMapUSD.set(dateKey, 0);
+      const price = await getEthPriceFromStorage(dateKey);
+      if (price && price.eur && price.usd) {
+        datePriceMap.set(dateKey, price);
+      } else {
+        console.warn(`  Warning: No price found in storage for ${dateKey}, transaction will have 0 prices`);
+        datePriceMap.set(dateKey, { eur: 0, usd: 0 });
       }
     }
     
-    // Process transactions
+    // Process transactions (no longer storing prices in transaction documents)
     const processedTxs = [];
     for (const tx of newTxs) {
       const timestamp = parseInt(tx.timeStamp) * 1000;
@@ -310,16 +319,12 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
       
       const rawValue = parseFloat(tx.value);
       const ethAmount = tx.rewardType === 'CL' ? rawValue / 1e9 : rawValue / 1e18;
-      const ethPriceEUR = datePriceMapEUR.get(dateKey) || 0;
-      const ethPriceUSD = datePriceMapUSD.get(dateKey) || 0;
       const taxesInEth = ethAmount * (tracker.taxRate / 100);
       
       processedTxs.push({
         date: date.toLocaleDateString('en-GB', { timeZone: 'Europe/Zagreb' }),
         time: date.toLocaleTimeString('en-GB', { timeZone: 'Europe/Zagreb', hour12: false }),
         ethAmount,
-        ethPriceEUR,
-        ethPriceUSD,
         taxRate: tracker.taxRate,
         taxesInEth,
         transactionHash: tx.hash,
@@ -329,7 +334,7 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
       });
     }
     
-    // Save to Firestore
+    // Save to Firestore (no longer storing ethPriceEUR/ethPriceUSD)
     const batch = db.batch();
     for (const tx of processedTxs) {
       const txRef = db.collection(`users/${uid}/trackers/${tracker.id}/transactions`).doc(tx.transactionHash);
@@ -337,8 +342,6 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
         date: tx.date,
         time: tx.time,
         ethAmount: tx.ethAmount,
-        ethPriceEUR: tx.ethPriceEUR,
-        ethPriceUSD: tx.ethPriceUSD,
         taxRate: tx.taxRate,
         taxesInEth: tx.taxesInEth,
         transactionHash: tx.transactionHash,
@@ -359,6 +362,50 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
 }
 
 /**
+ * Update today's ETH price in centralized storage
+ * This runs once per day before processing transactions
+ */
+async function updateTodaysPrice(coingeckoApiKey) {
+  console.log('Updating today\'s ETH price in centralized storage...');
+  
+  try {
+    const today = new Date();
+    const todayKey = getDateKey(Math.floor(today.getTime() / 1000));
+    
+    // Check if today's price already exists
+    const existingPrice = await getEthPriceFromStorage(todayKey);
+    if (existingPrice && existingPrice.eur && existingPrice.usd) {
+      console.log(`  Today's price (${todayKey}) already exists: EUR ${existingPrice.eur}, USD ${existingPrice.usd}`);
+      return;
+    }
+    
+    // Fetch today's prices from CoinGecko
+    const timestamp = Math.floor(today.getTime() / 1000);
+    const priceEUR = await getEthPriceAtTimestamp(timestamp, 'EUR', coingeckoApiKey);
+    await new Promise((resolve) => setTimeout(resolve, 2100));
+    const priceUSD = await getEthPriceAtTimestamp(timestamp, 'USD', coingeckoApiKey);
+    
+    // Update centralized storage
+    const pricesRef = db.doc('ethPrices/daily');
+    const pricesDoc = await pricesRef.get();
+    
+    const updateData = {};
+    updateData[todayKey] = { eur: priceEUR, usd: priceUSD };
+    
+    if (pricesDoc.exists) {
+      await pricesRef.update(updateData);
+    } else {
+      await pricesRef.set(updateData);
+    }
+    
+    console.log(`  Updated today's price (${todayKey}): EUR ${priceEUR}, USD ${priceUSD}`);
+  } catch (error) {
+    console.error('  Error updating today\'s price:', error.message);
+    // Don't fail the entire sync if price update fails
+  }
+}
+
+/**
  * Main function
  */
 async function main() {
@@ -370,8 +417,14 @@ async function main() {
   }
   
   try {
+    // First, update today's price in centralized storage
+    if (coingeckoApiKey) {
+      await updateTodaysPrice(coingeckoApiKey);
+    }
+    
+    // Then process all trackers
     const trackersMap = await getAllTrackers();
-    console.log(`Found ${trackersMap.size} users with trackers`);
+    console.log(`\nFound ${trackersMap.size} users with trackers`);
     
     let totalProcessed = 0;
     for (const [uid, trackers] of trackersMap.entries()) {

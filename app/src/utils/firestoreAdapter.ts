@@ -305,3 +305,109 @@ export async function deleteFirestoreTracker(
   }
 }
 
+// Centralized ETH price storage
+// Structure: /ethPrices/daily -> { "2025-01-01": { eur: 2500.50, usd: 2700.00 }, ... }
+const ETH_PRICES_PATH = "ethPrices/daily";
+
+export interface DailyEthPrice {
+  eur: number;
+  usd: number;
+}
+
+export interface EthPricesDocument {
+  [dateKey: string]: DailyEthPrice; // dateKey format: "YYYY-MM-DD"
+}
+
+/**
+ * Get ETH prices for a specific date from centralized storage
+ * Returns null if date not found
+ */
+export async function getEthPriceForDate(dateKey: string): Promise<DailyEthPrice | null> {
+  try {
+    const pricesRef = doc(db, ETH_PRICES_PATH);
+    const pricesDoc = await getDoc(pricesRef);
+    
+    if (!pricesDoc.exists()) {
+      return null;
+    }
+    
+    const data = pricesDoc.data() as EthPricesDocument;
+    return data[dateKey] || null;
+  } catch (error) {
+    console.error(`Error fetching ETH price for date ${dateKey}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get all ETH prices from centralized storage
+ * Useful for frontend to cache all prices at once
+ */
+export async function getAllEthPrices(): Promise<EthPricesDocument> {
+  try {
+    const pricesRef = doc(db, ETH_PRICES_PATH);
+    const pricesDoc = await getDoc(pricesRef);
+    
+    if (!pricesDoc.exists()) {
+      return {};
+    }
+    
+    return pricesDoc.data() as EthPricesDocument;
+  } catch (error) {
+    console.error("Error fetching all ETH prices:", error);
+    return {};
+  }
+}
+
+/**
+ * Update ETH price for a specific date in centralized storage
+ * Used by daily sync script
+ */
+export async function updateEthPriceForDate(
+  dateKey: string,
+  price: DailyEthPrice
+): Promise<void> {
+  try {
+    const pricesRef = doc(db, ETH_PRICES_PATH);
+    const pricesDoc = await getDoc(pricesRef);
+    
+    const updateData: any = {};
+    updateData[dateKey] = price;
+    
+    if (pricesDoc.exists()) {
+      // Update existing document
+      await setDoc(pricesRef, updateData, { merge: true });
+    } else {
+      // Create new document
+      await setDoc(pricesRef, updateData);
+    }
+  } catch (error) {
+    console.error(`Error updating ETH price for date ${dateKey}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Batch update multiple ETH prices
+ * Used by migration script to populate historical data
+ */
+export async function batchUpdateEthPrices(prices: EthPricesDocument): Promise<void> {
+  try {
+    const pricesRef = doc(db, ETH_PRICES_PATH);
+    const pricesDoc = await getDoc(pricesRef);
+    
+    if (pricesDoc.exists()) {
+      // Merge with existing data
+      const existingData = pricesDoc.data() as EthPricesDocument;
+      const mergedData = { ...existingData, ...prices };
+      await setDoc(pricesRef, mergedData);
+    } else {
+      // Create new document
+      await setDoc(pricesRef, prices);
+    }
+  } catch (error) {
+    console.error("Error batch updating ETH prices:", error);
+    throw error;
+  }
+}
+

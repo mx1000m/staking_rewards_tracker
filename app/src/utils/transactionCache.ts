@@ -7,17 +7,17 @@ export interface CachedTransaction {
   date: string;
   time: string;
   ethAmount: number;
-  ethPriceEUR: number; // ETH price in EUR at transaction time
-  ethPriceUSD: number; // ETH price in USD at transaction time
-  ethPrice?: number; // Legacy field for backward compatibility (deprecated)
+  ethPriceEUR: number; // DEPRECATED: No longer stored, kept for interface compatibility. Prices fetched from centralized storage.
+  ethPriceUSD: number; // DEPRECATED: No longer stored, kept for interface compatibility. Prices fetched from centralized storage.
+  ethPrice?: number; // Legacy field (deprecated)
   taxRate: number;
   taxesInEth: number;
   transactionHash: string;
   status: string;
-  timestamp: number; // Unix timestamp for sorting
+  timestamp: number; // Unix timestamp for sorting (used to match with centralized price storage)
   swapHash?: string; // Optional: transaction hash of the swap
   rewardType?: "CL" | "EVM"; // Consensus Layer (beacon withdrawals) or Execution Layer (fee recipient)
-  // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly based on currency preference
+  // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly using prices from centralized storage
 }
 
 interface CacheMetadata {
