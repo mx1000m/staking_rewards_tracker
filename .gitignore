@@ -11,4 +11,7 @@ dist
 app/dist
 **/dist
 
+# ETH prices JSON - updated automatically by GitHub Actions daily sync
+# Don't commit local changes, the workflow handles updates
+data/eth-prices.json
 

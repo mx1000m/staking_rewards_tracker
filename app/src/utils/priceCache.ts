@@ -10,10 +10,12 @@ export function setCachedPrice(dateKey: string, price: number): void {
 }
 
 export function getDateKey(timestamp: number): string {
+  // Use UTC to match backend scripts (daily-sync.js, populate-historical-prices.js)
+  // This ensures consistent date keys regardless of user's timezone
   const date = new Date(timestamp * 1000);
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 

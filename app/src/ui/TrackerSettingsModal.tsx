@@ -7,8 +7,7 @@ import { deleteFirestoreTracker, deleteFirestoreTransactions } from "../utils/fi
 const COUNTRY_DEFAULT_TAX: Record<string, number> = {
   Croatia: 24,
   Germany: 25,
-  France: 30,
-  USA: 22
+  "United Kingdom": 20,
 };
 
 interface TrackerSettingsModalProps {

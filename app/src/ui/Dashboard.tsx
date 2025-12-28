@@ -2,6 +2,18 @@ import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
 import { getTransactions } from "../api/etherscan";
 import { getDateKey } from "../utils/priceCache";
+
+// Country to timezone mapping
+const COUNTRY_TIMEZONE: Record<string, string> = {
+  Croatia: "Europe/Zagreb",    // UTC+1 (winter) / UTC+2 (summer)
+  Germany: "Europe/Berlin",    // UTC+1 (winter) / UTC+2 (summer)
+  "United Kingdom": "Europe/London", // UTC+0 (winter) / UTC+1 (summer)
+};
+
+// Helper to get timezone for a country (defaults to UTC if not found)
+function getTimezoneForCountry(country: string): string {
+  return COUNTRY_TIMEZONE[country] || "UTC";
+}
 import {
   getCachedTransactions,
   saveTransactions,
@@ -452,9 +464,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         
         // Note: We no longer store ethPriceEUR/ethPriceUSD in transactions
         // Prices are fetched from centralized storage on-the-fly
+        // Use tracker's country timezone for date/time display
+        const timezone = getTimezoneForCountry(tracker.country);
         processedTxs.push({
-          date: date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" }),
-          time: date.toLocaleTimeString("en-GB", { timeZone: "Europe/Zagreb", hour12: false }),
+          date: date.toLocaleDateString("en-GB", { timeZone: timezone }),
+          time: date.toLocaleTimeString("en-GB", { timeZone: timezone, hour12: false }),
           ethAmount,
           ethPriceEUR: 0, // Not stored anymore, fetched from centralized storage
           ethPriceUSD: 0, // Not stored anymore, fetched from centralized storage

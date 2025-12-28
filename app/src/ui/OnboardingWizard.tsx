@@ -9,8 +9,7 @@ type OnboardingWizardProps = {
 const COUNTRY_DEFAULT_TAX: Record<string, number> = {
   Croatia: 24,
   Germany: 25,
-  France: 30,
-  USA: 22
+  "United Kingdom": 20,
 };
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {

@@ -203,6 +203,22 @@ function getDateKey(timestamp) {
 }
 
 /**
+ * Country to timezone mapping
+ */
+const COUNTRY_TIMEZONE = {
+  'Croatia': 'Europe/Zagreb',      // UTC+1 (winter) / UTC+2 (summer)
+  'Germany': 'Europe/Berlin',      // UTC+1 (winter) / UTC+2 (summer) - same as Croatia
+  'United Kingdom': 'Europe/London', // UTC+0 (winter) / UTC+1 (summer)
+};
+
+/**
+ * Get timezone for a country (defaults to UTC if not found)
+ */
+function getTimezoneForCountry(country) {
+  return COUNTRY_TIMEZONE[country] || 'UTC';
+}
+
+/**
  * Get all trackers from Firestore
  */
 async function getAllTrackers() {
@@ -288,17 +304,19 @@ function saveEthPrices(prices) {
  */
 function commitAndPushPrices() {
   try {
-    // Check if we're in a git repository and if there are changes
+    // Check if there are changes to commit
     try {
-      const gitStatus = execSync('git status --porcelain data/eth-prices.json', { 
+      // Check if file has changes compared to HEAD
+      execSync('git diff --quiet HEAD -- data/eth-prices.json', {
         cwd: path.join(__dirname, '..'),
-        encoding: 'utf8'
-      }).trim();
-      
-      if (!gitStatus) {
-        console.log('  No changes to commit (price already up to date)');
-        return;
-      }
+        stdio: 'ignore'
+      });
+      // If diff --quiet succeeds (exit code 0), there are no changes
+      console.log('  No changes to commit (price already up to date)');
+      return;
+    } catch (diffError) {
+      // diff --quiet returns non-zero if there are changes - continue to commit
+    }
       
       // Configure git user (required for commits)
       execSync('git config user.name "GitHub Actions"', { 
@@ -310,8 +328,8 @@ function commitAndPushPrices() {
         stdio: 'ignore'
       });
       
-      // Stage, commit, and push
-      execSync('git add data/eth-prices.json', { 
+      // Stage, commit, and push (force add even if in .gitignore)
+      execSync('git add -f data/eth-prices.json', { 
         cwd: path.join(__dirname, '..'),
         stdio: 'inherit'
       });
@@ -406,9 +424,11 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
       const ethAmount = tx.rewardType === 'CL' ? rawValue / 1e9 : rawValue / 1e18;
       const taxesInEth = ethAmount * (tracker.taxRate / 100);
       
+      // Use tracker's country timezone for date/time display
+      const timezone = getTimezoneForCountry(tracker.country);
       processedTxs.push({
-        date: date.toLocaleDateString('en-GB', { timeZone: 'Europe/Zagreb' }),
-        time: date.toLocaleTimeString('en-GB', { timeZone: 'Europe/Zagreb', hour12: false }),
+        date: date.toLocaleDateString('en-GB', { timeZone: timezone }),
+        time: date.toLocaleTimeString('en-GB', { timeZone: timezone, hour12: false }),
         ethAmount,
         taxRate: tracker.taxRate,
         taxesInEth,
