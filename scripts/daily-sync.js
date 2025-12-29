@@ -317,42 +317,39 @@ function commitAndPushPrices() {
     } catch (diffError) {
       // diff --quiet returns non-zero if there are changes - continue to commit
     }
-      
-      // Configure git user (required for commits)
-      execSync('git config user.name "GitHub Actions"', { 
-        cwd: path.join(__dirname, '..'),
-        stdio: 'ignore'
-      });
-      execSync('git config user.email "actions@github.com"', { 
-        cwd: path.join(__dirname, '..'),
-        stdio: 'ignore'
-      });
-      
-      // Stage, commit, and push (force add even if in .gitignore)
-      execSync('git add -f data/eth-prices.json', { 
-        cwd: path.join(__dirname, '..'),
-        stdio: 'inherit'
-      });
-      
-      const today = new Date().toISOString().split('T')[0];
-      execSync(`git commit -m "Update ETH prices for ${today}"`, { 
-        cwd: path.join(__dirname, '..'),
-        stdio: 'inherit'
-      });
-      
-      execSync('git push origin main', { 
-        cwd: path.join(__dirname, '..'),
-        stdio: 'inherit'
-      });
-      
-      console.log('  Successfully committed and pushed price updates to GitHub');
-    } catch (error) {
-      // If git operations fail (e.g., not in a git repo, no permissions), just log a warning
-      console.warn('  Warning: Could not commit/push price updates to GitHub:', error.message);
-      console.warn('  Prices were saved locally but not pushed. This is OK if running locally.');
-    }
+    
+    // Configure git user (required for commits)
+    execSync('git config user.name "GitHub Actions"', { 
+      cwd: path.join(__dirname, '..'),
+      stdio: 'ignore'
+    });
+    execSync('git config user.email "actions@github.com"', { 
+      cwd: path.join(__dirname, '..'),
+      stdio: 'ignore'
+    });
+    
+    // Stage, commit, and push (force add even if in .gitignore)
+    execSync('git add -f data/eth-prices.json', { 
+      cwd: path.join(__dirname, '..'),
+      stdio: 'inherit'
+    });
+    
+    const today = new Date().toISOString().split('T')[0];
+    execSync(`git commit -m "Update ETH prices for ${today}"`, { 
+      cwd: path.join(__dirname, '..'),
+      stdio: 'inherit'
+    });
+    
+    execSync('git push origin main', { 
+      cwd: path.join(__dirname, '..'),
+      stdio: 'inherit'
+    });
+    
+    console.log('  Successfully committed and pushed price updates to GitHub');
   } catch (error) {
-    console.warn('  Warning: Git operations failed:', error.message);
+    // If git operations fail (e.g., not in a git repo, no permissions), just log a warning
+    console.warn('  Warning: Could not commit/push price updates to GitHub:', error.message);
+    console.warn('  Prices were saved locally but not pushed. This is OK if running locally.');
   }
 }
 
