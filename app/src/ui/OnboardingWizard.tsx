@@ -25,6 +25,17 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [etherscanKey, setEtherscanKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
 
+  // Check for duplicate consensus layer address
+  const duplicateTracker = useMemo(() => {
+    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return null;
+    }
+    const normalizedAddress = walletAddress.toLowerCase();
+    return trackers.find(
+      (t) => t.walletAddress.toLowerCase() === normalizedAddress
+    ) || null;
+  }, [walletAddress, trackers]);
+
   // Prevent background scrolling while the wizard is open
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;
@@ -48,13 +59,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     if (step === 1) {
       const walletValid = /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
       const feeRecipientValid = !feeRecipientAddress.trim() || /^0x[a-fA-F0-9]{40}$/.test(feeRecipientAddress.trim());
-      return walletValid && feeRecipientValid;
+      const noDuplicate = !duplicateTracker; // Prevent proceeding if address is duplicate
+      return walletValid && feeRecipientValid && noDuplicate;
     }
     if (step === 2) return currency === "EUR" || currency === "USD";
     if (step === 3) return taxRate >= 0 && taxRate <= 100;
     if (step === 4) return etherscanKey.trim().length > 0;
     return true;
-  }, [step, name, walletAddress, feeRecipientAddress, currency, taxRate, etherscanKey]);
+  }, [step, name, walletAddress, feeRecipientAddress, currency, taxRate, etherscanKey, duplicateTracker]);
 
   const next = async () => {
     if (!canNext) return;
@@ -158,7 +170,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             placeholder="0x..."
             value={walletAddress}
             onChange={(e) => setWalletAddress(e.target.value.trim())}
+            style={{
+              borderColor: duplicateTracker ? "#ef4444" : undefined,
+              borderWidth: duplicateTracker ? "2px" : undefined,
+            }}
           />
+          {duplicateTracker && (
+            <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
+              This staking node is already being tracked in {duplicateTracker.name || `Node Tracker ${trackers.findIndex((t) => t.id === duplicateTracker.id) + 1}`}.
+            </p>
+          )}
           <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Execution layer withdrawal address (optional)
           </label>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useTrackerStore, Tracker, Currency } from "../store/trackerStore";
 import { clearCache } from "../utils/transactionCache";
 import { useAuth } from "../hooks/useAuth";
@@ -17,7 +17,7 @@ interface TrackerSettingsModalProps {
 }
 
 export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ tracker, onClose, onSaved }) => {
-  const { updateTracker, syncTrackerToFirestore, removeTracker } = useTrackerStore();
+  const { updateTracker, syncTrackerToFirestore, removeTracker, trackers } = useTrackerStore();
   const { user } = useAuth();
   const [name, setName] = useState(tracker.name);
   const [walletAddress, setWalletAddress] = useState(tracker.walletAddress);
@@ -35,6 +35,17 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [animationState, setAnimationState] = useState<"enter" | "exit">("enter");
   const closeTimeoutRef = useRef<number | null>(null);
   const MODAL_ANIMATION_DURATION = 175;
+
+  // Check for duplicate consensus layer address (excluding current tracker)
+  const duplicateTracker = useMemo(() => {
+    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+      return null;
+    }
+    const normalizedAddress = walletAddress.toLowerCase();
+    return trackers.find(
+      (t) => t.id !== tracker.id && t.walletAddress.toLowerCase() === normalizedAddress
+    ) || null;
+  }, [walletAddress, trackers, tracker.id]);
 
   useEffect(() => {
     // Prevent body scroll when modal is open
@@ -75,6 +86,10 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     }
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
       alert("Please enter a valid Ethereum withdrawal address.");
+      return;
+    }
+    if (duplicateTracker) {
+      alert(`This staking node is already being tracked in ${duplicateTracker.name || "another tracker"}.`);
       return;
     }
     // Validate fee recipient address if provided
@@ -288,7 +303,16 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               placeholder="0x..."
               value={walletAddress}
               onChange={(e) => setWalletAddress(e.target.value.trim())}
+              style={{
+                borderColor: duplicateTracker ? "#ef4444" : undefined,
+                borderWidth: duplicateTracker ? "2px" : undefined,
+              }}
             />
+            {duplicateTracker && (
+              <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
+                This staking node is already being tracked in {duplicateTracker.name || "another tracker"}.
+              </p>
+            )}
           </div>
 
           <div>
