@@ -177,7 +177,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           />
           {duplicateTracker && (
             <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-              This staking node is already being tracked in {duplicateTracker.name || `Node Tracker ${trackers.findIndex((t) => t.id === duplicateTracker.id) + 1}`}.
+              ⚠ This staking node is already being tracked in {duplicateTracker.name || `Node Tracker ${trackers.findIndex((t) => t.id === duplicateTracker.id) + 1}`}.
             </p>
           )}
           <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>

@@ -310,7 +310,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             />
             {duplicateTracker && (
               <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-                This staking node is already being tracked in {duplicateTracker.name || "another tracker"}.
+                ⚠ This staking node is already being tracked in {duplicateTracker.name || "another tracker"}.
               </p>
             )}
           </div>
