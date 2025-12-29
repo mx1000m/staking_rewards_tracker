@@ -900,7 +900,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         tx.rewardType === "CL" ? "" : (tx.transactionHash || ""),
       ];
     });
-    const csv = [headers, ...rows]
+    
+    // Create header rows with tracker information
+    const trackerName = activeTracker.name || "Node Tracker";
+    const trackerLocation = activeTracker.country || "Unknown";
+    const consensusAddress = activeTracker.walletAddress || "";
+    const executionAddress = activeTracker.feeRecipientAddress || activeTracker.walletAddress || "";
+    
+    // Header rows (text in first column, empty cells for the rest to span visually)
+    const headerRows = [
+      [`${trackerName} - Location: ${trackerLocation}`, "", "", "", "", "", "", "", ""],
+      [`Consensus layer withdrawal address: ${consensusAddress}`, "", "", "", "", "", "", "", ""],
+      [`Execution layer withdrawal address: ${executionAddress}`, "", "", "", "", "", "", "", ""],
+      [], // Empty row for spacing
+    ];
+    
+    const csv = [...headerRows, headers, ...rows]
       .map((r) => r.map((c) => `"${c}"`).join(","))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
