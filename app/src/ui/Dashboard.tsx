@@ -907,12 +907,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const consensusAddress = activeTracker.walletAddress || "";
     const executionAddress = activeTracker.feeRecipientAddress || activeTracker.walletAddress || "";
     
-    // Header rows (text in first column, empty cells for the rest to span visually)
+    // Number of columns in the table
+    const numColumns = headers.length;
+    
+    // Header rows (text in first column only, rest empty - will appear to span when opened in Excel)
     const headerRows = [
-      [`${trackerName} - Location: ${trackerLocation}`, "", "", "", "", "", "", "", ""],
-      [`Consensus layer withdrawal address: ${consensusAddress}`, "", "", "", "", "", "", "", ""],
-      [`Execution layer withdrawal address: ${executionAddress}`, "", "", "", "", "", "", "", ""],
-      [], // Empty row for spacing
+      [`${trackerName} - Location: ${trackerLocation}`, ...Array(numColumns - 1).fill("")],
+      [`Consensus layer withdrawal address: ${consensusAddress}`, ...Array(numColumns - 1).fill("")],
+      [`Execution layer withdrawal address: ${executionAddress}`, ...Array(numColumns - 1).fill("")],
+      Array(numColumns).fill(""), // Empty row for spacing
     ];
     
     const csv = [...headerRows, headers, ...rows]
