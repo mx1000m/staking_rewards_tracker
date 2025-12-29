@@ -33,6 +33,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveButtonText, setSaveButtonText] = useState("Save");
   const [animationState, setAnimationState] = useState<"enter" | "exit">("enter");
+  const [shakeInput, setShakeInput] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
   const MODAL_ANIMATION_DURATION = 175;
 
@@ -89,7 +90,9 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       return;
     }
     if (duplicateTracker) {
-      alert(`This staking node is already being tracked in ${duplicateTracker.name || "another tracker"}.`);
+      // Trigger shake animation
+      setShakeInput(true);
+      setTimeout(() => setShakeInput(false), 500);
       return;
     }
     // Validate fee recipient address if provided
@@ -306,6 +309,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               style={{
                 borderColor: duplicateTracker ? "#ef4444" : undefined,
                 borderWidth: duplicateTracker ? "2px" : undefined,
+                animation: shakeInput ? "shake 0.5s" : undefined,
               }}
             />
             {duplicateTracker && (
