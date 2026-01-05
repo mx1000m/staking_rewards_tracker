@@ -179,12 +179,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
     // Set warning if there are any missing prices
     if (missingCount > 0) {
-      const currency = globalCurrency === "USD" ? "USD" : "EUR";
-      setError(`⚠ Ethereum price not yet available for ${missingCount} reward${missingCount > 1 ? 's' : ''}.\n${currency} values update daily at 00:00 CET.`);
+      // Store as a special format that we'll parse in the display
+      setError(`PRICE_WARNING:${missingCount}`);
     } else {
       // Only clear error if it's a price-related warning (not other errors)
       setError((currentError) => {
-        if (currentError && currentError.includes("Ethereum price not yet available")) {
+        if (currentError && currentError.startsWith("PRICE_WARNING:")) {
           return null;
         }
         return currentError; // Keep other errors
@@ -1675,7 +1675,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     whiteSpace: "pre-line",
                   }}
                 >
-                  {error}
+                  {error.startsWith("PRICE_WARNING:") ? (
+                    <>
+                      ⚠ Ethereum price pending for <strong>{error.split(":")[1]}</strong> reward{parseInt(error.split(":")[1]) > 1 ? 's' : ''}.<br />
+                      Price updates daily at 00:00 CET.
+                    </>
+                  ) : (
+                    error
+                  )}
                 </div>
               )}
 
