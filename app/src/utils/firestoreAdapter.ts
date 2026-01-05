@@ -115,6 +115,38 @@ export async function getFirestoreTransactions(
 }
 
 /**
+ * Check if Firestore has any transactions for a specific year
+ * Returns true if at least one transaction exists for that year
+ */
+export async function hasFirestoreTransactionsForYear(
+  uid: string,
+  trackerId: string,
+  year: number
+): Promise<boolean> {
+  try {
+    const transactionsRef = collection(db, getTrackerTransactionsPath(uid, trackerId));
+    
+    // Calculate year boundaries in UTC
+    const yearStart = Timestamp.fromMillis(Date.UTC(year, 0, 1, 0, 0, 0));
+    const yearEnd = Timestamp.fromMillis(Date.UTC(year, 11, 31, 23, 59, 59));
+    
+    // Query for transactions within the year range
+    const q = query(
+      transactionsRef,
+      where("timestamp", ">=", yearStart),
+      where("timestamp", "<=", yearEnd),
+      limit(1) // We only need to know if at least one exists
+    );
+    
+    const snapshot = await getDocs(q);
+    return !snapshot.empty;
+  } catch (error) {
+    console.error("Error checking Firestore transactions for year:", error);
+    return false; // On error, assume no transactions (will trigger fetch)
+  }
+}
+
+/**
  * Save a single transaction to Firestore
  */
 export async function saveFirestoreTransaction(

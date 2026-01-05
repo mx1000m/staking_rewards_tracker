@@ -27,6 +27,7 @@ import {
   getFirestoreTransactions,
   saveFirestoreTransactionsBatch,
   updateFirestoreTransactionStatus,
+  hasFirestoreTransactionsForYear,
 } from "../utils/firestoreAdapter";
 
 // ETH prices are now stored in GitHub, not Firestore
@@ -332,18 +333,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // (metadata was already fetched above)
       const now = Math.floor(Date.now() / 1000);
       const oneDayAgo = now - 24 * 60 * 60;
+      const currentYear = new Date().getFullYear();
 
       // Fetch if:
       // - No cache exists
       // - Cache is older than 1 day
       // - It's after midnight UTC (for daily updates)
+      // Always fetch for current year on initial load
       const shouldFetch =
         !metadata ||
         metadata.lastFetchedTimestamp < oneDayAgo ||
         isAfterMidnightUTC(metadata.lastFetchedTimestamp);
 
       if (shouldFetch) {
-        await fetchTransactions(tracker, false);
+        // Fetch for current year when tracker is first loaded
+        await fetchTransactions(tracker, false, currentYear);
       } else {
         console.log("Using cached data, no fetch needed");
       }
@@ -370,13 +374,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     return nowUTC > lastUTC;
   };
 
-  const fetchTransactions = async (tracker: Tracker, forceRefresh = false) => {
+  const fetchTransactions = async (tracker: Tracker, forceRefresh = false, year?: number) => {
     setLoading(true);
     setLoadingProgress({ current: 0, total: 0, progressPercent: 0 });
     setError(null);
     try {
-      // Always start from Jan 1 of current year (00:01 UTC) to include entire-year history
-      const startTimestamp = Math.floor(Date.UTC(new Date().getUTCFullYear(), 0, 1, 0, 1, 0) / 1000);
+      // Use provided year or default to current year
+      const targetYear = year ?? new Date().getUTCFullYear();
+      
+      // Check Firestore first to see if we already have transactions for this year
+      if (user && !forceRefresh) {
+        const hasTransactions = await hasFirestoreTransactionsForYear(user.uid, tracker.id, targetYear);
+        if (hasTransactions) {
+          console.log(`Transactions for ${targetYear} already exist in Firestore, loading from cache/Firestore`);
+          // Load from cache/Firestore instead of fetching from Etherscan
+          await loadTransactions(tracker);
+          return;
+        }
+      }
+      
+      // Start from Jan 1 of target year (00:01 UTC) to include entire-year history
+      const startTimestamp = Math.floor(Date.UTC(targetYear, 0, 1, 0, 1, 0) / 1000);
+      // End at Dec 31 of target year (23:59:59 UTC)
+      const endTimestamp = Math.floor(Date.UTC(targetYear, 11, 31, 23, 59, 59) / 1000);
       
       // Use fee recipient address if provided, otherwise default to withdrawal address
       const feeRecipientAddress = tracker.feeRecipientAddress || tracker.walletAddress;
@@ -384,17 +404,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       console.log("Fetching transactions for:", {
         withdrawalAddress: tracker.walletAddress,
         feeRecipientAddress: feeRecipientAddress,
+        year: targetYear,
         from: new Date(startTimestamp * 1000).toLocaleDateString()
       });
       const etherscanTxs = await getTransactions(tracker.walletAddress, feeRecipientAddress, tracker.etherscanKey, startTimestamp);
-      console.log("Found transactions:", etherscanTxs.length);
+      
+      // Filter transactions to only include those within the target year
+      const yearTxs = etherscanTxs.filter((tx) => {
+        const txTimestamp = parseInt(tx.timeStamp);
+        return txTimestamp >= startTimestamp && txTimestamp <= endTimestamp;
+      });
+      
+      console.log(`Found ${yearTxs.length} transactions for year ${targetYear} (out of ${etherscanTxs.length} total)`);
       
       // Set initial progress (will be updated during price fetching and transaction processing)
       // Total represents transactions, but progress includes price fetches too
-      setLoadingProgress({ current: 0, total: etherscanTxs.length, progressPercent: 0 });
+      setLoadingProgress({ current: 0, total: yearTxs.length, progressPercent: 0 });
       
-      if (etherscanTxs.length === 0) {
-        setError("No incoming transactions found for this wallet address.");
+      if (yearTxs.length === 0) {
+        setError(`No incoming rewards found for this wallet in ${targetYear}.`);
         setTransactions([]);
         setLoading(false);
         return;
@@ -407,7 +435,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       const uniqueDates = new Set<string>();
       const missingDates: string[] = [];
       
-      for (const tx of etherscanTxs) {
+      for (const tx of yearTxs) {
         const dateKey = getDateKey(parseInt(tx.timeStamp));
         uniqueDates.add(dateKey);
         
@@ -434,8 +462,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // Step 2: Process all transactions using prices from centralized storage
       const processedTxs: CachedTransaction[] = [];
       
-      for (let i = 0; i < etherscanTxs.length; i++) {
-        const tx = etherscanTxs[i];
+      for (let i = 0; i < yearTxs.length; i++) {
+        const tx = yearTxs[i];
         const timestamp = parseInt(tx.timeStamp) * 1000;
         const date = new Date(timestamp);
 
@@ -456,8 +484,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         // Update progress
         setLoadingProgress({ 
           current: i + 1, // Show current transaction being processed
-          total: etherscanTxs.length,
-          progressPercent: ((i + 1) / etherscanTxs.length) * 100
+          total: yearTxs.length,
+          progressPercent: ((i + 1) / yearTxs.length) * 100
         });
         
         const taxesInEth = ethAmount * (tracker.taxRate / 100);
@@ -599,13 +627,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     );
   }
 
-  // Get available years from transactions
+  // Get available years from transactions, plus 2025 as minimum option
   const availableYears = React.useMemo(() => {
     const years = new Set<number>();
+    const currentYear = new Date().getFullYear();
+    const minYear = 2025;
+    
+    // Always include 2025 and current year
+    years.add(minYear);
+    years.add(currentYear);
+    
+    // Add years from transactions
     transactions.forEach((tx) => {
       const year = new Date(tx.timestamp * 1000).getFullYear();
-      years.add(year);
+      if (year >= minYear) {
+        years.add(year);
+      }
     });
+    
+    // Fill in any missing years between minYear and currentYear
+    for (let y = minYear; y <= currentYear; y++) {
+      years.add(y);
+    }
+    
     return Array.from(years).sort((a, b) => b - a); // Sort descending
   }, [transactions]);
 
@@ -641,6 +685,48 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   React.useEffect(() => {
     setSelectedMonth(null); // Reset to "ALL" when year changes
   }, [selectedYear]);
+
+  // Fetch transactions when year changes (if we don't have data for that year)
+  React.useEffect(() => {
+    if (activeTracker && user) {
+      // Check if we have transactions for the selected year in our current transactions
+      const hasTransactionsForYear = transactions.some((tx) => {
+        const txYear = new Date(tx.timestamp * 1000).getFullYear();
+        return txYear === selectedYear;
+      });
+      
+      // If we don't have transactions for this year, check Firestore first, then fetch from Etherscan if needed
+      if (!hasTransactionsForYear) {
+        console.log(`No transactions found for ${selectedYear} in current state, checking Firestore...`);
+        
+        // Check Firestore first
+        hasFirestoreTransactionsForYear(user.uid, activeTracker.id, selectedYear)
+          .then((hasInFirestore) => {
+            if (hasInFirestore) {
+              // Firestore has transactions for this year, reload from Firestore
+              console.log(`Found transactions for ${selectedYear} in Firestore, loading...`);
+              loadTransactions(activeTracker).catch((error) => {
+                console.error("Failed to load transactions from Firestore:", error);
+              });
+            } else {
+              // Firestore doesn't have transactions for this year, fetch from Etherscan
+              console.log(`No transactions for ${selectedYear} in Firestore, fetching from Etherscan...`);
+              fetchTransactions(activeTracker, false, selectedYear).catch((error) => {
+                console.error("Failed to fetch transactions for year:", error);
+              });
+            }
+          })
+          .catch((error) => {
+            console.error("Error checking Firestore for year:", error);
+            // On error, try fetching from Etherscan anyway
+            fetchTransactions(activeTracker, false, selectedYear).catch((fetchError) => {
+              console.error("Failed to fetch transactions for year:", fetchError);
+            });
+          });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedYear, activeTrackerId]);
 
   // Group transactions by month for display
   const transactionsByMonth = React.useMemo(() => {
