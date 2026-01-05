@@ -194,6 +194,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   useEffect(() => {
     if (activeTracker) {
+      // Reset to current year when switching trackers
+      const currentYear = new Date().getFullYear();
+      setSelectedYear(currentYear);
       loadTransactions(activeTracker);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
