@@ -17,12 +17,23 @@ interface TrackerSettingsModalProps {
 }
 
 export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ tracker, onClose, onSaved }) => {
-  const { updateTracker, syncTrackerToFirestore, removeTracker, trackers } = useTrackerStore();
+  const { updateTracker, syncTrackerToFirestore, removeTracker, trackers, currency: globalCurrency, setCurrency } = useTrackerStore();
   const { user } = useAuth();
   const [name, setName] = useState(tracker.name);
   const [walletAddress, setWalletAddress] = useState(tracker.walletAddress);
   const [feeRecipientAddress, setFeeRecipientAddress] = useState(tracker.feeRecipientAddress || "");
-  const [currency, setCurrency] = useState<Currency>(tracker.currency);
+  const [currency, setCurrencyLocal] = useState<Currency>(globalCurrency);
+  
+  // Update local currency when global currency changes
+  useEffect(() => {
+    setCurrencyLocal(globalCurrency);
+  }, [globalCurrency]);
+  
+  // Wrapper to update both local and global currency
+  const handleCurrencyChange = (newCurrency: Currency) => {
+    setCurrencyLocal(newCurrency);
+    setCurrency(newCurrency); // Update global currency
+  };
   const [country, setCountry] = useState(tracker.country);
   const [taxRate, setTaxRate] = useState<number>(tracker.taxRate);
   const [etherscanKey, setEtherscanKey] = useState(tracker.etherscanKey);
@@ -129,11 +140,13 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     // Normalize fee recipient address: if empty, don't store it (will default to walletAddress)
     const normalizedFeeRecipient = feeRecipientAddress.trim() || undefined;
     
+    // Update global currency preference (already updated via handleCurrencyChange)
+    
+    // Update tracker (currency is now global, so we don't store it per-tracker)
     updateTracker(tracker.id, {
       name: name.trim(),
       walletAddress,
       feeRecipientAddress: normalizedFeeRecipient,
-      currency,
       country,
       taxRate,
       etherscanKey,
@@ -336,12 +349,12 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
 
           <div>
             <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Currency preference
+              Currency preference (applies to all nodes)
             </label>
             <div style={{ display: "flex", gap: "12px" }}>
               <button
                 type="button"
-                onClick={() => setCurrency("EUR")}
+                onClick={() => handleCurrencyChange("EUR")}
                 style={{
                   flex: 1,
                   padding: "12px 20px",
@@ -369,7 +382,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               </button>
               <button
                 type="button"
-                onClick={() => setCurrency("USD")}
+                onClick={() => handleCurrencyChange("USD")}
                 style={{
                   flex: 1,
                   padding: "12px 20px",

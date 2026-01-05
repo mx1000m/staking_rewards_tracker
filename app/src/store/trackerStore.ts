@@ -19,6 +19,8 @@ export interface Tracker {
 interface TrackerStore {
   trackers: Tracker[];
   activeTrackerId: string | null;
+  currency: Currency; // Global currency preference for all nodes
+  setCurrency: (currency: Currency) => void;
   addTracker: (tracker: Omit<Tracker, "id" | "createdAt">) => void;
   updateTracker: (id: string, updates: Partial<Omit<Tracker, "id" | "createdAt">>) => void;
   setActiveTracker: (id: string) => void;
@@ -32,6 +34,8 @@ export const useTrackerStore = create<TrackerStore>()(
     (set) => ({
       trackers: [],
       activeTrackerId: null,
+      currency: "EUR" as Currency, // Default to EUR
+      setCurrency: (currency) => set({ currency }),
       addTracker: (tracker) => {
         const newTracker: Tracker = {
           ...tracker,

@@ -13,13 +13,24 @@ const COUNTRY_DEFAULT_TAX: Record<string, number> = {
 };
 
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
-  const { addTracker, syncTrackerToFirestore, trackers } = useTrackerStore();
+  const { addTracker, syncTrackerToFirestore, trackers, currency: globalCurrency, setCurrency } = useTrackerStore();
   const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [feeRecipientAddress, setFeeRecipientAddress] = useState("");
-  const [currency, setCurrency] = useState<Currency>("EUR");
+  const [currency, setCurrencyLocal] = useState<Currency>(globalCurrency);
+  
+  // Update local currency when global currency changes
+  useEffect(() => {
+    setCurrencyLocal(globalCurrency);
+  }, [globalCurrency]);
+  
+  // Wrapper to update both local and global currency
+  const handleCurrencyChange = (newCurrency: Currency) => {
+    setCurrencyLocal(newCurrency);
+    setCurrency(newCurrency); // Update global currency
+  };
   const [country, setCountry] = useState("Croatia");
   const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
   const [etherscanKey, setEtherscanKey] = useState("");
@@ -74,10 +85,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       // Save tracker and complete
       // Use placeholder name if name is empty
       const defaultName = name.trim() || `Node Tracker ${trackers.length + 1}`;
+      
+      // Update global currency preference (already updated via handleCurrencyChange)
+      
+      // Add tracker (currency is now global, but we keep it in tracker for backward compatibility)
       addTracker({
         walletAddress,
         feeRecipientAddress: feeRecipientAddress.trim() || undefined,
-        currency,
+        currency, // Keep for backward compatibility, but global currency is used for display
         country,
         taxRate,
         etherscanKey,
@@ -197,12 +212,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 2 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Currency preference
+            Currency preference (applies to all nodes)
           </label>
           <div style={{ display: "flex", gap: "12px" }}>
             <button
               type="button"
-              onClick={() => setCurrency("EUR")}
+                onClick={() => handleCurrencyChange("EUR")}
               style={{
                 flex: 1,
                 padding: "12px 20px",
@@ -230,7 +245,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             </button>
             <button
               type="button"
-              onClick={() => setCurrency("USD")}
+                onClick={() => handleCurrencyChange("USD")}
               style={{
                 flex: 1,
                 padding: "12px 20px",

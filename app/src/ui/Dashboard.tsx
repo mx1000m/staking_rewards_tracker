@@ -48,7 +48,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
-  const { trackers, activeTrackerId, setActiveTracker } = useTrackerStore();
+  const { trackers, activeTrackerId, setActiveTracker, currency: globalCurrency } = useTrackerStore();
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -461,8 +461,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       
       if (missingDates.length > 0) {
         console.warn(`Warning: ${missingDates.length} dates missing from centralized price storage:`, missingDates.slice(0, 5));
-        // Get currency for the warning message
-        const currency = tracker.currency === "USD" ? "USD" : "EUR";
+        // Get currency for the warning message (use global currency)
+        const currency = globalCurrency === "USD" ? "USD" : "EUR";
         setError(`⚠ Ethereum price not yet available for ${missingDates.length} reward${missingDates.length > 1 ? 's' : ''}.\n${currency} values update daily at 00:00 CET.`);
       }
       
@@ -836,11 +836,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       for (const tracker of trackers) {
         const cached = await getCachedTransactions(tracker.id);
         allRewards += cached.reduce((sum, tx) => {
-          const value = getRewardsInCurrency(tx, tracker.currency);
+          const value = getRewardsInCurrency(tx, globalCurrency);
           return sum + (isNaN(value) ? 0 : value);
         }, 0);
         allTaxes += cached.reduce((sum, tx) => {
-          const value = getTaxesInCurrency(tx, tracker.currency);
+          const value = getTaxesInCurrency(tx, globalCurrency);
           return sum + (isNaN(value) ? 0 : value);
         }, 0);
         allEthRewards += cached.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
@@ -856,7 +856,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             const taxableUntil = new Date(rewardDate);
             taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
             if (now >= taxableUntil) {
-              const cgtRewards = getRewardsInCurrency(tx, tracker.currency);
+              const cgtRewards = getRewardsInCurrency(tx, globalCurrency);
               allCgtFreeRewards += isNaN(cgtRewards) ? 0 : cgtRewards;
               allCgtFreeEth += tx.ethAmount || 0;
             }
@@ -877,16 +877,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     if (trackers.length > 0) {
       calculateAllTotals();
     }
-  }, [trackers, transactions, holdingStatusMap]); // Recalculate when trackers, transactions or holding status change
+  }, [trackers, transactions, holdingStatusMap, globalCurrency]); // Recalculate when trackers, transactions, holding status, or currency changes
 
   // Calculate totals based on filtered transactions (for selected node)
-  const activeCurrency = activeTracker?.currency || "EUR";
+  // Use global currency for all calculations
   const totalRewards = filteredTransactions.reduce((sum, tx) => {
-    const value = getRewardsInCurrency(tx, activeCurrency);
+    const value = getRewardsInCurrency(tx, globalCurrency);
     return sum + (isNaN(value) ? 0 : value);
   }, 0);
   const totalTaxes = filteredTransactions.reduce((sum, tx) => {
-    const value = getTaxesInCurrency(tx, activeCurrency);
+    const value = getTaxesInCurrency(tx, globalCurrency);
     return sum + (isNaN(value) ? 0 : value);
   }, 0);
   const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
@@ -913,18 +913,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         const taxableUntil = new Date(rewardDate);
         taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
         if (nowForCgt >= taxableUntil) {
-          const cgtRewards = getRewardsInCurrency(tx, activeCurrency);
+          const cgtRewards = getRewardsInCurrency(tx, globalCurrency);
           return sum + (isNaN(cgtRewards) ? 0 : cgtRewards);
         }
         return sum;
       }, 0)
     : 0;
 
-  // Use active tracker's currency, or default to EUR for All nodes overview
-  const currencySymbol = activeTracker?.currency === "EUR" ? "€" : "$";
-  const valueLabel = activeTracker?.currency === "EUR" ? "Value in EUR" : "Value in USD";
-  const incomeTaxLabel = activeTracker?.currency === "EUR" ? "Income tax (EUR)" : "Income tax (USD)";
-  const allNodesCurrencySymbol = trackers.length > 0 && trackers[0].currency === "USD" ? "$" : "€";
+  // Use global currency for all displays
+  const currencySymbol = globalCurrency === "EUR" ? "€" : "$";
+  const valueLabel = globalCurrency === "EUR" ? "Value in EUR" : "Value in USD";
+  const incomeTaxLabel = globalCurrency === "EUR" ? "Income tax (EUR)" : "Income tax (USD)";
+  const allNodesCurrencySymbol = globalCurrency === "EUR" ? "€" : "$";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
 
   // Human-readable description of the currently selected time range
@@ -966,8 +966,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       return;
     }
     
-    const currencySymbol = activeTracker.currency === "EUR" ? "€" : "$";
-    const currencyCode = activeTracker.currency === "EUR" ? "EUR" : "USD";
+    const currencySymbol = globalCurrency === "EUR" ? "€" : "$";
+    const currencyCode = globalCurrency === "EUR" ? "EUR" : "USD";
     const headers = [
       "Date",
       "Time",
@@ -980,9 +980,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       "Transaction Hash",
     ];
     const rows = yearTransactions.map((tx) => {
-      const ethPrice = getEthPriceForDisplay(tx, activeTracker.currency);
-      const rewardsInCurrency = getRewardsInCurrency(tx, activeTracker.currency);
-      const taxesInCurrency = getTaxesInCurrency(tx, activeTracker.currency);
+      const ethPrice = getEthPriceForDisplay(tx, globalCurrency);
+      const rewardsInCurrency = getRewardsInCurrency(tx, globalCurrency);
+      const taxesInCurrency = getTaxesInCurrency(tx, globalCurrency);
       return [
         tx.date || "",
         tx.time || "",
@@ -1713,24 +1713,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{(tx.ethAmount || 0).toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>
-                        {isPriceMissing(tx, activeTracker?.currency || "EUR") ? (
+                        {isPriceMissing(tx, globalCurrency) ? (
                           "⏱️ Pending"
                         ) : (
-                          `${currencySymbol} ${getEthPriceForDisplay(tx, activeTracker?.currency || "EUR").toFixed(2)}`
+                          `${currencySymbol} ${getEthPriceForDisplay(tx, globalCurrency).toFixed(2)}`
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>
-                        {isPriceMissing(tx, activeTracker?.currency || "EUR") ? (
+                        {isPriceMissing(tx, globalCurrency) ? (
                           "⏱️ Pending"
                         ) : (
-                          `${currencySymbol} ${getRewardsInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}`
+                          `${currencySymbol} ${getRewardsInCurrency(tx, globalCurrency).toFixed(2)}`
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>
-                        {isPriceMissing(tx, activeTracker?.currency || "EUR") ? (
+                        {isPriceMissing(tx, globalCurrency) ? (
                           "⏱️ Pending"
                         ) : (
-                          `${currencySymbol} ${getTaxesInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}`
+                          `${currencySymbol} ${getTaxesInCurrency(tx, globalCurrency).toFixed(2)}`
                         )}
                       </td>
                       {/* CGT Status column */}
