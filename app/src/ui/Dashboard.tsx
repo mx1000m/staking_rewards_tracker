@@ -197,6 +197,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // Reset to current year when switching trackers
       const currentYear = new Date().getFullYear();
       setSelectedYear(currentYear);
+      // Clear any previous error/warning when switching trackers
+      setError(null);
       loadTransactions(activeTracker);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -751,15 +753,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   // This ensures the warning appears even if transactions load before prices or vice versa
   // We check the FILTERED transactions (for selected year) to show warning only for current year
   React.useEffect(() => {
-    if (ethPricesLoaded && filteredTransactions.length > 0 && activeTracker) {
+    if (!ethPricesLoaded || !activeTracker) return;
+    
+    // If we have filtered transactions for the selected year, check for missing prices
+    if (filteredTransactions.length > 0) {
       checkForMissingPrices(filteredTransactions);
-    } else if (ethPricesLoaded && filteredTransactions.length === 0 && transactions.length > 0) {
-      // If no filtered transactions but we have transactions, clear the warning
+    } else if (transactions.length > 0) {
+      // If we have transactions but none for the selected year, clear price warning
+      // (but keep "No incoming rewards" message if it exists)
       setError((currentError) => {
         if (currentError && currentError.startsWith("PRICE_WARNING:")) {
           return null;
         }
-        return currentError; // Keep other errors
+        return currentError; // Keep other errors like "No incoming rewards"
+      });
+    } else {
+      // No transactions at all - clear price warning (other errors will be set by loadTransactions/fetchTransactions)
+      setError((currentError) => {
+        if (currentError && currentError.startsWith("PRICE_WARNING:")) {
+          return null;
+        }
+        return currentError;
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
