@@ -199,13 +199,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrackerId]);
 
-  // Check for missing prices when ethPrices finish loading (important for page refresh)
+  // Check for missing prices whenever transactions or prices change (important for page refresh)
+  // This ensures the warning appears even if transactions load before prices or vice versa
+  // We check whenever:
+  // 1. Prices finish loading (and we have transactions)
+  // 2. Transactions change (and prices are loaded)
+  // 3. Active tracker changes (and we have both)
   useEffect(() => {
     if (ethPricesLoaded && transactions.length > 0 && activeTracker) {
       checkForMissingPrices(transactions);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ethPricesLoaded, ethPrices]);
+  }, [ethPricesLoaded, transactions, activeTrackerId]);
 
   // Handle export modal body overflow and animation
   useEffect(() => {
