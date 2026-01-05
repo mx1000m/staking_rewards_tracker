@@ -965,14 +965,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   // Calculate totals based on filtered transactions (for selected node)
   // Use global currency for all calculations
+  // Separate pending and non-pending transactions
+  const pendingTransactions = filteredTransactions.filter((tx) => isPriceMissing(tx, globalCurrency));
+  const nonPendingTransactions = filteredTransactions.filter((tx) => !isPriceMissing(tx, globalCurrency));
+  const pendingCount = pendingTransactions.length;
+  
+  // Rewards: Include all transactions in ETH, but exclude pending from EUR
+  const totalRewardsNonPending = nonPendingTransactions.reduce((sum, tx) => {
+    const value = getRewardsInCurrency(tx, globalCurrency);
+    return sum + (isNaN(value) ? 0 : value);
+  }, 0);
   const totalRewards = filteredTransactions.reduce((sum, tx) => {
     const value = getRewardsInCurrency(tx, globalCurrency);
     return sum + (isNaN(value) ? 0 : value);
   }, 0);
-  const totalTaxes = filteredTransactions.reduce((sum, tx) => {
+  
+  // Taxes: Exclude pending transactions from EUR calculation
+  const totalTaxes = nonPendingTransactions.reduce((sum, tx) => {
     const value = getTaxesInCurrency(tx, globalCurrency);
     return sum + (isNaN(value) ? 0 : value);
   }, 0);
+  
+  // ETH totals include all transactions (pending or not)
   const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
   const totalEthTaxes = filteredTransactions.reduce((sum, tx) => sum + (tx.taxesInEth || 0), 0);
   
@@ -1671,20 +1685,110 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Rewards received</p>
-                    <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
-                      {currencySymbol}
-                      {totalRewards.toFixed(2)}
-                    </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
+                      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
+                        {currencySymbol}
+                        {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : totalRewardsNonPending.toFixed(2)}
+                      </p>
+                      {pendingCount > 0 && (
+                        <div
+                          style={{ position: "relative", display: "inline-block" }}
+                          onMouseEnter={() => setVisibleTooltip("rewards-pending")}
+                          onMouseLeave={() => setVisibleTooltip(null)}
+                        >
+                          <svg 
+                            width="16" 
+                            height="16" 
+                            viewBox="0 0 21 21" 
+                            style={{ display: "inline-block", verticalAlign: "middle" }}
+                          >
+                            <path 
+                              fill="#e4a729" 
+                              fillRule="evenodd" 
+                              d="M10.5,4.5c.76,0,1.38.62,1.38,1.38,0,.04,0,.08,0,.11l-.56,6.76c-.04.42-.39.75-.81.75s-.78-.32-.81-.75l-.56-6.76c-.06-.76.5-1.43,1.26-1.49.04,0,.08,0,.11,0ZM10.5,16.5c-.55,0-1-.45-1-1s.45-1,1-1,1,.45,1,1-.45,1-1,1ZM10.5,21C4.7,21,0,16.3,0,10.5S4.7,0,10.5,0s10.5,4.7,10.5,10.5-4.7,10.5-10.5,10.5ZM10.5,19c4.69,0,8.5-3.81,8.5-8.5S15.19,2,10.5,2,2,5.81,2,10.5s3.81,8.5,8.5,8.5Z"
+                            />
+                          </svg>
+                          {visibleTooltip === "rewards-pending" && (
+                            <div 
+                              className="tooltip-gradient-border"
+                              style={{
+                                position: "absolute",
+                                top: "calc(100% + 6px)",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                minWidth: "200px",
+                                maxWidth: "250px",
+                                zIndex: 1000,
+                                opacity: 1,
+                                transition: "opacity 0.2s",
+                                pointerEvents: "none",
+                              }}
+                            >
+                              <div style={{ background: "#181818", padding: "12px", borderRadius: "8px", border: "1px solid #2b2b2b" }}>
+                                <p style={{ margin: 0, color: "#f0f0f0", fontSize: "0.85rem", lineHeight: "1.4" }}>
+                                  {pendingCount} reward{pendingCount > 1 ? 's are' : ' is'} pending fiat valuation.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
                       {totalEthRewards.toFixed(6)} ETH
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Income tax due</p>
-                    <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none" }}>
-                      {currencySymbol}
-                      {totalTaxes.toFixed(2)}
-                    </p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
+                      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none" }}>
+                        {currencySymbol}
+                        {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : totalTaxes.toFixed(2)}
+                      </p>
+                      {pendingCount > 0 && (
+                        <div
+                          style={{ position: "relative", display: "inline-block" }}
+                          onMouseEnter={() => setVisibleTooltip("tax-pending")}
+                          onMouseLeave={() => setVisibleTooltip(null)}
+                        >
+                          <svg 
+                            width="16" 
+                            height="16" 
+                            viewBox="0 0 21 21" 
+                            style={{ display: "inline-block", verticalAlign: "middle" }}
+                          >
+                            <path 
+                              fill="#e4a729" 
+                              fillRule="evenodd" 
+                              d="M10.5,4.5c.76,0,1.38.62,1.38,1.38,0,.04,0,.08,0,.11l-.56,6.76c-.04.42-.39.75-.81.75s-.78-.32-.81-.75l-.56-6.76c-.06-.76.5-1.43,1.26-1.49.04,0,.08,0,.11,0ZM10.5,16.5c-.55,0-1-.45-1-1s.45-1,1-1,1,.45,1,1-.45,1-1,1ZM10.5,21C4.7,21,0,16.3,0,10.5S4.7,0,10.5,0s10.5,4.7,10.5,10.5-4.7,10.5-10.5,10.5ZM10.5,19c4.69,0,8.5-3.81,8.5-8.5S15.19,2,10.5,2,2,5.81,2,10.5s3.81,8.5,8.5,8.5Z"
+                            />
+                          </svg>
+                          {visibleTooltip === "tax-pending" && (
+                            <div 
+                              className="tooltip-gradient-border"
+                              style={{
+                                position: "absolute",
+                                top: "calc(100% + 6px)",
+                                left: "50%",
+                                transform: "translateX(-50%)",
+                                minWidth: "200px",
+                                maxWidth: "250px",
+                                zIndex: 1000,
+                                opacity: 1,
+                                transition: "opacity 0.2s",
+                                pointerEvents: "none",
+                              }}
+                            >
+                              <div style={{ background: "#181818", padding: "12px", borderRadius: "8px", border: "1px solid #2b2b2b" }}>
+                                <p style={{ margin: 0, color: "#f0f0f0", fontSize: "0.85rem", lineHeight: "1.4" }}>
+                                  Tax calculation pending fiat valuation for {pendingCount} reward{pendingCount > 1 ? 's' : ''}.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
                       {totalEthTaxes.toFixed(6)} ETH
                     </p>
