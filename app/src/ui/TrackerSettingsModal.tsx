@@ -348,9 +348,12 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
           </div>
 
           <div>
-            <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Currency preference (applies to all nodes)
+            <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+              Currency preference
             </label>
+            <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+              Applies to all nodes.
+            </p>
             <div style={{ display: "flex", gap: "12px" }}>
               <button
                 type="button"
