@@ -1781,21 +1781,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{(tx.ethAmount || 0).toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
-                          "⏱️ Pending"
+                          <span style={{ color: "#ff8888" }}>⏱️ Pending</span>
                         ) : (
                           `${currencySymbol} ${getEthPriceForDisplay(tx, globalCurrency).toFixed(2)}`
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
-                          "⏱️ Pending"
+                          <span style={{ color: "#ff8888" }}>⏱️ Pending</span>
                         ) : (
                           `${currencySymbol} ${getRewardsInCurrency(tx, globalCurrency).toFixed(2)}`
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
-                          "⏱️ Pending"
+                          <span style={{ color: "#ff8888" }}>⏱️ Pending</span>
                         ) : (
                           `${currencySymbol} ${getTaxesInCurrency(tx, globalCurrency).toFixed(2)}`
                         )}
