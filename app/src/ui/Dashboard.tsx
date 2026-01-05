@@ -1055,7 +1055,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const headers = [
       "Date",
       "Time",
-      "Reward Type",
+      "Reward type",
       "Reward (ETH)",
       `ETH Price (${currencySymbol})`,
       `Value in ${currencyCode} (${currencySymbol})`,
@@ -1670,7 +1670,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               >
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0" }}>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Rewards Received</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Rewards received</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
                       {currencySymbol}
                       {totalRewards.toFixed(2)}
@@ -1750,7 +1750,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 <thead>
                   <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                     <th style={{ padding: "12px", textAlign: "left", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Received</th>
-                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Reward Type</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Reward type</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Reward (ETH)</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{valueLabel}</th>
@@ -1803,21 +1803,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{(tx.ethAmount || 0).toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
-                          <span style={{ color: "#ff8888" }}>⏱️ Pending</span>
+                          <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
                           `${currencySymbol} ${getEthPriceForDisplay(tx, globalCurrency).toFixed(2)}`
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
-                          <span style={{ color: "#ff8888" }}>⏱️ Pending</span>
+                          <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
                           `${currencySymbol} ${getRewardsInCurrency(tx, globalCurrency).toFixed(2)}`
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
-                          <span style={{ color: "#ff8888" }}>⏱️ Pending</span>
+                          <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
                           `${currencySymbol} ${getTaxesInCurrency(tx, globalCurrency).toFixed(2)}`
                         )}
