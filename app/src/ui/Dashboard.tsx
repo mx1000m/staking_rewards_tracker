@@ -155,6 +155,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     return isNaN(price) ? 0 : price;
   };
 
+  // Helper to check if price is missing (0 or not available)
+  const isPriceMissing = (tx: CachedTransaction, currency: "EUR" | "USD"): boolean => {
+    if (!tx) return true;
+    const price = getEthPriceForDisplay(tx, currency);
+    return price === 0;
+  };
+
   useEffect(() => {
     if (activeTracker) {
       loadTransactions(activeTracker);
@@ -454,7 +461,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       
       if (missingDates.length > 0) {
         console.warn(`Warning: ${missingDates.length} dates missing from centralized price storage:`, missingDates.slice(0, 5));
-        setError(`Warning: Price data missing for ${missingDates.length} date(s). Prices may show as 0.`);
+        // Get currency for the warning message
+        const currency = tracker.currency === "USD" ? "USD" : "EUR";
+        setError(`⚠ Ethereum price not yet available for ${missingDates.length} reward${missingDates.length > 1 ? 's' : ''}.\n${currency} values update daily at 00:00 CET.`);
       }
       
       console.log(`Loaded prices from centralized storage for ${uniqueDates.size - missingDates.length}/${uniqueDates.size} unique dates`);
@@ -1619,6 +1628,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     borderRadius: "8px",
                     color: "#ff8888",
                     marginBottom: "16px",
+                    whiteSpace: "pre-line",
                   }}
                 >
                   {error}
@@ -1703,13 +1713,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{(tx.ethAmount || 0).toFixed(6)}</td>
                       <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>
-                        {currencySymbol} {getEthPriceForDisplay(tx, activeTracker?.currency || "EUR").toFixed(2)}
+                        {isPriceMissing(tx, activeTracker?.currency || "EUR") ? (
+                          "⏱️ Pending"
+                        ) : (
+                          `${currencySymbol} ${getEthPriceForDisplay(tx, activeTracker?.currency || "EUR").toFixed(2)}`
+                        )}
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>
-                        {currencySymbol} {getRewardsInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}
+                        {isPriceMissing(tx, activeTracker?.currency || "EUR") ? (
+                          "⏱️ Pending"
+                        ) : (
+                          `${currencySymbol} ${getRewardsInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}`
+                        )}
                       </td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>
-                        {currencySymbol} {getTaxesInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}
+                        {isPriceMissing(tx, activeTracker?.currency || "EUR") ? (
+                          "⏱️ Pending"
+                        ) : (
+                          `${currencySymbol} ${getTaxesInCurrency(tx, activeTracker?.currency || "EUR").toFixed(2)}`
+                        )}
                       </td>
                       {/* CGT Status column */}
                       <td style={{ padding: "12px 8px", textAlign: "center" }}>
