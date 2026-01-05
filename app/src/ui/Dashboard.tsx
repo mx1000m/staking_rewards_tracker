@@ -199,6 +199,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrackerId]);
 
+  // Check for missing prices when ethPrices finish loading (important for page refresh)
+  useEffect(() => {
+    if (ethPricesLoaded && transactions.length > 0 && activeTracker) {
+      checkForMissingPrices(transactions);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ethPricesLoaded, ethPrices]);
+
   // Handle export modal body overflow and animation
   useEffect(() => {
     if (showExportModal) {
@@ -401,6 +409,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         await fetchTransactions(tracker, false, currentYear);
       } else {
         console.log("Using cached data, no fetch needed");
+        // Still check for missing prices even when using cached data
+        const finalTransactions = transactions.length > 0 ? transactions : cached;
+        if (finalTransactions.length > 0) {
+          checkForMissingPrices(finalTransactions);
+        }
       }
     } catch (error: any) {
       console.error("Failed to load transactions:", error);
@@ -1672,13 +1685,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     borderRadius: "8px",
                     color: "#ff8888",
                     marginBottom: "16px",
-                    whiteSpace: "pre-line",
                   }}
                 >
                   {error.startsWith("PRICE_WARNING:") ? (
                     <>
-                      ⚠ Ethereum price pending for <strong>{error.split(":")[1]}</strong> reward{parseInt(error.split(":")[1]) > 1 ? 's' : ''}.<br />
-                      Price updates daily at 00:00 CET.
+                      ⚠ Ethereum price pending for <strong>{error.split(":")[1]} reward{parseInt(error.split(":")[1]) > 1 ? 's' : ''}</strong>. Price updates daily at 00:00 CET.
                     </>
                   ) : (
                     error
