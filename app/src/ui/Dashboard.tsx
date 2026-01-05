@@ -199,19 +199,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTrackerId]);
 
-  // Check for missing prices whenever transactions or prices change (important for page refresh)
-  // This ensures the warning appears even if transactions load before prices or vice versa
-  // We check whenever:
-  // 1. Prices finish loading (and we have transactions)
-  // 2. Transactions change (and prices are loaded)
-  // 3. Active tracker changes (and we have both)
-  useEffect(() => {
-    if (ethPricesLoaded && transactions.length > 0 && activeTracker) {
-      checkForMissingPrices(transactions);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ethPricesLoaded, transactions, activeTrackerId]);
-
   // Handle export modal body overflow and animation
   useEffect(() => {
     if (showExportModal) {
@@ -756,6 +743,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   React.useEffect(() => {
     setSelectedMonth(null); // Reset to "ALL" when year changes
   }, [selectedYear]);
+
+  // Check for missing prices whenever transactions, prices, or selected year changes
+  // This ensures the warning appears even if transactions load before prices or vice versa
+  // We check the FILTERED transactions (for selected year) to show warning only for current year
+  React.useEffect(() => {
+    if (ethPricesLoaded && filteredTransactions.length > 0 && activeTracker) {
+      checkForMissingPrices(filteredTransactions);
+    } else if (ethPricesLoaded && filteredTransactions.length === 0 && transactions.length > 0) {
+      // If no filtered transactions but we have transactions, clear the warning
+      setError((currentError) => {
+        if (currentError && currentError.startsWith("PRICE_WARNING:")) {
+          return null;
+        }
+        return currentError; // Keep other errors
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ethPricesLoaded, filteredTransactions, activeTrackerId]);
 
   // Fetch transactions when year changes (if we don't have data for that year)
   React.useEffect(() => {
