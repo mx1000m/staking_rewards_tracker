@@ -15,3 +15,4 @@ app/dist
 # Don't commit local changes, the workflow handles updates
 data/eth-prices.json
 
+.DS_Store
