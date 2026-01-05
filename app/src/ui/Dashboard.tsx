@@ -162,6 +162,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     return price === 0;
   };
 
+  // Check for missing prices for the current tracker's transactions and update warning
+  const checkForMissingPrices = React.useCallback((trackerTransactions: CachedTransaction[]) => {
+    if (!ethPricesLoaded || Object.keys(ethPrices).length === 0) {
+      return; // Prices not loaded yet
+    }
+
+    let missingCount = 0;
+    
+    // Check transactions for missing prices
+    for (const tx of trackerTransactions) {
+      if (isPriceMissing(tx, globalCurrency)) {
+        missingCount++;
+      }
+    }
+
+    // Set warning if there are any missing prices
+    if (missingCount > 0) {
+      const currency = globalCurrency === "USD" ? "USD" : "EUR";
+      setError(`⚠ Ethereum price not yet available for ${missingCount} reward${missingCount > 1 ? 's' : ''}.\n${currency} values update daily at 00:00 CET.`);
+    } else {
+      // Only clear error if it's a price-related warning (not other errors)
+      setError((currentError) => {
+        if (currentError && currentError.includes("Ethereum price not yet available")) {
+          return null;
+        }
+        return currentError; // Keep other errors
+      });
+    }
+  }, [ethPricesLoaded, ethPrices, globalCurrency]);
+
   useEffect(() => {
     if (activeTracker) {
       loadTransactions(activeTracker);
@@ -291,7 +321,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   // Load transactions: first from cache, then sync with Firestore, then fetch new ones if needed
   const loadTransactions = async (tracker: Tracker) => {
     setLoading(true);
-    setError(null);
+    // Don't clear error here - let checkForMissingPrices handle it after transactions are loaded
 
     try {
       // Load cached transactions first (instant display)
@@ -302,6 +332,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         setTransactions(cached);
         setLoading(false);
         console.log(`Loaded ${cached.length} cached transactions`);
+        // Check for missing prices immediately when loading from cache
+        checkForMissingPrices(cached);
       }
 
       // Sync with Firestore if user is authenticated
@@ -330,10 +362,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             const merged = Array.from(cachedMap.values()).sort((a, b) => b.timestamp - a.timestamp);
             setTransactions(merged);
             await saveTransactions(tracker.id, merged);
+            // Check for missing prices after loading transactions
+            checkForMissingPrices(merged);
+          } else if (cached.length > 0) {
+            // Check for missing prices if we only have cached data
+            checkForMissingPrices(cached);
           }
         } catch (firestoreError) {
           console.warn("Firestore sync failed (continuing with cache):", firestoreError);
+          // Still check for missing prices in cached data
+          if (cached.length > 0) {
+            checkForMissingPrices(cached);
+          }
         }
+      } else if (cached.length > 0) {
+        // Check for missing prices if we only have cached data and no user
+        checkForMissingPrices(cached);
       }
 
       // Check if we need to fetch new transactions from Etherscan
@@ -461,9 +505,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       
       if (missingDates.length > 0) {
         console.warn(`Warning: ${missingDates.length} dates missing from centralized price storage:`, missingDates.slice(0, 5));
-        // Get currency for the warning message (use global currency)
-        const currency = globalCurrency === "USD" ? "USD" : "EUR";
-        setError(`⚠ Ethereum price not yet available for ${missingDates.length} reward${missingDates.length > 1 ? 's' : ''}.\n${currency} values update daily at 00:00 CET.`);
       }
       
       console.log(`Loaded prices from centralized storage for ${uniqueDates.size - missingDates.length}/${uniqueDates.size} unique dates`);
@@ -583,6 +624,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     
     console.log("Processed transactions:", newTxs.length, "new,", allTransactions.length, "total");
     setTransactions(allTransactions);
+    
+    // Check for missing prices after fetching transactions
+    checkForMissingPrices(allTransactions);
     } catch (error: any) {
       console.error("Failed to fetch transactions:", error);
       setError(`Failed to fetch transactions: ${error.message || "Unknown error"}. Please check your Etherscan API key and wallet address.`);
