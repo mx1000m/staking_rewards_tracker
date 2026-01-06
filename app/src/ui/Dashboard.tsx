@@ -161,6 +161,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   };
 
+  // Format date based on currency preference
+  // EUR: DD/MM/YYYY (e.g., "05/01/2026")
+  // USD: MM/DD/YYYY (e.g., "01/05/2026")
+  const formatDate = (date: Date, timezone: string, currency: "EUR" | "USD"): string => {
+    const locale = currency === "EUR" ? "en-GB" : "en-US";
+    return date.toLocaleDateString(locale, { timeZone: timezone });
+  };
+
   const getEthPriceFromStorage = (dateKey: string, currency: "EUR" | "USD"): number => {
     const priceEntry = ethPrices[dateKey];
     if (!priceEntry) return 0;
@@ -601,7 +609,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         // Use tracker's country timezone for date/time display
         const timezone = getTimezoneForCountry(tracker.country);
         processedTxs.push({
-          date: date.toLocaleDateString("en-GB", { timeZone: timezone }),
+          date: formatDate(date, timezone, globalCurrency),
           time: date.toLocaleTimeString("en-GB", { timeZone: timezone, hour12: false }),
           ethAmount,
           ethPriceEUR: 0, // Not stored anymore, fetched from centralized storage
@@ -1979,7 +1987,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           const ratio = totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 1;
                           const progressPercent = Math.round(ratio * 100);
                           const isTaxFree = now >= taxableUntil;
-                          const dateLabel = taxableUntil.toLocaleDateString("en-GB");
+                          const timezone = activeTracker ? getTimezoneForCountry(activeTracker.country) : "UTC";
+                          const dateLabel = formatDate(taxableUntil, timezone, globalCurrency);
                           const barColor = isTaxFree ? "#55b685" : "#aaaaaa";
                           const dotColor = isTaxFree ? "#55b685" : "#ff5252";
 
