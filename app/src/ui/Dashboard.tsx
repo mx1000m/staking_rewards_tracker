@@ -115,6 +115,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   }, []);
 
   // Helper to get ETH price from centralized storage for a date
+  // Format number based on currency preference
+  // USD: period (.) as decimal separator, comma (,) as thousands separator (e.g., 1,000.45)
+  // EUR: comma (,) as decimal separator, thin space as thousands separator (e.g., 1 000,45)
+  const formatNumber = (value: number, decimals: number, currency: "EUR" | "USD"): string => {
+    if (isNaN(value) || !isFinite(value)) {
+      value = 0;
+    }
+    
+    // Round to specified decimals
+    const rounded = Math.round(value * Math.pow(10, decimals)) / Math.pow(10, decimals);
+    
+    // Split into integer and decimal parts
+    const parts = rounded.toFixed(decimals).split(".");
+    const integerPart = parts[0];
+    const decimalPart = parts[1] || "";
+    
+    // Format thousands separator
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, currency === "USD" ? "," : "\u2009");
+    
+    // Add decimal part if needed
+    if (decimals === 0) {
+      return formattedInteger;
+    }
+    
+    if (currency === "USD") {
+      // USD: comma for thousands, period for decimal
+      return formattedInteger + "." + decimalPart;
+    } else {
+      // EUR: thin space for thousands, comma for decimal
+      return formattedInteger + "," + decimalPart;
+    }
+  };
+
   const getEthPriceFromStorage = (dateKey: string, currency: "EUR" | "USD"): number => {
     const priceEntry = ethPrices[dateKey];
     if (!priceEntry) return 0;
@@ -1085,11 +1118,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         tx.date || "",
         tx.time || "",
         tx.rewardType || "EVM",
-        (tx.ethAmount || 0).toFixed(6),
-        ethPrice.toFixed(2),
-        rewardsInCurrency.toFixed(2),
+        formatNumber(tx.ethAmount || 0, 6, globalCurrency),
+        formatNumber(ethPrice, 2, globalCurrency),
+        formatNumber(rewardsInCurrency, 2, globalCurrency),
         (tx.taxRate || 0).toString(),
-        taxesInCurrency.toFixed(2),
+        formatNumber(taxesInCurrency, 2, globalCurrency),
         tx.rewardType === "CL" ? "" : (tx.transactionHash || ""),
       ];
     });
@@ -1171,10 +1204,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>REWARDS RECEIVED</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {allNodesCurrencySymbol} {allTrackersTotals.totalRewards.toFixed(2)}
+            {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalRewards, 2, globalCurrency)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {allTrackersTotals.totalEthRewards.toFixed(6)} ETH
+            {formatNumber(allTrackersTotals.totalEthRewards, 6, globalCurrency)} ETH
           </p>
         </div>
         <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
@@ -1214,10 +1247,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>INCOME TAX DUE</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {allNodesCurrencySymbol} {allTrackersTotals.totalTaxes.toFixed(2)}
+            {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {allTrackersTotals.totalEthTaxes.toFixed(6)} ETH
+            {formatNumber(allTrackersTotals.totalEthTaxes, 6, globalCurrency)} ETH
           </p>
         </div>
         <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
@@ -1257,10 +1290,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>CAPITAL GAINS TAX FREE</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
-            {allTrackersTotals.totalCgtFreeEth.toFixed(6)} ETH
+            {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)} ETH
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {allNodesCurrencySymbol} {allTrackersTotals.totalCgtFreeRewards.toFixed(2)}
+            {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalCgtFreeRewards, 2, globalCurrency)}
           </p>
         </div>
         </div>
@@ -1472,7 +1505,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               >
                 Node location: {activeTracker.country || "—"} - Income tax rate:{" "}
                 {typeof activeTracker.taxRate === "number"
-                  ? `${activeTracker.taxRate.toFixed(0)}%`
+                  ? `${formatNumber(activeTracker.taxRate, 0, globalCurrency)}%`
                   : "—"}
               </p>
 
@@ -1688,7 +1721,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
                       <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
                         {currencySymbol}
-                        {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : totalRewardsNonPending.toFixed(2)}
+                        {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : formatNumber(totalRewardsNonPending, 2, globalCurrency)}
                       </p>
                       {pendingCount > 0 && (
                         <div
@@ -1735,7 +1768,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       )}
                     </div>
                     <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                      {totalEthRewards.toFixed(6)} ETH
+                      {formatNumber(totalEthRewards, 6, globalCurrency)} ETH
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
@@ -1743,7 +1776,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
                       <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none" }}>
                         {currencySymbol}
-                        {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : totalTaxes.toFixed(2)}
+                        {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : formatNumber(totalTaxes, 2, globalCurrency)}
                       </p>
                       {pendingCount > 0 && (
                         <div
@@ -1790,17 +1823,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       )}
                     </div>
                     <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                      {totalEthTaxes.toFixed(6)} ETH
+                      {formatNumber(totalEthTaxes, 6, globalCurrency)} ETH
                     </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Capital gains tax free</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", textTransform: "none" }}>
-                      {totalCgtFreeEth.toFixed(6)} ETH
+                      {formatNumber(totalCgtFreeEth, 6, globalCurrency)} ETH
                     </p>
                     <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
                       {currencySymbol}
-                      {totalCgtFreeRewards.toFixed(2)}
+                      {formatNumber(totalCgtFreeRewards, 2, globalCurrency)}
                     </p>
                   </div>
                 </div>
@@ -1904,26 +1937,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           {tx.rewardType === "CL" ? "CL" : "EVM"}
                         </span>
                       </td>
-                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{(tx.ethAmount || 0).toFixed(6)}</td>
+                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{formatNumber(tx.ethAmount || 0, 6, globalCurrency)}</td>
                       <td style={{ padding: "12px", color: "#aaaaaa", whiteSpace: "nowrap", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
                           <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
-                          `${currencySymbol} ${getEthPriceForDisplay(tx, globalCurrency).toFixed(2)}`
+                          `${currencySymbol} ${formatNumber(getEthPriceForDisplay(tx, globalCurrency), 2, globalCurrency)}`
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
                           <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
-                          `${currencySymbol} ${getRewardsInCurrency(tx, globalCurrency).toFixed(2)}`
+                          `${currencySymbol} ${formatNumber(getRewardsInCurrency(tx, globalCurrency), 2, globalCurrency)}`
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
                           <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
-                          `${currencySymbol} ${getTaxesInCurrency(tx, globalCurrency).toFixed(2)}`
+                          `${currencySymbol} ${formatNumber(getTaxesInCurrency(tx, globalCurrency), 2, globalCurrency)}`
                         )}
                       </td>
                       {/* CGT Status column */}
