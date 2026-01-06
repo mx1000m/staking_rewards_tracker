@@ -1249,9 +1249,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
             {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}
           </p>
-          <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {formatNumber(allTrackersTotals.totalEthTaxes, 6, globalCurrency)} ETH
-          </p>
         </div>
         <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
@@ -1822,9 +1819,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         </div>
                       )}
                     </div>
-                    <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                      {formatNumber(totalEthTaxes, 6, globalCurrency)} ETH
-                    </p>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Capital gains tax free</p>
