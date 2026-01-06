@@ -1203,7 +1203,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>REWARDS RECEIVED</h3>
-          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
+          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
             {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalRewards, 2, globalCurrency)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
@@ -1246,7 +1246,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>INCOME TAX DUE</h3>
-          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
+          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
             {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
@@ -1289,10 +1289,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>CAPITAL GAINS TAX FREE</h3>
-          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white" }}>
+          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
             {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)} ETH
           </p>
-          <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
+          <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)", whiteSpace: "nowrap" }}>
             {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalCgtFreeRewards, 2, globalCurrency)}
           </p>
         </div>
@@ -1719,7 +1719,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Rewards received</p>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
-                      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none" }}>
+                      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none", whiteSpace: "nowrap" }}>
                         {currencySymbol}
                         {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : formatNumber(totalRewardsNonPending, 2, globalCurrency)}
                       </p>
@@ -1774,7 +1774,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Income tax due</p>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
-                      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none" }}>
+                      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none", whiteSpace: "nowrap" }}>
                         {currencySymbol}
                         {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : formatNumber(totalTaxes, 2, globalCurrency)}
                       </p>
@@ -1828,10 +1828,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Capital gains tax free</p>
-                    <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", textTransform: "none" }}>
+                    <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", textTransform: "none", whiteSpace: "nowrap" }}>
                       {formatNumber(totalCgtFreeEth, 6, globalCurrency)} ETH
                     </p>
-                    <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
+                    <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>
                       {currencySymbol}
                       {formatNumber(totalCgtFreeRewards, 2, globalCurrency)}
                     </p>
@@ -1945,7 +1945,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           `${currencySymbol} ${formatNumber(getEthPriceForDisplay(tx, globalCurrency), 2, globalCurrency)}`
                         )}
                       </td>
-                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>
+                      <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center", whiteSpace: "nowrap" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
                           <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
