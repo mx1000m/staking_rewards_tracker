@@ -1204,6 +1204,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   };
 
   const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
+  const yearDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close year dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (yearDropdownRef.current && !yearDropdownRef.current.contains(event.target as Node)) {
+        setIsYearDropdownOpen(false);
+      }
+    };
+
+    if (isYearDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isYearDropdownOpen]);
 
   return (
     <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
@@ -1558,7 +1576,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginTop: "24px", marginBottom: "12px" }}>
                 {/* Year dropdown */}
                 {availableYears.length > 0 && (
-                  <div style={{ position: "relative" }}>
+                  <div ref={yearDropdownRef} style={{ position: "relative" }}>
                     <button
                       onClick={() => {
                         if (availableYears.length > 1) {
@@ -1603,6 +1621,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               setSelectedYear(year);
                               setIsYearDropdownOpen(false);
                             }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.background = "#2b2b2b";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.background = "transparent";
+                            }}
                             style={{
                               width: "100%",
                               background: "transparent",
@@ -1612,6 +1636,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               textAlign: "left",
                               cursor: "pointer",
                               fontSize: "0.9rem",
+                              transition: "background 0.2s",
                             }}
                           >
                             {year}
