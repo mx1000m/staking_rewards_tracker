@@ -1490,7 +1490,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <span style={{ color: "#aaaaaa" }}>Mark as sold</span>
                   </button>
                   <button
-                    onClick={() => setShowExportModal(true)}
+                    onClick={() => {
+                      setExportYear(selectedYear);
+                      setShowExportModal(true);
+                    }}
                     disabled={transactions.length === 0}
                     style={{ background: "#2b2b2b", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", padding: "10px 12px", textTransform: "none" }}
                     title="Export CSV"
