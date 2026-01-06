@@ -803,6 +803,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     setSelectedMonth(null); // Reset to "ALL" when year changes
   }, [selectedYear]);
 
+  // Clear price warning and transactions immediately when switching trackers to prevent showing wrong tracker's warnings
+  React.useEffect(() => {
+    // Clear price warning
+    setError((currentError) => {
+      if (currentError && currentError.startsWith("PRICE_WARNING:")) {
+        return null;
+      }
+      return currentError; // Keep other errors
+    });
+    // Clear transactions to prevent stale data from previous tracker
+    setTransactions([]);
+  }, [activeTrackerId]);
+
   // Check for missing prices whenever transactions, prices, or selected year changes
   // This ensures the warning appears even if transactions load before prices or vice versa
   // We check the FILTERED transactions (for selected year) to show warning only for current year
