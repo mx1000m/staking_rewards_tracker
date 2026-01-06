@@ -1148,6 +1148,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       ];
     });
     
+    // Calculate totals for the summary row
+    const totalEthRewards = yearTransactions.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
+    const totalRewardsInCurrency = yearTransactions.reduce((sum, tx) => {
+      return sum + getRewardsInCurrency(tx, globalCurrency);
+    }, 0);
+    const totalTaxesInCurrency = yearTransactions.reduce((sum, tx) => {
+      return sum + getTaxesInCurrency(tx, globalCurrency);
+    }, 0);
+    const taxRate = activeTracker.taxRate || 0;
+    
+    // Create total row
+    const totalRow = [
+      "TOTAL",
+      "", // Time
+      "", // Reward type
+      formatNumber(totalEthRewards, 6, globalCurrency),
+      "", // ETH Price
+      formatNumber(totalRewardsInCurrency, 2, globalCurrency),
+      taxRate.toString(),
+      formatNumber(totalTaxesInCurrency, 2, globalCurrency),
+      "", // Transaction Hash
+    ];
+    
     // Create header rows with tracker information
     const trackerName = activeTracker.name || "Node Tracker";
     const trackerLocation = activeTracker.country || "Unknown";
@@ -1165,7 +1188,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       Array(numColumns).fill(""), // Empty row for spacing
     ];
     
-    const csv = [...headerRows, headers, ...rows]
+    const csv = [...headerRows, headers, ...rows, totalRow]
       .map((r) => r.map((c) => `"${c}"`).join(","))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
