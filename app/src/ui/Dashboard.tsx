@@ -114,7 +114,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     loadEthPrices();
   }, []);
 
-  // Helper to get ETH price from centralized storage for a date
   // Format number based on currency preference
   // USD: period (.) as decimal separator, comma (,) as thousands separator (e.g., 1,000.45)
   // EUR: comma (,) as decimal separator, thin space as thousands separator (e.g., 1 000,45)
@@ -145,6 +144,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     } else {
       // EUR: thin space for thousands, comma for decimal
       return formattedInteger + "," + decimalPart;
+    }
+  };
+
+  // Format currency value with symbol in correct position
+  // EUR: symbol after number (e.g., "88 324,70 €")
+  // USD: symbol before number (e.g., "$ 1,000.45")
+  const formatCurrency = (value: number, decimals: number, currency: "EUR" | "USD"): string => {
+    const formattedNumber = formatNumber(value, decimals, currency);
+    const symbol = currency === "EUR" ? "€" : "$";
+    
+    if (currency === "EUR") {
+      return `${formattedNumber} ${symbol}`;
+    } else {
+      return `${symbol} ${formattedNumber}`;
     }
   };
 
@@ -1204,7 +1217,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>REWARDS RECEIVED</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
-            {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalRewards, 2, globalCurrency)}
+            {formatCurrency(allTrackersTotals.totalRewards, 2, globalCurrency)}
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
             {formatNumber(allTrackersTotals.totalEthRewards, 6, globalCurrency)} ETH
@@ -1247,7 +1260,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>INCOME TAX DUE</h3>
           <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
-            {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}
+            {formatCurrency(allTrackersTotals.totalTaxes, 2, globalCurrency)}
           </p>
         </div>
         <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
@@ -1290,7 +1303,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)} ETH
           </p>
           <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)", whiteSpace: "nowrap" }}>
-            {allNodesCurrencySymbol} {formatNumber(allTrackersTotals.totalCgtFreeRewards, 2, globalCurrency)}
+            {formatCurrency(allTrackersTotals.totalCgtFreeRewards, 2, globalCurrency)}
           </p>
         </div>
         </div>
@@ -1717,8 +1730,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Rewards received</p>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
                       <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none", whiteSpace: "nowrap" }}>
-                        {currencySymbol}
-                        {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : formatNumber(totalRewardsNonPending, 2, globalCurrency)}
+                        {filteredTransactions.length === 1 && pendingCount === 1 
+                          ? (globalCurrency === "EUR" ? "— €" : "$ —")
+                          : formatCurrency(totalRewardsNonPending, 2, globalCurrency)}
                       </p>
                       {pendingCount > 0 && (
                         <div
@@ -1772,8 +1786,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Income tax due</p>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
                       <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none", whiteSpace: "nowrap" }}>
-                        {currencySymbol}
-                        {filteredTransactions.length === 1 && pendingCount === 1 ? "—" : formatNumber(totalTaxes, 2, globalCurrency)}
+                        {filteredTransactions.length === 1 && pendingCount === 1 
+                          ? (globalCurrency === "EUR" ? "— €" : "$ —")
+                          : formatCurrency(totalTaxes, 2, globalCurrency)}
                       </p>
                       {pendingCount > 0 && (
                         <div
@@ -1826,8 +1841,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {formatNumber(totalCgtFreeEth, 6, globalCurrency)} ETH
                     </p>
                     <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>
-                      {currencySymbol}
-                      {formatNumber(totalCgtFreeRewards, 2, globalCurrency)}
+                      {formatCurrency(totalCgtFreeRewards, 2, globalCurrency)}
                     </p>
                   </div>
                 </div>
@@ -1936,21 +1950,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         {isPriceMissing(tx, globalCurrency) ? (
                           <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
-                          `${currencySymbol} ${formatNumber(getEthPriceForDisplay(tx, globalCurrency), 2, globalCurrency)}`
+                          formatCurrency(getEthPriceForDisplay(tx, globalCurrency), 2, globalCurrency)
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center", whiteSpace: "nowrap" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
                           <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
-                          `${currencySymbol} ${formatNumber(getRewardsInCurrency(tx, globalCurrency), 2, globalCurrency)}`
+                          formatCurrency(getRewardsInCurrency(tx, globalCurrency), 2, globalCurrency)
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#e4a729", whiteSpace: "nowrap", textAlign: "center" }}>
                         {isPriceMissing(tx, globalCurrency) ? (
                           <span style={{ color: "#e4a729" }}>Pending</span>
                         ) : (
-                          `${currencySymbol} ${formatNumber(getTaxesInCurrency(tx, globalCurrency), 2, globalCurrency)}`
+                          formatCurrency(getTaxesInCurrency(tx, globalCurrency), 2, globalCurrency)
                         )}
                       </td>
                       {/* CGT Status column */}
