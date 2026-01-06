@@ -44,9 +44,17 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveButtonText, setSaveButtonText] = useState("Save");
   const [animationState, setAnimationState] = useState<"enter" | "exit">("enter");
-  const [shakeInput, setShakeInput] = useState(false);
+  const [shakeNameInput, setShakeNameInput] = useState(false);
+  const [shakeAddressInput, setShakeAddressInput] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
   const MODAL_ANIMATION_DURATION = 175;
+
+  // Check for duplicate name (excluding current tracker)
+  const duplicateName = useMemo(() => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return null;
+    return trackers.find((t) => t.id !== tracker.id && t.name === trimmedName) || null;
+  }, [name, trackers, tracker.id]);
 
   // Check for duplicate consensus layer address (excluding current tracker)
   const duplicateTracker = useMemo(() => {
@@ -96,14 +104,20 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       alert("Please enter a name for the tracker.");
       return;
     }
+    if (duplicateName) {
+      // Trigger shake animation for name input
+      setShakeNameInput(true);
+      setTimeout(() => setShakeNameInput(false), 500);
+      return;
+    }
     if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
       alert("Please enter a valid Ethereum withdrawal address.");
       return;
     }
     if (duplicateTracker) {
-      // Trigger shake animation
-      setShakeInput(true);
-      setTimeout(() => setShakeInput(false), 500);
+      // Trigger shake animation for address input
+      setShakeAddressInput(true);
+      setTimeout(() => setShakeAddressInput(false), 500);
       return;
     }
     // Validate fee recipient address if provided
@@ -304,7 +318,17 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               placeholder="Node Tracker 1"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              style={{
+                borderColor: duplicateName ? "#ef4444" : undefined,
+                borderWidth: duplicateName ? "2px" : undefined,
+                animation: shakeNameInput ? "shake 0.5s" : undefined,
+              }}
             />
+            {duplicateName && (
+              <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
+                ⚠ You already have a node tracker called <strong>{duplicateName.name}</strong>. Please choose a different name.
+              </p>
+            )}
           </div>
 
           <div>
@@ -322,7 +346,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               style={{
                 borderColor: duplicateTracker ? "#ef4444" : undefined,
                 borderWidth: duplicateTracker ? "2px" : undefined,
-                animation: shakeInput ? "shake 0.5s" : undefined,
+                animation: shakeAddressInput ? "shake 0.5s" : undefined,
               }}
             />
             {duplicateTracker && (

@@ -35,6 +35,23 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
   const [etherscanKey, setEtherscanKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [shakeNameInput, setShakeNameInput] = useState(false);
+
+  // Get next available tracker name
+  const getNextAvailableName = useMemo(() => {
+    let num = 1;
+    while (trackers.some((t) => t.name === `Node Tracker ${num}`)) {
+      num++;
+    }
+    return `Node Tracker ${num}`;
+  }, [trackers]);
+
+  // Check for duplicate name
+  const duplicateName = useMemo(() => {
+    const trimmedName = name.trim();
+    if (!trimmedName) return null;
+    return trackers.find((t) => t.name === trimmedName) || null;
+  }, [name, trackers]);
 
   // Check for duplicate consensus layer address
   const duplicateTracker = useMemo(() => {
@@ -66,7 +83,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const isFirstTracker = trackers.length === 0;
 
   const canNext = useMemo(() => {
-    if (step === 0) return true; // Allow empty name, will use default
+    if (step === 0) {
+      // Prevent proceeding if name is duplicate
+      const trimmedName = name.trim();
+      if (trimmedName && duplicateName) {
+        return false;
+      }
+      return true; // Allow empty name, will use default
+    }
     if (step === 1) {
       const walletValid = /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
       const feeRecipientValid = !feeRecipientAddress.trim() || /^0x[a-fA-F0-9]{40}$/.test(feeRecipientAddress.trim());
@@ -77,10 +101,17 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     if (step === 3) return taxRate >= 0 && taxRate <= 100;
     if (step === 4) return etherscanKey.trim().length > 0;
     return true;
-  }, [step, name, walletAddress, feeRecipientAddress, currency, taxRate, etherscanKey, duplicateTracker]);
+  }, [step, name, walletAddress, feeRecipientAddress, currency, taxRate, etherscanKey, duplicateTracker, duplicateName]);
 
   const next = async () => {
-    if (!canNext) return;
+    if (!canNext) {
+      // Trigger shake animation if trying to proceed with duplicate name
+      if (step === 0 && duplicateName) {
+        setShakeNameInput(true);
+        setTimeout(() => setShakeNameInput(false), 500);
+      }
+      return;
+    }
     if (step === 4) {
       // Save tracker and complete
       // Use placeholder name if name is empty
@@ -166,10 +197,20 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           </label>
           <input
             className="input"
-            placeholder={`Node Tracker ${trackers.length + 1}`}
+            placeholder={getNextAvailableName}
             value={name}
             onChange={(e) => setName(e.target.value)}
+            style={{
+              borderColor: duplicateName ? "#ef4444" : undefined,
+              borderWidth: duplicateName ? "2px" : undefined,
+              animation: shakeNameInput ? "shake 0.5s" : undefined,
+            }}
           />
+          {duplicateName && (
+            <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
+              ⚠ You already have a node tracker called <strong>{duplicateName.name}</strong>. Please choose a different name.
+            </p>
+          )}
         </div>
       )}
       {step === 1 && (
