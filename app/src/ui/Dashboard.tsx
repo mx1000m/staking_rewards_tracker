@@ -310,13 +310,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [ethPricesLoaded, ethPrices, globalCurrency]);
 
-  useEffect(() => {
+  // Clear price warning and transactions immediately when switching trackers to prevent showing wrong tracker's warnings
+  React.useEffect(() => {
     if (activeTracker) {
       // Reset to current year when switching trackers
       const currentYear = new Date().getFullYear();
       setSelectedYear(currentYear);
-      // Clear any previous error/warning when switching trackers
-      setError(null);
+      // Clear price warning immediately when switching trackers
+      setError((currentError) => {
+        if (currentError && currentError.startsWith("PRICE_WARNING:")) {
+          return null;
+        }
+        return currentError; // Keep other errors
+      });
+      // Clear transactions to prevent stale data from previous tracker
+      setTransactions([]);
+      // Load transactions for the new tracker
       loadTransactions(activeTracker);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -455,8 +464,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         setTransactions(cached);
         setLoading(false);
         console.log(`Loaded ${cached.length} cached transactions`);
-        // Check for missing prices immediately when loading from cache
-        checkForMissingPrices(cached);
+        // Don't check for missing prices here - let the useEffect handle it after transactions are set
       }
 
       // Sync with Firestore if user is authenticated
@@ -485,22 +493,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             const merged = Array.from(cachedMap.values()).sort((a, b) => b.timestamp - a.timestamp);
             setTransactions(merged);
             await saveTransactions(tracker.id, merged);
-            // Check for missing prices after loading transactions
-            checkForMissingPrices(merged);
-          } else if (cached.length > 0) {
-            // Check for missing prices if we only have cached data
-            checkForMissingPrices(cached);
+            // Don't check for missing prices here - let the useEffect handle it after transactions are set
           }
         } catch (firestoreError) {
           console.warn("Firestore sync failed (continuing with cache):", firestoreError);
-          // Still check for missing prices in cached data
-          if (cached.length > 0) {
-            checkForMissingPrices(cached);
-          }
         }
-      } else if (cached.length > 0) {
-        // Check for missing prices if we only have cached data and no user
-        checkForMissingPrices(cached);
       }
 
       // Check if we need to fetch new transactions from Etherscan
@@ -524,11 +521,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         await fetchTransactions(tracker, false, currentYear);
       } else {
         console.log("Using cached data, no fetch needed");
-        // Still check for missing prices even when using cached data
-        const finalTransactions = transactions.length > 0 ? transactions : cached;
-        if (finalTransactions.length > 0) {
-          checkForMissingPrices(finalTransactions);
-        }
+        // Don't check for missing prices here - let the useEffect handle it after transactions are set
       }
     } catch (error: any) {
       console.error("Failed to load transactions:", error);
@@ -754,7 +747,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     setTransactions(allTransactions);
     
     // Check for missing prices after fetching transactions
-    checkForMissingPrices(allTransactions);
+    // Don't check for missing prices here - let the useEffect handle it after transactions are set
     } catch (error: any) {
       console.error("Failed to fetch transactions:", error);
       setError(`Failed to fetch transactions: ${error.message || "Unknown error"}. Please check your Etherscan API key and wallet address.`);
@@ -867,25 +860,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     setSelectedMonth(null); // Reset to "ALL" when year changes
   }, [selectedYear]);
 
-  // Clear price warning and transactions immediately when switching trackers to prevent showing wrong tracker's warnings
-  React.useEffect(() => {
-    // Clear price warning
-    setError((currentError) => {
-      if (currentError && currentError.startsWith("PRICE_WARNING:")) {
-        return null;
-      }
-      return currentError; // Keep other errors
-    });
-    // Clear transactions to prevent stale data from previous tracker
-    setTransactions([]);
-  }, [activeTrackerId]);
-
   // Check for missing prices whenever transactions, prices, or selected year changes
   // This ensures the warning appears even if transactions load before prices or vice versa
   // We check the FILTERED transactions (for selected year) to show warning only for current year
   React.useEffect(() => {
-    if (!ethPricesLoaded || !activeTracker) return;
+    if (!ethPricesLoaded || !activeTracker) {
+      // Clear warning if prices aren't loaded or no active tracker
+      setError((currentError) => {
+        if (currentError && currentError.startsWith("PRICE_WARNING:")) {
+          return null;
+        }
+        return currentError;
+      });
+      return;
+    }
     
+    // Only check if we have transactions for the current tracker
     // If we have filtered transactions for the selected year, check for missing prices
     if (filteredTransactions.length > 0) {
       checkForMissingPrices(filteredTransactions);
@@ -908,7 +898,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ethPricesLoaded, filteredTransactions, activeTrackerId]);
+  }, [ethPricesLoaded, filteredTransactions, activeTrackerId, transactions.length]);
 
   // Fetch transactions when year changes (if we don't have data for that year)
   React.useEffect(() => {
