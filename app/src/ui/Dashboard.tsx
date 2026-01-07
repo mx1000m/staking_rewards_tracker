@@ -1320,60 +1320,62 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
         {/* First Card - TOTAL ETH EARNED */}
-        <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
-            onMouseEnter={() => setVisibleTooltip("rewards")}
-            onMouseLeave={() => setVisibleTooltip(null)}
-          >
-            <img 
-              src="/staking_rewards_tracker/icons/info_icon.svg" 
-              alt="Info" 
-              style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
-            />
-            {visibleTooltip === "rewards" && (
-              <div 
-                className="tooltip-gradient-border"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  right: "-9px",
-                  minWidth: "200px",
-                  maxWidth: "250px",
-                  zIndex: 1000,
-                  opacity: visibleTooltip === "rewards" ? 1 : 0,
-                  transition: "opacity 0.2s",
-                  pointerEvents: "none",
-                }}
-              >
-                <div className="tooltip-content" style={{
-                  color: "white",
-                  fontSize: "0.85rem",
-                  whiteSpace: "pre-line",
-                }}>
-                  Total ETH rewards received{'\n'}across all nodes and all years.
+        <div style={{ background: "linear-gradient(45deg, #8ec7f9, #3788fd)", padding: "2px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)" }}>
+          <div style={{ background: "linear-gradient(45deg, #3088d5, #4b9ee7, #3088d5)", padding: "20px", borderRadius: "12px", position: "relative", display: "flex", flexDirection: "column", height: "100%" }}>
+            <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
+              onMouseEnter={() => setVisibleTooltip("rewards")}
+              onMouseLeave={() => setVisibleTooltip(null)}
+            >
+              <img 
+                src="/staking_rewards_tracker/icons/info_icon.svg" 
+                alt="Info" 
+                style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
+              />
+              {visibleTooltip === "rewards" && (
+                <div 
+                  className="tooltip-gradient-border"
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    right: "-9px",
+                    minWidth: "200px",
+                    maxWidth: "250px",
+                    zIndex: 1000,
+                    opacity: visibleTooltip === "rewards" ? 1 : 0,
+                    transition: "opacity 0.2s",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div className="tooltip-content" style={{
+                    color: "white",
+                    fontSize: "0.85rem",
+                    whiteSpace: "pre-line",
+                  }}>
+                    Total ETH rewards received{'\n'}across all nodes and all years.
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          <div>
-            <h3 style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
-            <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
-              {formatNumber(allTrackersTotals.totalEthRewards, 4, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
-            </p>
-          </div>
-          <div style={{ marginTop: "2px" }}>
-            <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
-              Value at receipt: {formatCurrency(allTrackersTotals.totalRewards, 2, globalCurrency)}
-            </p>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
-              Value today: {currentEthPriceError ? (
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>Currently not available</span>
-              ) : currentEthPrice ? (
-                formatCurrency(allTrackersTotals.totalEthRewards * (globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd), 2, globalCurrency)
-              ) : (
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>Loading...</span>
               )}
-            </p>
+            </div>
+            <div>
+              <h3 style={{ margin: "0 0 6px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
+              <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
+                {formatNumber(allTrackersTotals.totalEthRewards, 4, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
+              </p>
+            </div>
+            <div style={{ marginTop: "2px" }}>
+              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+                Value at receipt: {formatCurrency(allTrackersTotals.totalRewards, 2, globalCurrency)}
+              </p>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+                Value today: {currentEthPriceError ? (
+                  <span style={{ color: "rgba(255,255,255,0.7)" }}>Currently not available</span>
+                ) : currentEthPrice ? (
+                  formatCurrency(allTrackersTotals.totalEthRewards * (globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd), 2, globalCurrency)
+                ) : (
+                  <span style={{ color: "rgba(255,255,255,0.7)" }}>Loading...</span>
+                )}
+              </p>
+            </div>
           </div>
         </div>
         {/* Second Card - TOTAL INCOME TAX */}
@@ -1413,7 +1415,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <div>
-            <h3 style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
+            <h3 style={{ margin: "0 0 6px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
             <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
               {globalCurrency === "EUR" ? (
                 <>
@@ -1469,7 +1471,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <div>
-            <h3 style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
+            <h3 style={{ margin: "0 0 6px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
             <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
               {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
             </p>
