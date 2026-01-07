@@ -1568,7 +1568,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       {/* Node Selected + Incoming Rewards combined */}
       {activeTracker && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Node selected:</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Node selected</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
             <div style={{ borderRadius: "13px", padding: "24px" }}>
               {/* Header row: node name, wallet + copy, action buttons */}
@@ -2140,7 +2140,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               >
                                 {isTaxFree ? (
                                   <>
-                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Tax free</span>
+                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>Tax free</span>
                                     <div
                                       style={{
                                         marginTop: 4,
@@ -2163,8 +2163,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                   </>
                                 ) : (
                                   <>
-                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>Taxable&nbsp;until</span>
-                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>Taxable until {dateLabel}</span>
                                     <div
                                       style={{
                                         marginTop: 4,
@@ -2229,6 +2228,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 cursor: "pointer",
                                 textTransform: "none",
                                 transition: "background 0.2s, transform 0.1s",
+                                whiteSpace: "nowrap",
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background = "#383838";
