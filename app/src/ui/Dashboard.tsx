@@ -1357,13 +1357,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               )}
             </div>
             <div>
-              <h3 style={{ margin: "0 0 6px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
+              <h3 style={{ margin: "0 0 5px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
               <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
                 {formatNumber(allTrackersTotals.totalEthRewards, 4, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
               </p>
             </div>
-            <div style={{ marginTop: "2px" }}>
-              <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+            <div style={{ marginTop: "3px" }}>
+              <p style={{ margin: "0 0 3px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
                 Value at receipt: {formatCurrency(allTrackersTotals.totalRewards, 2, globalCurrency)}
               </p>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
@@ -1379,113 +1379,117 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
         </div>
         {/* Second Card - TOTAL INCOME TAX */}
-        <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
-            onMouseEnter={() => setVisibleTooltip("taxes")}
-            onMouseLeave={() => setVisibleTooltip(null)}
-          >
-            <img 
-              src="/staking_rewards_tracker/icons/info_icon.svg" 
-              alt="Info" 
-              style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
-            />
-            {visibleTooltip === "taxes" && (
-              <div 
-                className="tooltip-gradient-border"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  right: "-9px",
-                  minWidth: "200px",
-                  maxWidth: "250px",
-                  zIndex: 1000,
-                  opacity: visibleTooltip === "taxes" ? 1 : 0,
-                  transition: "opacity 0.2s",
-                  pointerEvents: "none",
-                }}
-              >
-                <div className="tooltip-content" style={{
-                  color: "white",
-                  fontSize: "0.85rem",
-                  whiteSpace: "pre-line",
-                }}>
-                  Total income tax due{'\n'}across all nodes and all years.
+        <div style={{ background: "linear-gradient(45deg, #f8c94c, #c18d02)", padding: "2px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", display: "flex" }}>
+          <div style={{ background: "linear-gradient(45deg, #c18d02, #dea611, #c18d02)", padding: "20px", borderRadius: "12px", position: "relative", display: "flex", flexDirection: "column", width: "100%", boxSizing: "border-box" }}>
+            <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
+              onMouseEnter={() => setVisibleTooltip("taxes")}
+              onMouseLeave={() => setVisibleTooltip(null)}
+            >
+              <img 
+                src="/staking_rewards_tracker/icons/info_icon.svg" 
+                alt="Info" 
+                style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
+              />
+              {visibleTooltip === "taxes" && (
+                <div 
+                  className="tooltip-gradient-border"
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    right: "-9px",
+                    minWidth: "200px",
+                    maxWidth: "250px",
+                    zIndex: 1000,
+                    opacity: visibleTooltip === "taxes" ? 1 : 0,
+                    transition: "opacity 0.2s",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div className="tooltip-content" style={{
+                    color: "white",
+                    fontSize: "0.85rem",
+                    whiteSpace: "pre-line",
+                  }}>
+                    Total income tax due{'\n'}across all nodes and all years.
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          <div>
-            <h3 style={{ margin: "0 0 6px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
-            <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
-              {globalCurrency === "EUR" ? (
-                <>
-                  {formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> €</span>
-                </>
-              ) : (
-                <>
-                  <span style={{ fontSize: "1.4rem" }}>$</span>{formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}
-                </>
               )}
-            </p>
-          </div>
-          <div style={{ marginTop: "2px" }}>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
-              Due this year: {formatCurrency(allTrackersTotals.totalTaxesCurrentYear, 2, globalCurrency)}
-            </p>
+            </div>
+            <div>
+              <h3 style={{ margin: "0 0 5px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
+              <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
+                {globalCurrency === "EUR" ? (
+                  <>
+                    {formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> €</span>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: "1.4rem" }}>$</span>{formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}
+                  </>
+                )}
+              </p>
+            </div>
+            <div style={{ marginTop: "3px" }}>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+                Due this year: {formatCurrency(allTrackersTotals.totalTaxesCurrentYear, 2, globalCurrency)}
+              </p>
+            </div>
           </div>
         </div>
         {/* Third Card - CAPITAL GAIN TAX FREE */}
-        <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", display: "flex", flexDirection: "column" }}>
-          <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
-            onMouseEnter={() => setVisibleTooltip("cgtFree")}
-            onMouseLeave={() => setVisibleTooltip(null)}
-          >
-            <img 
-              src="/staking_rewards_tracker/icons/info_icon.svg" 
-              alt="Info" 
-              style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
-            />
-            {visibleTooltip === "cgtFree" && (
-              <div 
-                className="tooltip-gradient-border"
-                style={{
-                  position: "absolute",
-                  top: "calc(100% + 6px)",
-                  right: "-9px",
-                  minWidth: "200px",
-                  maxWidth: "250px",
-                  zIndex: 1000,
-                  opacity: visibleTooltip === "cgtFree" ? 1 : 0,
-                  transition: "opacity 0.2s",
-                  pointerEvents: "none",
-                }}
-              >
-                <div className="tooltip-content" style={{
-                  color: "white",
-                  fontSize: "0.85rem",
-                  whiteSpace: "pre-line",
-                }}>
-                  Total ETH rewards that are{'\n'}capital gains tax free{'\n'}(held ≥ 2 years, not sold).
+        <div style={{ background: "linear-gradient(45deg, #2fd3ab, #0f9d7a)", padding: "2px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", display: "flex" }}>
+          <div style={{ background: "linear-gradient(45deg, #0f9d7a, #24ba95, #0f9d7a)", padding: "20px", borderRadius: "12px", position: "relative", display: "flex", flexDirection: "column", width: "100%", boxSizing: "border-box" }}>
+            <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
+              onMouseEnter={() => setVisibleTooltip("cgtFree")}
+              onMouseLeave={() => setVisibleTooltip(null)}
+            >
+              <img 
+                src="/staking_rewards_tracker/icons/info_icon.svg" 
+                alt="Info" 
+                style={{ width: "16px", height: "16px", filter: "brightness(0) invert(1)" }}
+              />
+              {visibleTooltip === "cgtFree" && (
+                <div 
+                  className="tooltip-gradient-border"
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 6px)",
+                    right: "-9px",
+                    minWidth: "200px",
+                    maxWidth: "250px",
+                    zIndex: 1000,
+                    opacity: visibleTooltip === "cgtFree" ? 1 : 0,
+                    transition: "opacity 0.2s",
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div className="tooltip-content" style={{
+                    color: "white",
+                    fontSize: "0.85rem",
+                    whiteSpace: "pre-line",
+                  }}>
+                    Total ETH rewards that are{'\n'}capital gains tax free{'\n'}(held ≥ 2 years, not sold).
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          <div>
-            <h3 style={{ margin: "0 0 6px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
-            <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
-              {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
-            </p>
-          </div>
-          <div style={{ marginTop: "2px" }}>
-            <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
-              Value today: {currentEthPriceError ? (
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>Currently not available</span>
-              ) : currentEthPrice ? (
-                formatCurrency(allTrackersTotals.totalCgtFreeEth * (globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd), 2, globalCurrency)
-              ) : (
-                <span style={{ color: "rgba(255,255,255,0.7)" }}>Loading...</span>
               )}
-            </p>
+            </div>
+            <div>
+              <h3 style={{ margin: "0 0 5px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
+              <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
+                {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
+              </p>
+            </div>
+            <div style={{ marginTop: "3px" }}>
+              <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+                Value today: {currentEthPriceError ? (
+                  <span style={{ color: "rgba(255,255,255,0.7)" }}>Currently not available</span>
+                ) : currentEthPrice ? (
+                  formatCurrency(allTrackersTotals.totalCgtFreeEth * (globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd), 2, globalCurrency)
+                ) : (
+                  <span style={{ color: "rgba(255,255,255,0.7)" }}>Loading...</span>
+                )}
+              </p>
+            </div>
           </div>
         </div>
         </div>
