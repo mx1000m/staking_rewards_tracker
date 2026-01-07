@@ -1917,8 +1917,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 {/* Card 1: Reward received */}
                 <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
                   <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Reward received</p>
-                    <p style={{ margin: "0 0 8px 0", fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", whiteSpace: "nowrap" }}>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Reward received</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", whiteSpace: "nowrap" }}>
                       {formatNumber(totalEthRewards, 6, globalCurrency)}<span style={{ fontSize: "0.9rem", color: "#32c0ea" }}> ETH</span>
                     </p>
                     <p style={{ margin: 0, fontSize: "0.85rem", color: "#aaaaaa", lineHeight: "1.4" }}>
@@ -1935,7 +1935,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 {/* Card 2: Value at receipt */}
                 <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
                   <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Value at receipt</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Value at receipt</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", whiteSpace: "nowrap" }}>
                       {globalCurrency === "EUR" ? (
                         <>
@@ -1952,7 +1952,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 {/* Card 3: Income tax due */}
                 <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
                   <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Income tax due</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Income tax due</p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#dbaa46", whiteSpace: "nowrap" }}>
                       {globalCurrency === "EUR" ? (
                         <>
@@ -1969,8 +1969,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 {/* Card 4: Capital gain tax free */}
                 <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
                   <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Capital gain tax free</p>
-                    <p style={{ margin: "0 0 8px 0", fontSize: "1.2rem", fontWeight: 600, color: "#6fb489", whiteSpace: "nowrap" }}>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Capital gain tax free</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "1.2rem", fontWeight: 600, color: "#6fb489", whiteSpace: "nowrap" }}>
                       {formatNumber(totalCgtFreeEth, 6, globalCurrency)}<span style={{ fontSize: "0.9rem", color: "#6fb489" }}> ETH</span>
                     </p>
                     <p style={{ margin: 0, fontSize: "0.85rem", color: "#aaaaaa", lineHeight: "1.4" }}>
