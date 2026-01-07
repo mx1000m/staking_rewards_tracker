@@ -85,6 +85,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
+  
+  // Current ETH price state (from Coinbase API)
+  const [currentEthPrice, setCurrentEthPrice] = useState<{ eur: number; usd: number } | null>(null);
+  const [currentEthPriceError, setCurrentEthPriceError] = useState<string | null>(null);
+  const [currentEthPriceLoading, setCurrentEthPriceLoading] = useState(false);
 
   // Load centralized ETH prices from GitHub on mount
   useEffect(() => {
@@ -112,6 +117,65 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       }
     };
     loadEthPrices();
+  }, []);
+
+  // Fetch current ETH price from Coinbase API with 1-hour browser cache
+  useEffect(() => {
+    const fetchCurrentEthPrice = async () => {
+      const CACHE_KEY = 'current_eth_price';
+      const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
+      
+      try {
+        // Check cache first
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { price, timestamp } = JSON.parse(cached);
+          const now = Date.now();
+          if (now - timestamp < CACHE_DURATION) {
+            setCurrentEthPrice(price);
+            setCurrentEthPriceError(null);
+            return;
+          }
+        }
+
+        // Fetch from Coinbase API
+        setCurrentEthPriceLoading(true);
+        const response = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=ETH');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch current ETH price: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        const rates = data.data?.rates;
+        
+        if (!rates || !rates.EUR || !rates.USD) {
+          throw new Error('Invalid response from Coinbase API');
+        }
+        
+        const price = {
+          eur: parseFloat(rates.EUR),
+          usd: parseFloat(rates.USD),
+        };
+        
+        // Cache the result
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          price,
+          timestamp: Date.now(),
+        }));
+        
+        setCurrentEthPrice(price);
+        setCurrentEthPriceError(null);
+      } catch (error: any) {
+        console.error('Failed to fetch current ETH price:', error);
+        setCurrentEthPriceError('Currently not available');
+        setCurrentEthPrice(null);
+      } finally {
+        setCurrentEthPriceLoading(false);
+      }
+    };
+
+    fetchCurrentEthPrice();
   }, []);
 
   // Format number based on currency preference
@@ -967,6 +1031,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [allTrackersTotals, setAllTrackersTotals] = React.useState({
     totalRewards: 0,
     totalTaxes: 0,
+    totalTaxesCurrentYear: 0, // Income tax for current year only
     totalEthRewards: 0,
     totalEthTaxes: 0,
     // Capital gains tax‑free amounts (across all trackers)
@@ -979,10 +1044,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const calculateAllTotals = async () => {
       let allRewards = 0;
       let allTaxes = 0;
+      let allTaxesCurrentYear = 0;
       let allEthRewards = 0;
       let allEthTaxes = 0;
       let allCgtFreeRewards = 0;
       let allCgtFreeEth = 0;
+      const currentYear = new Date().getFullYear();
 
       for (const tracker of trackers) {
         const cached = await getCachedTransactions(tracker.id);
@@ -993,6 +1060,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         allTaxes += cached.reduce((sum, tx) => {
           const value = getTaxesInCurrency(tx, globalCurrency);
           return sum + (isNaN(value) ? 0 : value);
+        }, 0);
+        // Calculate income tax for current year only
+        allTaxesCurrentYear += cached.reduce((sum, tx) => {
+          const txYear = new Date(tx.timestamp * 1000).getFullYear();
+          if (txYear === currentYear) {
+            const value = getTaxesInCurrency(tx, globalCurrency);
+            return sum + (isNaN(value) ? 0 : value);
+          }
+          return sum;
         }, 0);
         allEthRewards += cached.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
         allEthTaxes += cached.reduce((sum, tx) => sum + (tx.taxesInEth || 0), 0);
@@ -1018,6 +1094,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       setAllTrackersTotals({
         totalRewards: allRewards,
         totalTaxes: allTaxes,
+        totalTaxesCurrentYear: allTaxesCurrentYear,
         totalEthRewards: allEthRewards,
         totalEthTaxes: allEthTaxes,
         totalCgtFreeRewards: allCgtFreeRewards,
@@ -1242,7 +1319,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All time nodes overview</h3>
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
-        <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
+        {/* First Card - TOTAL ETH EARNED */}
+        <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "24px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", minHeight: "180px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
             onMouseEnter={() => setVisibleTooltip("rewards")}
             onMouseLeave={() => setVisibleTooltip(null)}
@@ -1272,20 +1350,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   fontSize: "0.85rem",
                   whiteSpace: "pre-line",
                 }}>
-                  Cumulative staking{'\n'}rewards distributed to{'\n'}all nodes across all{'\n'}years.
+                  Total ETH rewards received{'\n'}across all nodes and all years.
                 </div>
               </div>
             )}
           </div>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>REWARDS RECEIVED</h3>
-          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
-            {formatCurrency(allTrackersTotals.totalRewards, 2, globalCurrency)}
-          </p>
-          <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)" }}>
-            {formatNumber(allTrackersTotals.totalEthRewards, 6, globalCurrency)} ETH
-          </p>
+          <div>
+            <h3 style={{ margin: "0 0 16px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
+            <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
+              {formatNumber(allTrackersTotals.totalEthRewards, 4, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
+            </p>
+          </div>
+          <div style={{ marginTop: "auto", paddingTop: "16px" }}>
+            <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+              Value at receipt: {formatCurrency(allTrackersTotals.totalRewards, 2, globalCurrency)}
+            </p>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+              Value today: {currentEthPriceError ? (
+                <span style={{ color: "rgba(255,255,255,0.7)" }}>Currently not available</span>
+              ) : currentEthPrice ? (
+                formatCurrency(allTrackersTotals.totalEthRewards * (globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd), 2, globalCurrency)
+              ) : (
+                <span style={{ color: "rgba(255,255,255,0.7)" }}>Loading...</span>
+              )}
+            </p>
+          </div>
         </div>
-        <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
+        {/* Second Card - TOTAL INCOME TAX */}
+        <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "24px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", minHeight: "180px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
             onMouseEnter={() => setVisibleTooltip("taxes")}
             onMouseLeave={() => setVisibleTooltip(null)}
@@ -1315,17 +1407,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   fontSize: "0.85rem",
                   whiteSpace: "pre-line",
                 }}>
-                  Cumulative taxes at{'\n'}selected country rate{'\n'}across all nodes and years.
+                  Total income tax due{'\n'}across all nodes and all years.
                 </div>
               </div>
             )}
           </div>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>INCOME TAX DUE</h3>
-          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
-            {formatCurrency(allTrackersTotals.totalTaxes, 2, globalCurrency)}
-          </p>
+          <div>
+            <h3 style={{ margin: "0 0 16px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
+            <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
+              {globalCurrency === "EUR" ? (
+                <>
+                  {formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> €</span>
+                </>
+              ) : (
+                <>
+                  <span style={{ fontSize: "1.4rem" }}>$</span>{formatNumber(allTrackersTotals.totalTaxes, 2, globalCurrency)}
+                </>
+              )}
+            </p>
+          </div>
+          <div style={{ marginTop: "auto", paddingTop: "16px" }}>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+              Due this year: {formatCurrency(allTrackersTotals.totalTaxesCurrentYear, 2, globalCurrency)}
+            </p>
+          </div>
         </div>
-        <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative" }}>
+        {/* Third Card - CAPITAL GAIN TAX FREE */}
+        <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "24px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", minHeight: "180px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
             onMouseEnter={() => setVisibleTooltip("cgtFree")}
             onMouseLeave={() => setVisibleTooltip(null)}
@@ -1355,18 +1463,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   fontSize: "0.85rem",
                   whiteSpace: "pre-line",
                 }}>
-                  Estimated amount of{'\n'}rewards currently{'\n'}capital‑gains tax free{'\n'}(based on local rules).
+                  Total ETH rewards that are{'\n'}capital gains tax free{'\n'}(held ≥ 2 years, not sold).
                 </div>
               </div>
             )}
           </div>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", color: "rgba(255,255,255,0.9)" }}>CAPITAL GAINS TAX FREE</h3>
-          <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700, color: "white", whiteSpace: "nowrap" }}>
-            {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)} ETH
-          </p>
-          <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.8)", whiteSpace: "nowrap" }}>
-            {formatCurrency(allTrackersTotals.totalCgtFreeRewards, 2, globalCurrency)}
-          </p>
+          <div>
+            <h3 style={{ margin: "0 0 16px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
+            <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
+              {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
+            </p>
+          </div>
+          <div style={{ marginTop: "auto", paddingTop: "16px" }}>
+            <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+              Value today: {currentEthPriceError ? (
+                <span style={{ color: "rgba(255,255,255,0.7)" }}>Currently not available</span>
+              ) : currentEthPrice ? (
+                formatCurrency(allTrackersTotals.totalCgtFreeEth * (globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd), 2, globalCurrency)
+              ) : (
+                <span style={{ color: "rgba(255,255,255,0.7)" }}>Loading...</span>
+              )}
+            </p>
+          </div>
         </div>
         </div>
       </div>
