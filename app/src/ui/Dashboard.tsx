@@ -1912,132 +1912,75 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 {dataShownText}
               </p>
 
-              {/* Totals strip */}
-              <div
-                style={{
-                  background: "#2b2b2b",
-                  borderRadius: "10px",
-                  padding: "16px 20px",
-                  marginBottom: "16px",
-                }}
-              >
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0" }}>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Rewards received</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
-                      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", textTransform: "none", whiteSpace: "nowrap" }}>
-                        {filteredTransactions.length === 1 && pendingCount === 1 
-                          ? (globalCurrency === "EUR" ? "— €" : "$ —")
-                          : formatCurrency(totalRewardsNonPending, 2, globalCurrency)}
-                      </p>
-                      {pendingCount > 0 && (
-                        <div
-                          style={{ position: "relative", display: "inline-block" }}
-                          onMouseEnter={() => setVisibleTooltip("rewards-pending")}
-                          onMouseLeave={() => setVisibleTooltip(null)}
-                        >
-                          <svg 
-                            width="16" 
-                            height="16" 
-                            viewBox="0 0 21 21" 
-                            style={{ display: "inline-block", verticalAlign: "middle" }}
-                          >
-                            <path 
-                              fill="#e4a729" 
-                              fillRule="evenodd" 
-                              d="M10.5,4.5c.76,0,1.38.62,1.38,1.38,0,.04,0,.08,0,.11l-.56,6.76c-.04.42-.39.75-.81.75s-.78-.32-.81-.75l-.56-6.76c-.06-.76.5-1.43,1.26-1.49.04,0,.08,0,.11,0ZM10.5,16.5c-.55,0-1-.45-1-1s.45-1,1-1,1,.45,1,1-.45,1-1,1ZM10.5,21C4.7,21,0,16.3,0,10.5S4.7,0,10.5,0s10.5,4.7,10.5,10.5-4.7,10.5-10.5,10.5ZM10.5,19c4.69,0,8.5-3.81,8.5-8.5S15.19,2,10.5,2,2,5.81,2,10.5s3.81,8.5,8.5,8.5Z"
-                            />
-                          </svg>
-                          {visibleTooltip === "rewards-pending" && (
-                            <div 
-                              className="tooltip-gradient-border"
-                              style={{
-                                position: "absolute",
-                                top: "calc(100% + 6px)",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                minWidth: "200px",
-                                maxWidth: "250px",
-                                zIndex: 1000,
-                                opacity: 1,
-                                transition: "opacity 0.2s",
-                                pointerEvents: "none",
-                              }}
-                            >
-                              <div style={{ background: "#181818", padding: "12px", borderRadius: "8px", border: "1px solid #2b2b2b" }}>
-                                <p style={{ margin: 0, color: "#f0f0f0", fontSize: "0.85rem", lineHeight: "1.4" }}>
-                                  {pendingCount} reward{pendingCount > 1 ? 's are' : ' is'} pending fiat valuation.
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+              {/* Summary Cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "16px" }}>
+                {/* Card 1: Reward received */}
+                <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
+                  <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+                    <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Reward received</p>
+                    <p style={{ margin: "0 0 8px 0", fontSize: "1.2rem", fontWeight: 600, color: "white", whiteSpace: "nowrap" }}>
+                      {formatNumber(totalEthRewards, 6, globalCurrency)}<span style={{ fontSize: "0.9rem" }}> ETH</span>
+                    </p>
+                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#aaaaaa", lineHeight: "1.4" }}>
+                      Value today: {currentEthPriceError ? (
+                        <span style={{ color: "#888" }}>Currently not available</span>
+                      ) : currentEthPrice ? (
+                        formatCurrency(totalEthRewards * (globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd), 2, globalCurrency)
+                      ) : (
+                        <span style={{ color: "#888" }}>Loading...</span>
                       )}
-                    </div>
-                    <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                      {formatNumber(totalEthRewards, 6, globalCurrency)} ETH
                     </p>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Income tax due</p>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", position: "relative" }}>
-                      <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#e4a729", textTransform: "none", whiteSpace: "nowrap" }}>
-                        {filteredTransactions.length === 1 && pendingCount === 1 
-                          ? (globalCurrency === "EUR" ? "— €" : "$ —")
-                          : formatCurrency(totalTaxes, 2, globalCurrency)}
-                      </p>
-                      {pendingCount > 0 && (
-                        <div
-                          style={{ position: "relative", display: "inline-block" }}
-                          onMouseEnter={() => setVisibleTooltip("tax-pending")}
-                          onMouseLeave={() => setVisibleTooltip(null)}
-                        >
-                          <svg 
-                            width="16" 
-                            height="16" 
-                            viewBox="0 0 21 21" 
-                            style={{ display: "inline-block", verticalAlign: "middle" }}
-                          >
-                            <path 
-                              fill="#e4a729" 
-                              fillRule="evenodd" 
-                              d="M10.5,4.5c.76,0,1.38.62,1.38,1.38,0,.04,0,.08,0,.11l-.56,6.76c-.04.42-.39.75-.81.75s-.78-.32-.81-.75l-.56-6.76c-.06-.76.5-1.43,1.26-1.49.04,0,.08,0,.11,0ZM10.5,16.5c-.55,0-1-.45-1-1s.45-1,1-1,1,.45,1,1-.45,1-1,1ZM10.5,21C4.7,21,0,16.3,0,10.5S4.7,0,10.5,0s10.5,4.7,10.5,10.5-4.7,10.5-10.5,10.5ZM10.5,19c4.69,0,8.5-3.81,8.5-8.5S15.19,2,10.5,2,2,5.81,2,10.5s3.81,8.5,8.5,8.5Z"
-                            />
-                          </svg>
-                          {visibleTooltip === "tax-pending" && (
-                            <div 
-                              className="tooltip-gradient-border"
-                              style={{
-                                position: "absolute",
-                                top: "calc(100% + 6px)",
-                                left: "50%",
-                                transform: "translateX(-50%)",
-                                minWidth: "200px",
-                                maxWidth: "250px",
-                                zIndex: 1000,
-                                opacity: 1,
-                                transition: "opacity 0.2s",
-                                pointerEvents: "none",
-                              }}
-                            >
-                              <div style={{ background: "#181818", padding: "12px", borderRadius: "8px", border: "1px solid #2b2b2b" }}>
-                                <p style={{ margin: 0, color: "#f0f0f0", fontSize: "0.85rem", lineHeight: "1.4" }}>
-                                  Tax calculation pending fiat valuation for {pendingCount} reward{pendingCount > 1 ? 's' : ''}.
-                                </p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                </div>
+                {/* Card 2: Value at receipt */}
+                <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
+                  <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+                    <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Value at receipt</p>
+                    <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "white", whiteSpace: "nowrap" }}>
+                      {globalCurrency === "EUR" ? (
+                        <>
+                          {formatNumber(totalRewards, 2, globalCurrency)}<span style={{ fontSize: "0.9rem" }}> €</span>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: "0.9rem" }}>$</span>{formatNumber(totalRewards, 2, globalCurrency)}
+                        </>
                       )}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa" }}>Capital gains tax free</p>
-                    <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#55b685", textTransform: "none", whiteSpace: "nowrap" }}>
-                      {formatNumber(totalCgtFreeEth, 6, globalCurrency)} ETH
                     </p>
-                    <p style={{ margin: "4px 0 0 0", fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>
-                      {formatCurrency(totalCgtFreeRewards, 2, globalCurrency)}
+                  </div>
+                </div>
+                {/* Card 3: Income tax due */}
+                <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
+                  <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+                    <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Income tax due</p>
+                    <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "white", whiteSpace: "nowrap" }}>
+                      {globalCurrency === "EUR" ? (
+                        <>
+                          {formatNumber(totalTaxes, 2, globalCurrency)}<span style={{ fontSize: "0.9rem" }}> €</span>
+                        </>
+                      ) : (
+                        <>
+                          <span style={{ fontSize: "0.9rem" }}>$</span>{formatNumber(totalTaxes, 2, globalCurrency)}
+                        </>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                {/* Card 4: Capital gain tax free */}
+                <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
+                  <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column" }}>
+                    <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Capital gain tax free</p>
+                    <p style={{ margin: "0 0 8px 0", fontSize: "1.2rem", fontWeight: 600, color: "white", whiteSpace: "nowrap" }}>
+                      {formatNumber(totalCgtFreeEth, 6, globalCurrency)}<span style={{ fontSize: "0.9rem" }}> ETH</span>
+                    </p>
+                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#aaaaaa", lineHeight: "1.4" }}>
+                      Value today: {currentEthPriceError ? (
+                        <span style={{ color: "#888" }}>Currently not available</span>
+                      ) : currentEthPrice ? (
+                        formatCurrency(totalCgtFreeEth * (globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd), 2, globalCurrency)
+                      ) : (
+                        <span style={{ color: "#888" }}>Loading...</span>
+                      )}
                     </p>
                   </div>
                 </div>
