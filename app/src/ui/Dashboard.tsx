@@ -1357,13 +1357,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               )}
             </div>
             <div>
-              <h3 style={{ margin: "0 0 5px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
+              <h3 style={{ margin: "0 0 2px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
               <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
                 {formatNumber(allTrackersTotals.totalEthRewards, 4, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
               </p>
             </div>
-            <div style={{ marginTop: "3px" }}>
-              <p style={{ margin: "0 0 3px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
+            <div style={{ marginTop: "6px" }}>
+              <p style={{ margin: "0 0 0px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
                 Value at receipt: {formatCurrency(allTrackersTotals.totalRewards, 2, globalCurrency)}
               </p>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
@@ -1416,7 +1416,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               )}
             </div>
             <div>
-              <h3 style={{ margin: "0 0 5px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
+              <h3 style={{ margin: "0 0 2px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
               <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
                 {globalCurrency === "EUR" ? (
                   <>
@@ -1429,7 +1429,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 )}
               </p>
             </div>
-            <div style={{ marginTop: "3px" }}>
+            <div style={{ marginTop: "6px" }}>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
                 Due this year: {formatCurrency(allTrackersTotals.totalTaxesCurrentYear, 2, globalCurrency)}
               </p>
@@ -1474,12 +1474,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               )}
             </div>
             <div>
-              <h3 style={{ margin: "0 0 5px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
+              <h3 style={{ margin: "0 0 2px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 700, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
               <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
                 {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
               </p>
             </div>
-            <div style={{ marginTop: "3px" }}>
+            <div style={{ marginTop: "6px" }}>
               <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
                 Value today: {currentEthPriceError ? (
                   <span style={{ color: "rgba(255,255,255,0.7)" }}>Currently not available</span>
