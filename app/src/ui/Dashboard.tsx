@@ -2039,8 +2039,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>ETH Price</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{valueLabel}</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{incomeTaxLabel}</th>
-                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>CGT status</th>
-                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Hodling status</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>CGT status</th>
+                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Hodling status</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
                   </tr>
                 </thead>
@@ -2140,7 +2140,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                               >
                                 {isTaxFree ? (
                                   <>
-                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>Tax free</span>
+                                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>Tax free</span>
                                     <div
                                       style={{
                                         marginTop: 4,
@@ -2163,7 +2163,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                   </>
                                 ) : (
                                   <>
-                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>Taxable until {dateLabel}</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa", whiteSpace: "nowrap" }}>Taxable&nbsp;until</span>
+                                      <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>{dateLabel}</span>
                                     <div
                                       style={{
                                         marginTop: 4,
@@ -2228,7 +2229,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                                 cursor: "pointer",
                                 textTransform: "none",
                                 transition: "background 0.2s, transform 0.1s",
-                                whiteSpace: "nowrap",
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.background = "#383838";
