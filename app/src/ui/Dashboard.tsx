@@ -1320,7 +1320,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
         {/* First Card - TOTAL ETH EARNED */}
-        <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "24px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", minHeight: "180px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div style={{ background: "linear-gradient(45deg, #3088d5, #34f3fc)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", display: "flex", flexDirection: "column" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
             onMouseEnter={() => setVisibleTooltip("rewards")}
             onMouseLeave={() => setVisibleTooltip(null)}
@@ -1356,12 +1356,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <div>
-            <h3 style={{ margin: "0 0 16px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
+            <h3 style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>TOTAL ETH EARNED</h3>
             <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
               {formatNumber(allTrackersTotals.totalEthRewards, 4, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
             </p>
           </div>
-          <div style={{ marginTop: "auto", paddingTop: "16px" }}>
+          <div style={{ marginTop: "2px" }}>
             <p style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
               Value at receipt: {formatCurrency(allTrackersTotals.totalRewards, 2, globalCurrency)}
             </p>
@@ -1377,7 +1377,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           </div>
         </div>
         {/* Second Card - TOTAL INCOME TAX */}
-        <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "24px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", minHeight: "180px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div style={{ background: "linear-gradient(45deg, #c18d02, #ffbb45)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", display: "flex", flexDirection: "column" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
             onMouseEnter={() => setVisibleTooltip("taxes")}
             onMouseLeave={() => setVisibleTooltip(null)}
@@ -1413,7 +1413,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <div>
-            <h3 style={{ margin: "0 0 16px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
+            <h3 style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>TOTAL INCOME TAX</h3>
             <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
               {globalCurrency === "EUR" ? (
                 <>
@@ -1426,14 +1426,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               )}
             </p>
           </div>
-          <div style={{ marginTop: "auto", paddingTop: "16px" }}>
+          <div style={{ marginTop: "2px" }}>
             <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
               Due this year: {formatCurrency(allTrackersTotals.totalTaxesCurrentYear, 2, globalCurrency)}
             </p>
           </div>
         </div>
         {/* Third Card - CAPITAL GAIN TAX FREE */}
-        <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "24px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", minHeight: "180px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div style={{ background: "linear-gradient(45deg, #0f9d7a, #10dcb6)", padding: "20px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", position: "relative", display: "flex", flexDirection: "column" }}>
           <div style={{ position: "absolute", top: "12px", right: "12px", cursor: "pointer" }}
             onMouseEnter={() => setVisibleTooltip("cgtFree")}
             onMouseLeave={() => setVisibleTooltip(null)}
@@ -1469,12 +1469,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             )}
           </div>
           <div>
-            <h3 style={{ margin: "0 0 16px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
+            <h3 style={{ margin: "0 0 8px 0", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontWeight: 500, letterSpacing: "0.5px" }}>CAPITAL GAIN TAX FREE</h3>
             <p style={{ margin: 0, fontSize: "2rem", fontWeight: 700, color: "white", whiteSpace: "nowrap", lineHeight: "1.2" }}>
               {formatNumber(allTrackersTotals.totalCgtFreeEth, 6, globalCurrency)}<span style={{ fontSize: "1.4rem" }}> ETH</span>
             </p>
           </div>
-          <div style={{ marginTop: "auto", paddingTop: "16px" }}>
+          <div style={{ marginTop: "2px" }}>
             <p style={{ margin: 0, fontSize: "0.85rem", color: "rgba(255,255,255,0.85)", lineHeight: "1.4" }}>
               Value today: {currentEthPriceError ? (
                 <span style={{ color: "rgba(255,255,255,0.7)" }}>Currently not available</span>
