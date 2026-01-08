@@ -1055,6 +1055,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [trackers, transactions, holdingStatusMap, globalCurrency]); // Recalculate when trackers, transactions, holding status, or currency changes
 
+  // Year dropdown state - MUST be before early return to ensure hooks are always called
+  const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
+  const yearDropdownRef = useRef<HTMLDivElement>(null);
+
   // Calculate totals based on filtered transactions (for selected node)
   // Use global currency for all calculations
   // Separate pending and non-pending transactions
@@ -1240,9 +1244,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     URL.revokeObjectURL(url);
     setShowExportModal(false);
   };
-
-  const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
-  const yearDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close year dropdown when clicking outside
   React.useEffect(() => {
