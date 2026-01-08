@@ -1419,7 +1419,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     fontSize: "0.85rem",
                     whiteSpace: "pre-line",
                   }}>
-                    Total ETH rewards that are{'\n'}capital gains tax free{'\n'}(held ≥ 2 years, not sold).
+                    Total ETH rewards that are capital gain tax free (held more than 2 years).
                   </div>
                 </div>
               )}
