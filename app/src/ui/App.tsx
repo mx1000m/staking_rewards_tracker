@@ -18,6 +18,16 @@ export const App: React.FC = () => {
         const { trackers: syncedTrackers } = useTrackerStore.getState();
         setShowWizard(syncedTrackers.length === 0);
       });
+      
+      // Set up periodic sync to detect deletions on other devices
+      // Sync every 30 seconds when user is authenticated
+      const syncInterval = setInterval(() => {
+        syncTrackersFromFirestore(user.uid).catch((error) => {
+          console.error("Periodic sync failed:", error);
+        });
+      }, 30000); // 30 seconds
+      
+      return () => clearInterval(syncInterval);
     }
   }, [isAuthenticated, user, syncTrackersFromFirestore]);
 

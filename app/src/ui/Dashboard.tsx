@@ -1071,8 +1071,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   // Wait for Zustand persistence to hydrate before rendering
   // This prevents hooks order issues when state loads from localStorage
   // Must be after all hooks to ensure hooks are always called in same order
+  // Return a minimal loading state instead of null to prevent unmount/remount issues
   if (!_hasHydrated) {
-    return null; // Return null during hydration to prevent hook order issues
+    return (
+      <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
+        <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", width: "100%", boxSizing: "border-box" }}>
+          <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
+            Loading...
+          </h2>
+        </div>
+      </div>
+    );
   }
 
   // Early return for no trackers - moved after all hooks to ensure hooks are always called
