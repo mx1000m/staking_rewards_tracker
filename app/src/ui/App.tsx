@@ -10,6 +10,13 @@ export const App: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [showWizard, setShowWizard] = useState(trackers.length === 0);
   
+  // Automatically open wizard when all trackers are deleted
+  useEffect(() => {
+    if (trackers.length === 0) {
+      setShowWizard(true);
+    }
+  }, [trackers.length]);
+  
   // Sync trackers from Firestore when user authenticates
   useEffect(() => {
     if (isAuthenticated && user) {
