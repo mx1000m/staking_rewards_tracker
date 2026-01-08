@@ -29,21 +29,12 @@ interface TrackerStore {
   syncTrackerToFirestore: (uid: string, tracker: Tracker) => Promise<void>;
 }
 
-interface TrackerStoreWithHydration extends TrackerStore {
-  _hasHydrated: boolean;
-  setHasHydrated: (hasHydrated: boolean) => void;
-}
-
-export const useTrackerStore = create<TrackerStoreWithHydration>()(
+export const useTrackerStore = create<TrackerStore>()(
   persist(
     (set) => ({
       trackers: [],
       activeTrackerId: null,
       currency: "EUR" as Currency, // Default to EUR
-      _hasHydrated: false,
-      setHasHydrated: (hasHydrated: boolean) => {
-        set({ _hasHydrated: hasHydrated });
-      },
       setCurrency: (currency) => set({ currency }),
       addTracker: (tracker) => {
         const newTracker: Tracker = {
@@ -144,14 +135,7 @@ export const useTrackerStore = create<TrackerStoreWithHydration>()(
           };
         }),
     }),
-    {
-      name: "tracker-storage",
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.setHasHydrated(true);
-        }
-      },
-    }
+    { name: "tracker-storage" }
   )
 );
 

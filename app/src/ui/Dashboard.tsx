@@ -48,7 +48,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
-  const { trackers, activeTrackerId, setActiveTracker, currency: globalCurrency, _hasHydrated } = useTrackerStore();
+  const { trackers, activeTrackerId, setActiveTracker, currency: globalCurrency } = useTrackerStore();
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -310,16 +310,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [ethPricesLoaded, ethPrices, globalCurrency]);
 
-  // Clear state when all trackers are deleted
-  React.useEffect(() => {
-    if (trackers.length === 0) {
-      setTransactions([]);
-      setError(null);
-      setSelectedYear(new Date().getFullYear());
-      setSelectedMonth(null);
-    }
-  }, [trackers.length]);
-
   // Clear price warning and transactions immediately when switching trackers to prevent showing wrong tracker's warnings
   React.useEffect(() => {
     if (activeTracker) {
@@ -337,13 +327,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       setTransactions([]);
       // Load transactions for the new tracker
       loadTransactions(activeTracker);
-    } else if (trackers.length > 0) {
-      // If we have trackers but no activeTracker (shouldn't happen, but handle gracefully)
-      setTransactions([]);
-      setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTrackerId, trackers.length]);
+  }, [activeTrackerId]);
 
   // Handle export modal body overflow and animation
   useEffect(() => {
@@ -771,8 +757,53 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   };
 
+  // Early return for no trackers - must be before hooks that depend on trackers
+  // This was the original structure that worked before today's changes
+  if (trackers.length === 0) {
+    return (
+      <div
+        style={{
+          background: "#181818",
+          border: "1px solid #2b2b2b",
+          borderRadius: "14px",
+          padding: "24px",
+          width: "100%",
+          boxSizing: "border-box",
+        }}
+      >
+        <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
+          No trackers yet
+        </h2>
+        <p style={{ margin: 0, marginBottom: "24px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+          Create your first node tracker to get started.
+        </p>
+        <button
+          onClick={() => onAddTracker?.()}
+          style={{
+            background: "#555555",
+            border: "none",
+            borderRadius: "10px",
+            padding: "10px 20px",
+            color: "#f0f0f0",
+            textTransform: "none",
+            fontWeight: 600,
+            cursor: "pointer",
+            transition: "background 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "#666666";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "#555555";
+          }}
+        >
+          Add a node tracker
+        </button>
+      </div>
+    );
+  }
+
   // Get available years from transactions, plus 2025 as minimum option
-  // Moved before early return to ensure hooks are always called in same order
   const availableYears = React.useMemo(() => {
     const years = new Set<number>();
     const currentYear = new Date().getFullYear();
@@ -1068,77 +1099,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [trackers, transactions, holdingStatusMap, globalCurrency]); // Recalculate when trackers, transactions, holding status, or currency changes
 
-  // Wait for Zustand persistence to hydrate before rendering
-  // This prevents hooks order issues when state loads from localStorage
-  // Must be after all hooks to ensure hooks are always called in same order
-  // Return a minimal loading state instead of null to prevent unmount/remount issues
-  // Use same structure as the "no trackers" return to maintain component structure
-  if (!_hasHydrated) {
-    return (
-      <div
-        style={{
-          background: "#181818",
-          border: "1px solid #2b2b2b",
-          borderRadius: "14px",
-          padding: "24px",
-          width: "100%",
-          boxSizing: "border-box",
-        }}
-      >
-        <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
-          Loading...
-        </h2>
-      </div>
-    );
-  }
-
-  // Early return for no trackers - moved after all hooks to ensure hooks are always called
-  // Use same wrapper structure as main return to maintain consistent component structure
-  if (trackers.length === 0) {
-    return (
-      <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
-        <div
-          style={{
-            background: "#181818",
-            border: "1px solid #2b2b2b",
-            borderRadius: "14px",
-            padding: "24px",
-            width: "100%",
-            boxSizing: "border-box",
-          }}
-        >
-          <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
-            No trackers yet
-          </h2>
-          <p style={{ margin: 0, marginBottom: "24px", color: "#aaaaaa", fontSize: "0.9rem" }}>
-            Create your first node tracker to get started.
-          </p>
-          <button
-            onClick={() => onAddTracker?.()}
-            style={{
-              background: "#555555",
-              border: "none",
-              borderRadius: "10px",
-              padding: "10px 20px",
-              color: "#f0f0f0",
-              textTransform: "none",
-              fontWeight: 600,
-              cursor: "pointer",
-              transition: "background 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "#666666";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#555555";
-            }}
-          >
-            Add a node tracker
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // Calculate totals based on filtered transactions (for selected node)
   // Use global currency for all calculations
