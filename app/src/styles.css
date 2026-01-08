@@ -206,33 +206,6 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   border-radius: 8px;
 }
 
-.tooltip-gradient-border::before {
-  content: '';
-  position: absolute;
-  top: -4px;
-  right: 18px;
-  width: 0;
-  height: 0;
-  border-left: 7px solid transparent;
-  border-right: 7px solid transparent;
-  border-bottom: 7px solid;
-  border-bottom-color: #2b2b2b;
-  z-index: 1;
-}
-
-.tooltip-gradient-border::after {
-  content: '';
-  position: absolute;
-  top: -2px;
-  right: 49px;
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 6px solid #181818;
-  z-index: 2;
-}
-
 .tooltip-content {
   background: #181818;
   border-radius: 7px;
