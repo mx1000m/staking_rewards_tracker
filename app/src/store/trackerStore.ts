@@ -82,13 +82,22 @@ export const useTrackerStore = create<TrackerStore>()(
       },
       setActiveTracker: (id) => set({ activeTrackerId: id }),
       removeTracker: (id) =>
-        set((state) => ({
-          trackers: state.trackers.filter((t) => t.id !== id),
-          activeTrackerId:
-            state.activeTrackerId === id
-              ? state.trackers.find((t) => t.id !== id)?.id || null
-              : state.activeTrackerId,
-        })),
+        set((state) => {
+          const newTrackers = state.trackers.filter((t) => t.id !== id);
+          // If we deleted the active tracker, set to first remaining tracker, or null if none remain
+          let newActiveTrackerId = state.activeTrackerId;
+          if (state.activeTrackerId === id) {
+            newActiveTrackerId = newTrackers.length > 0 ? newTrackers[0].id : null;
+          }
+          // If all trackers are deleted, ensure activeTrackerId is null
+          if (newTrackers.length === 0) {
+            newActiveTrackerId = null;
+          }
+          return {
+            trackers: newTrackers,
+            activeTrackerId: newActiveTrackerId,
+          };
+        }),
     }),
     { name: "tracker-storage" }
   )

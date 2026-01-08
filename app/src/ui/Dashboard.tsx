@@ -310,6 +310,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [ethPricesLoaded, ethPrices, globalCurrency]);
 
+  // Clear state when all trackers are deleted
+  React.useEffect(() => {
+    if (trackers.length === 0) {
+      setTransactions([]);
+      setError(null);
+      setSelectedYear(new Date().getFullYear());
+      setSelectedMonth(null);
+    }
+  }, [trackers.length]);
+
   // Clear price warning and transactions immediately when switching trackers to prevent showing wrong tracker's warnings
   React.useEffect(() => {
     if (activeTracker) {
@@ -327,9 +337,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       setTransactions([]);
       // Load transactions for the new tracker
       loadTransactions(activeTracker);
+    } else if (trackers.length > 0) {
+      // If we have trackers but no activeTracker (shouldn't happen, but handle gracefully)
+      setTransactions([]);
+      setError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTrackerId]);
+  }, [activeTrackerId, trackers.length]);
 
   // Handle export modal body overflow and animation
   useEffect(() => {
