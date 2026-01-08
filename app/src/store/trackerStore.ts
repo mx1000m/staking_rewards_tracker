@@ -56,55 +56,19 @@ export const useTrackerStore = create<TrackerStore>()(
       syncTrackersFromFirestore: async (uid) => {
         try {
           const firestoreTrackers = await getFirestoreTrackers(uid);
-          const firestoreTrackerIds = new Set(firestoreTrackers.map(t => t.id));
-          
-          set((state) => {
-            // Find local trackers that don't exist in Firestore (deleted on another device)
-            const deletedTrackerIds: string[] = [];
-            state.trackers.forEach((localTracker) => {
-              if (!firestoreTrackerIds.has(localTracker.id)) {
-                deletedTrackerIds.push(localTracker.id);
-              }
-            });
-            
-            // If there are deleted trackers, clear their cache
-            if (deletedTrackerIds.length > 0) {
-              console.log(`Detected ${deletedTrackerIds.length} tracker(s) deleted on another device, clearing cache...`);
-              // Import clearCache dynamically to avoid circular dependencies
-              import("../utils/transactionCache").then(({ clearCache }) => {
-                deletedTrackerIds.forEach((trackerId) => {
-                  clearCache(trackerId).catch((err) => {
-                    console.error(`Failed to clear cache for deleted tracker ${trackerId}:`, err);
-                  });
-                });
+          if (firestoreTrackers.length > 0) {
+            set((state) => {
+              // Merge Firestore trackers with local ones (Firestore takes precedence)
+              const localMap = new Map(state.trackers.map((t) => [t.id, t]));
+              firestoreTrackers.forEach((ft) => {
+                localMap.set(ft.id, ft);
               });
-            }
-            
-            // Merge Firestore trackers with local ones (Firestore takes precedence)
-            // Remove local trackers that don't exist in Firestore
-            const localMap = new Map(state.trackers.map((t) => [t.id, t]));
-            firestoreTrackers.forEach((ft) => {
-              localMap.set(ft.id, ft);
+              return {
+                trackers: Array.from(localMap.values()),
+                activeTrackerId: state.activeTrackerId || firestoreTrackers[0]?.id || null,
+              };
             });
-            
-            // Only keep trackers that exist in Firestore
-            const syncedTrackers = Array.from(localMap.values()).filter(t => 
-              firestoreTrackerIds.has(t.id)
-            );
-            
-            // Update activeTrackerId if the current one was deleted
-            let newActiveTrackerId = state.activeTrackerId;
-            if (state.activeTrackerId && !firestoreTrackerIds.has(state.activeTrackerId)) {
-              newActiveTrackerId = syncedTrackers.length > 0 ? syncedTrackers[0].id : null;
-            } else if (!newActiveTrackerId && syncedTrackers.length > 0) {
-              newActiveTrackerId = syncedTrackers[0].id;
-            }
-            
-            return {
-              trackers: syncedTrackers,
-              activeTrackerId: newActiveTrackerId,
-            };
-          });
+          }
         } catch (error) {
           console.error("Failed to sync trackers from Firestore:", error);
         }
@@ -118,22 +82,13 @@ export const useTrackerStore = create<TrackerStore>()(
       },
       setActiveTracker: (id) => set({ activeTrackerId: id }),
       removeTracker: (id) =>
-        set((state) => {
-          const newTrackers = state.trackers.filter((t) => t.id !== id);
-          // If we deleted the active tracker, set to first remaining tracker, or null if none remain
-          let newActiveTrackerId = state.activeTrackerId;
-          if (state.activeTrackerId === id) {
-            newActiveTrackerId = newTrackers.length > 0 ? newTrackers[0].id : null;
-          }
-          // If all trackers are deleted, ensure activeTrackerId is null
-          if (newTrackers.length === 0) {
-            newActiveTrackerId = null;
-          }
-          return {
-            trackers: newTrackers,
-            activeTrackerId: newActiveTrackerId,
-          };
-        }),
+        set((state) => ({
+          trackers: state.trackers.filter((t) => t.id !== id),
+          activeTrackerId:
+            state.activeTrackerId === id
+              ? state.trackers.find((t) => t.id !== id)?.id || null
+              : state.activeTrackerId,
+        })),
     }),
     { name: "tracker-storage" }
   )
