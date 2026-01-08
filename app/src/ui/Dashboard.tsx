@@ -48,7 +48,7 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
-  const { trackers, activeTrackerId, setActiveTracker, currency: globalCurrency } = useTrackerStore();
+  const { trackers, activeTrackerId, setActiveTracker, currency: globalCurrency, _hasHydrated } = useTrackerStore();
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
@@ -1067,6 +1067,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       calculateAllTotals();
     }
   }, [trackers, transactions, holdingStatusMap, globalCurrency]); // Recalculate when trackers, transactions, holding status, or currency changes
+
+  // Wait for Zustand persistence to hydrate before rendering
+  // This prevents hooks order issues when state loads from localStorage
+  // Must be after all hooks to ensure hooks are always called in same order
+  if (!_hasHydrated) {
+    return null; // Return null during hydration to prevent hook order issues
+  }
 
   // Early return for no trackers - moved after all hooks to ensure hooks are always called
   if (trackers.length === 0) {
