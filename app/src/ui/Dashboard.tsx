@@ -1361,7 +1361,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     fontSize: "0.85rem",
                     whiteSpace: "pre-line",
                   }}>
-                    Total income tax due{'\n'}across all nodes and all years.
+                    Total income tax accross all nodes and all years.
                   </div>
                 </div>
               )}
