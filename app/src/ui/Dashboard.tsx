@@ -1526,7 +1526,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </span>
             </button>
           ))}
-          {onAddTracker && (
+            </div>
+          )}
+          {onAddTracker && trackers.length > 0 && (
             <button
               onClick={onAddTracker}
               style={{
