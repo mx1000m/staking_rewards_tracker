@@ -1452,7 +1452,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your nodes</h3>
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
         <div style={{ borderRadius: "13px", padding: "24px" }}>
-          <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+          {trackers.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
+                No trackers yet
+              </h2>
+              <p style={{ margin: 0, marginBottom: "24px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+                Create your first node tracker to get started.
+              </p>
+              <button
+                onClick={() => onAddTracker?.()}
+                style={{
+                  background: "#555555",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "10px 20px",
+                  color: "#f0f0f0",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#666666";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#555555";
+                }}
+              >
+                Add a node tracker
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
           {trackers.map((tracker) => (
             <button
               key={tracker.id}
@@ -1514,7 +1546,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               + Add node tracker
             </button>
           )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
