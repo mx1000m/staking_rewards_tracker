@@ -139,7 +139,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         }
       }
       
-      onComplete?.();
+      // Use setTimeout to ensure state updates complete before closing wizard
+      // This prevents React hook order issues during the transition
+      setTimeout(() => {
+        onComplete?.();
+      }, 0);
     } else {
       setStep((s) => s + 1);
     }

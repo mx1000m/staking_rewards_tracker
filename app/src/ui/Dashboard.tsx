@@ -312,7 +312,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   // Clear price warning and transactions immediately when switching trackers to prevent showing wrong tracker's warnings
   React.useEffect(() => {
-    if (activeTracker) {
+    // Only run if we have trackers and an active tracker
+    if (trackers.length > 0 && activeTracker) {
       // Reset to current year when switching trackers
       const currentYear = new Date().getFullYear();
       setSelectedYear(currentYear);
@@ -329,7 +330,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       loadTransactions(activeTracker);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTrackerId]);
+  }, [activeTrackerId, trackers.length]);
 
   // Handle export modal body overflow and animation
   useEffect(() => {
