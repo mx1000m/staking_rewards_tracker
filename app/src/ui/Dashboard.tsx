@@ -1264,10 +1264,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   return (
     <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
-      {/* All Nodes Overview */}
-      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All time nodes overview</h3>
-      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+      {/* All Nodes Overview - Only show when there are trackers */}
+      {trackers.length > 0 && (
+        <>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All time nodes overview</h3>
+          <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
         {/* First Card - TOTAL ETH EARNED */}
         <div style={{ background: "linear-gradient(45deg, #8ec7f9, #3788fd)", padding: "2px", borderRadius: "14px", boxShadow: "0 4px 12px rgba(0,0,0,0.2)", display: "flex" }}>
           <div style={{ background: "linear-gradient(45deg, #3088d5, #4b9ee7, #3088d5)", padding: "20px", borderRadius: "12px", position: "relative", display: "flex", flexDirection: "column", width: "100%", boxSizing: "border-box" }}>
@@ -1441,8 +1443,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             </div>
           </div>
         </div>
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Your Nodes */}
       <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your nodes</h3>
