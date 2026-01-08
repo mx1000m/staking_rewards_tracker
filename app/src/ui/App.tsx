@@ -10,6 +10,15 @@ export const App: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [showWizard, setShowWizard] = useState(trackers.length === 0);
   
+  // Update wizard state when trackers change (but don't close it immediately when tracker is added)
+  useEffect(() => {
+    // Only update wizard state if trackers become empty (not when they're added)
+    if (trackers.length === 0) {
+      setShowWizard(true);
+    }
+    // Don't automatically close wizard when trackers are added - let onComplete handle it
+  }, [trackers.length]);
+
   // Sync trackers from Firestore when user authenticates
   useEffect(() => {
     if (isAuthenticated && user) {

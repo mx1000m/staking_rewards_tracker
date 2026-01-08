@@ -1072,20 +1072,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   // This prevents hooks order issues when state loads from localStorage
   // Must be after all hooks to ensure hooks are always called in same order
   // Return a minimal loading state instead of null to prevent unmount/remount issues
+  // Use same structure as the "no trackers" return to maintain component structure
   if (!_hasHydrated) {
-    return (
-      <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
-        <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", width: "100%", boxSizing: "border-box" }}>
-          <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
-            Loading...
-          </h2>
-        </div>
-      </div>
-    );
-  }
-
-  // Early return for no trackers - moved after all hooks to ensure hooks are always called
-  if (trackers.length === 0) {
     return (
       <div
         style={{
@@ -1098,33 +1086,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         }}
       >
         <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
-          No trackers yet
+          Loading...
         </h2>
-        <p style={{ margin: 0, marginBottom: "24px", color: "#aaaaaa", fontSize: "0.9rem" }}>
-          Create your first node tracker to get started.
-        </p>
-        <button
-          onClick={() => onAddTracker?.()}
+      </div>
+    );
+  }
+
+  // Early return for no trackers - moved after all hooks to ensure hooks are always called
+  // Use same wrapper structure as main return to maintain consistent component structure
+  if (trackers.length === 0) {
+    return (
+      <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
+        <div
           style={{
-            background: "#555555",
-            border: "none",
-            borderRadius: "10px",
-            padding: "10px 20px",
-            color: "#f0f0f0",
-            textTransform: "none",
-            fontWeight: 600,
-            cursor: "pointer",
-            transition: "background 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#666666";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#555555";
+            background: "#181818",
+            border: "1px solid #2b2b2b",
+            borderRadius: "14px",
+            padding: "24px",
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
-          Add a node tracker
-        </button>
+          <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
+            No trackers yet
+          </h2>
+          <p style={{ margin: 0, marginBottom: "24px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+            Create your first node tracker to get started.
+          </p>
+          <button
+            onClick={() => onAddTracker?.()}
+            style={{
+              background: "#555555",
+              border: "none",
+              borderRadius: "10px",
+              padding: "10px 20px",
+              color: "#f0f0f0",
+              textTransform: "none",
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "background 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#666666";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#555555";
+            }}
+          >
+            Add a node tracker
+          </button>
+        </div>
       </div>
     );
   }
