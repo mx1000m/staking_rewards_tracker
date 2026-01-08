@@ -1449,7 +1449,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       )}
 
       {/* Your Nodes */}
-      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your nodes</h3>
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your node trackers</h3>
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
         <div style={{ borderRadius: "13px", padding: "24px" }}>
           {trackers.length === 0 ? (
