@@ -22,7 +22,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [validatorPublicKey, setValidatorPublicKey] = useState("");
   const [mevMode, setMevMode] = useState<"none" | "direct" | "pool" | "mixed">("none");
   const [mevPoolPayoutAddress, setMevPoolPayoutAddress] = useState("");
-  const [beaconApiKey, setBeaconApiKeyLocal] = useState("");
+  const [beaconApiKeyLocal, setBeaconApiKeyLocal] = useState("");
   const [currency, setCurrencyLocal] = useState<Currency>(globalCurrency);
   
   // Update local currency when global currency changes
