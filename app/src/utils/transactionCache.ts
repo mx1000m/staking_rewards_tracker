@@ -17,6 +17,8 @@ export interface CachedTransaction {
   timestamp: number; // Unix timestamp for sorting (used to match with centralized price storage)
   swapHash?: string; // Optional: transaction hash of the swap
   rewardType?: "CL" | "EVM"; // Consensus Layer (beacon withdrawals) or Execution Layer (fee recipient)
+  // Optional finer-grained classification of rewards (used for MEV reporting)
+  rewardSubType?: "staking" | "direct_mev" | "mev_pool" | "priority_fee";
   // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly using prices from centralized storage
 }
 

@@ -284,7 +284,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             }}
           >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", paddingRight: "48px" }}>
-          <h2 style={{ margin: 0, color: "#f0f0f0" }}>Edit node tracker</h2>
+          <h2 style={{ margin: 0, color: "#f0f0f0" }}>Edit validator tracker</h2>
           <button
             onClick={requestClose}
             style={{
@@ -315,7 +315,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             </label>
             <input
               className="input"
-              placeholder="Node Tracker 1"
+              placeholder="Validator Tracker 1"
               value={name}
               onChange={(e) => setName(e.target.value)}
               style={{
@@ -326,7 +326,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             />
             {duplicateName && (
               <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-                ⚠ You already have a node tracker called <strong>{duplicateName.name}</strong>. Please choose a different name.
+                ⚠ You already have a validator tracker called <strong>{duplicateName.name}</strong>. Please choose a different name.
               </p>
             )}
           </div>
@@ -351,7 +351,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             />
             {duplicateTracker && (
               <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-                ⚠ This staking node is already being tracked in {duplicateTracker.name || "another tracker"}.
+                ⚠ This validator is already being tracked in {duplicateTracker.name || "another tracker"}.
               </p>
             )}
           </div>
@@ -376,7 +376,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               Currency preference
             </label>
             <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-              Applies to all nodes.
+              Applies to all validators.
             </p>
             <div style={{ display: "flex", gap: "12px" }}>
               <button
@@ -741,13 +741,13 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                     ⚠ This action cannot be undone.
                   </p>
                   <p style={{ margin: "0 0 8px", color: "#e8e8f0", fontSize: "0.9rem" }}>
-                    Type the exact name of your node to confirm deletion:
+                    Type the exact name of your validator tracker to confirm deletion:
                   </p>
                   <input
                     id="delete-name-input"
                     className="input"
                     value={deleteNameInput}
-                    placeholder="Enter node name"
+                    placeholder="Enter validator tracker name"
                     onChange={(e) => {
                       setDeleteNameInput(e.target.value);
                       setDeleteNameError(false);

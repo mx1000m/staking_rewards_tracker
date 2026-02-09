@@ -19,6 +19,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [name, setName] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [feeRecipientAddress, setFeeRecipientAddress] = useState("");
+  const [validatorPublicKey, setValidatorPublicKey] = useState("");
+  const [mevMode, setMevMode] = useState<"none" | "direct" | "pool" | "mixed">("none");
+  const [mevPoolPayoutAddress, setMevPoolPayoutAddress] = useState("");
+  const [beaconApiKey, setBeaconApiKeyLocal] = useState("");
   const [currency, setCurrencyLocal] = useState<Currency>(globalCurrency);
   
   // Update local currency when global currency changes
@@ -40,10 +44,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   // Get next available tracker name
   const getNextAvailableName = useMemo(() => {
     let num = 1;
-    while (trackers.some((t) => t.name === `Node Tracker ${num}`)) {
+    while (trackers.some((t) => t.name === `Validator Tracker ${num}`)) {
       num++;
     }
-    return `Node Tracker ${num}`;
+    return `Validator Tracker ${num}`;
   }, [trackers]);
 
   // Check for duplicate name
@@ -100,8 +104,16 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     if (step === 2) return currency === "EUR" || currency === "USD";
     if (step === 3) return taxRate >= 0 && taxRate <= 100;
     if (step === 4) return etherscanKey.trim().length > 0;
+    if (step === 5) {
+      const hasValidatorKey = validatorPublicKey.trim().length > 0;
+      const mevPoolValid =
+        mevMode !== "pool" && mevMode !== "mixed"
+          ? true
+          : /^0x[a-fA-F0-9]{40}$/.test(mevPoolPayoutAddress.trim());
+      return hasValidatorKey && mevPoolValid;
+    }
     return true;
-  }, [step, name, walletAddress, feeRecipientAddress, currency, taxRate, etherscanKey, duplicateTracker, duplicateName]);
+  }, [step, name, walletAddress, feeRecipientAddress, currency, taxRate, etherscanKey, validatorPublicKey, mevMode, mevPoolPayoutAddress, duplicateTracker, duplicateName]);
 
   const next = async () => {
     if (!canNext) {
@@ -112,10 +124,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       }
       return;
     }
-    if (step === 4) {
+    if (step === 5) {
       // Save tracker and complete
       // Use placeholder name if name is empty
-      const defaultName = name.trim() || `Node Tracker ${trackers.length + 1}`;
+      const defaultName = name.trim() || `Validator Tracker ${trackers.length + 1}`;
       
       // Update global currency preference (already updated via handleCurrencyChange)
       
@@ -128,6 +140,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         taxRate,
         etherscanKey,
         name: defaultName,
+        validatorPublicKey: validatorPublicKey.trim() || undefined,
+        beaconApiProvider: beaconApiKeyLocal ? "beaconcha" : undefined,
+        beaconApiKey: beaconApiKeyLocal.trim() || undefined,
+        mevMode,
+        mevPoolPayoutAddress:
+          mevMode === "pool" || mevMode === "mixed"
+            ? mevPoolPayoutAddress.trim() || undefined
+            : undefined,
       });
       
       // Sync to Firestore if authenticated
@@ -165,7 +185,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     <section style={{ position: "relative", width: "100%", boxSizing: "border-box" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>
-          {isFirstTracker ? "Set up your first node tracker" : "Set up your next node tracker"}
+          {isFirstTracker ? "Set up your first validator tracker" : "Set up your next validator tracker"}
         </h1>
         <button
           onClick={handleCancel}
@@ -210,11 +230,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               animation: shakeNameInput ? "shake 0.5s" : undefined,
             }}
           />
-          {duplicateName && (
-            <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-              ⚠ You already have a node tracker called <strong>{duplicateName.name}</strong>. Please choose a different name.
-            </p>
-          )}
+            {duplicateName && (
+              <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
+                ⚠ You already have a validator tracker called <strong>{duplicateName.name}</strong>. Please choose a different name.
+              </p>
+            )}
         </div>
       )}
       {step === 1 && (
@@ -237,7 +257,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           />
           {duplicateTracker && (
             <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-              ⚠ This staking node is already being tracked in {duplicateTracker.name || `Node Tracker ${trackers.findIndex((t) => t.id === duplicateTracker.id) + 1}`}.
+              ⚠ This validator is already being tracked in {duplicateTracker.name || `Validator Tracker ${trackers.findIndex((t) => t.id === duplicateTracker.id) + 1}`}.
             </p>
           )}
           <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
@@ -260,7 +280,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             Currency preference
           </label>
           <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Applies to all nodes.
+            Applies to all validators.
           </p>
           <div style={{ display: "flex", gap: "12px" }}>
             <button
@@ -431,6 +451,103 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               />
             </button>
           </div>
+        </div>
+      )}
+      {step === 5 && (
+        <div>
+          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Beaconcha validator public key
+          </label>
+          <input
+            className="input"
+            placeholder="0x... validator pubkey"
+            value={validatorPublicKey}
+            onChange={(e) => setValidatorPublicKey(e.target.value.trim())}
+          />
+          <p className="muted" style={{ margin: "8px 0 16px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            Used to fetch consensus-layer staking rewards from the beacon chain.
+          </p>
+
+          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Beaconcha API key (optional)
+          </label>
+          <input
+            className="input"
+            placeholder="Beaconcha API key (can be shared across validators)"
+            value={beaconApiKeyLocal}
+            onChange={(e) => setBeaconApiKeyLocal(e.target.value.trim())}
+          />
+          <p className="muted" style={{ margin: "8px 0 16px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            Free API key from beaconcha.in. If omitted, only execution-layer rewards will be tracked.
+          </p>
+
+          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            How do you receive MEV rewards?
+          </label>
+          <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
+            <button
+              type="button"
+              onClick={() => setMevMode("none")}
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                background: mevMode === "none" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
+                borderRadius: "10px",
+                color: mevMode === "none" ? "#f0f0f0" : "#aaaaaa",
+                cursor: "pointer",
+              }}
+            >
+              No MEV
+            </button>
+            <button
+              type="button"
+              onClick={() => setMevMode("direct")}
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                background: mevMode === "direct" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
+                borderRadius: "10px",
+                color: mevMode === "direct" ? "#f0f0f0" : "#aaaaaa",
+                cursor: "pointer",
+              }}
+            >
+              Direct to fee recipient
+            </button>
+            <button
+              type="button"
+              onClick={() => setMevMode("pool")}
+              style={{
+                flex: 1,
+                padding: "10px 16px",
+                background: mevMode === "pool" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
+                borderRadius: "10px",
+                color: mevMode === "pool" ? "#f0f0f0" : "#aaaaaa",
+                cursor: "pointer",
+              }}
+            >
+              MEV pool / smoothing
+            </button>
+          </div>
+
+          {(mevMode === "pool" || mevMode === "mixed") && (
+            <>
+              <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                MEV pool payout address
+              </label>
+              <input
+                className="input"
+                placeholder="0x... address receiving MEV pool payouts"
+                value={mevPoolPayoutAddress}
+                onChange={(e) => setMevPoolPayoutAddress(e.target.value.trim())}
+              />
+              <p className="muted" style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                All incoming ETH to this address will be treated as MEV pool income.
+              </p>
+            </>
+          )}
         </div>
       )}
       <div

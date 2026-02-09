@@ -29,6 +29,12 @@ interface Tracker {
   taxRate: number;
   etherscanKey: string;
   createdAt: number;
+  // Optional newer fields from app Tracker type; kept for compatibility
+  validatorPublicKey?: string;
+  beaconApiProvider?: "beaconcha";
+  beaconApiKey?: string;
+  mevMode?: "none" | "direct" | "pool" | "mixed";
+  mevPoolPayoutAddress?: string;
 }
 
 interface Transaction {
@@ -66,6 +72,11 @@ async function getAllTrackers(): Promise<Map<string, Tracker[]>> {
         taxRate: data.taxRate || 24,
         etherscanKey: data.etherscanKey || "",
         createdAt: data.createdAt?.toMillis() || Date.now(),
+        validatorPublicKey: data.validatorPublicKey || undefined,
+        beaconApiProvider: data.beaconApiProvider || undefined,
+        beaconApiKey: data.beaconApiKey || undefined,
+        mevMode: data.mevMode || undefined,
+        mevPoolPayoutAddress: data.mevPoolPayoutAddress || undefined,
       });
     }
     

@@ -235,6 +235,12 @@ export async function saveFirestoreTracker(
       country: tracker.country,
       taxRate: tracker.taxRate,
       etherscanKey: tracker.etherscanKey, // Note: Consider encrypting this
+      // Optional validator / MEV metadata (backward compatible)
+      validatorPublicKey: tracker.validatorPublicKey || null,
+      beaconApiProvider: tracker.beaconApiProvider || null,
+      beaconApiKey: tracker.beaconApiKey || null,
+      mevMode: tracker.mevMode || null,
+      mevPoolPayoutAddress: tracker.mevPoolPayoutAddress || null,
       createdAt: Timestamp.fromMillis(tracker.createdAt),
       updatedAt: serverTimestamp(),
     }, { merge: true });
@@ -270,6 +276,11 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
         taxRate: data.taxRate || 24,
         etherscanKey: data.etherscanKey || "",
         createdAt: timestampToNumber(data.createdAt) * 1000,
+        validatorPublicKey: data.validatorPublicKey || undefined,
+        beaconApiProvider: data.beaconApiProvider || undefined,
+        beaconApiKey: data.beaconApiKey || undefined,
+        mevMode: data.mevMode || undefined,
+        mevPoolPayoutAddress: data.mevPoolPayoutAddress || undefined,
       });
     });
     

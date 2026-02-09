@@ -6,6 +6,7 @@ export interface EtherscanTransaction {
   to: string;
   isError: string;
   rewardType?: "CL" | "EVM"; // Tag to identify reward source
+  rewardSubType?: "staking" | "direct_mev" | "mev_pool" | "priority_fee";
 }
 
 export interface BeaconWithdrawal {
@@ -104,8 +105,12 @@ export async function getTransactions(
     regularTxs = regularData.result;
   }
   
-  // Tag regular transactions as EVM rewards
-  regularTxs = regularTxs.map(tx => ({ ...tx, rewardType: "EVM" as const }));
+  // Tag regular transactions as EVM rewards (direct execution-layer income)
+  regularTxs = regularTxs.map(tx => ({
+    ...tx,
+    rewardType: "EVM" as const,
+    rewardSubType: "priority_fee" as const,
+  }));
 
   // Get internal transactions (fee recipient rewards)
   const internalUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlistinternal&address=${feeRecipientAddress}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
@@ -123,8 +128,12 @@ export async function getTransactions(
     internalTxs = internalData.result || [];
   }
   
-  // Tag internal transactions as EVM rewards
-  internalTxs = internalTxs.map(tx => ({ ...tx, rewardType: "EVM" as const }));
+  // Tag internal transactions as EVM rewards (these often include MEV / fee payouts)
+  internalTxs = internalTxs.map(tx => ({
+    ...tx,
+    rewardType: "EVM" as const,
+    rewardSubType: "direct_mev" as const,
+  }));
   
   // Combine all transactions
   const allTxs = [...clTransactions, ...regularTxs, ...internalTxs];
@@ -164,6 +173,67 @@ export async function getTransactions(
   console.log(`Incoming transactions (from ${new Date(startTime * 1000).toLocaleDateString()}): ${finalTxs.length} (${finalTxs.filter(t => t.rewardType === "CL").length} CL, ${finalTxs.filter(t => t.rewardType === "EVM").length} EVM)`);
   
   return finalTxs;
+}
+
+/**
+ * Fetch MEV pool / smoothing payouts for a given payout address.
+ * We treat all incoming ETH to this address as MEV pool income.
+ */
+export async function getMevPoolPayoutTransactions(
+  payoutAddress: string,
+  apiKey: string,
+  startTimestamp?: number
+): Promise<EtherscanTransaction[]> {
+  const startTime =
+    startTimestamp ||
+    new Date(new Date().getFullYear(), 0, 1).getTime() / 1000;
+
+  const address = payoutAddress.toLowerCase();
+
+  const regularUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${payoutAddress}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
+  const regularRes = await fetch(regularUrl);
+  const regularData = await regularRes.json();
+
+  let regularTxs: EtherscanTransaction[] = [];
+  if (regularData.status === "1" && Array.isArray(regularData.result)) {
+    regularTxs = regularData.result;
+  } else if (Array.isArray(regularData.result)) {
+    regularTxs = regularData.result;
+  }
+
+  const internalUrl = `https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlistinternal&address=${payoutAddress}&startblock=0&endblock=99999999&page=1&offset=1000&sort=asc&apikey=${apiKey}`;
+  const internalRes = await fetch(internalUrl);
+  const internalData = await internalRes.json();
+
+  let internalTxs: EtherscanTransaction[] = [];
+  if (internalData.status === "1" && Array.isArray(internalData.result)) {
+    internalTxs = internalData.result;
+  } else if (Array.isArray(internalData.result)) {
+    internalTxs = internalData.result;
+  }
+
+  const allTxs = [...regularTxs, ...internalTxs].map((tx) => ({
+    ...tx,
+    rewardType: "EVM" as const,
+    rewardSubType: "mev_pool" as const,
+  }));
+
+  const incoming = allTxs.filter((tx) => {
+    const ts = parseInt(tx.timeStamp);
+    if (isNaN(ts)) return false;
+    const isIncoming = tx.to && tx.to.toLowerCase() === address;
+    const hasValue = parseFloat(tx.value) > 0;
+    const isSuccessful = tx.isError === "0" || tx.isError === undefined;
+    const isAfterStartTime = ts >= startTime;
+    return isIncoming && hasValue && isSuccessful && isAfterStartTime;
+  });
+
+  const unique = new Map<string, EtherscanTransaction>();
+  incoming.forEach((tx) => {
+    if (!unique.has(tx.hash)) unique.set(tx.hash, tx);
+  });
+
+  return Array.from(unique.values());
 }
 
 /**

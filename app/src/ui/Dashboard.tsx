@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
-import { getTransactions } from "../api/etherscan";
+import { getTransactions, getMevPoolPayoutTransactions, EtherscanTransaction } from "../api/etherscan";
+import { fetchConsensusRewardsAsTransactions } from "../utils/beaconRewardsAdapter";
 import { getDateKey } from "../utils/priceCache";
 
 // Country to timezone mapping
@@ -581,10 +582,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         from: new Date(startTimestamp * 1000).toLocaleDateString()
       });
       const etherscanTxs = await getTransactions(tracker.walletAddress, feeRecipientAddress, tracker.etherscanKey, startTimestamp);
+
+      // If user uses MEV pool smoothing and provided a payout address, fetch those payouts as well.
+      let mevPoolTxs: EtherscanTransaction[] = [];
+      if (
+        (tracker.mevMode === "pool" || tracker.mevMode === "mixed") &&
+        tracker.mevPoolPayoutAddress
+      ) {
+        try {
+          mevPoolTxs = await getMevPoolPayoutTransactions(
+            tracker.mevPoolPayoutAddress,
+            tracker.etherscanKey,
+            startTimestamp
+          );
+        } catch (e) {
+          console.warn("Failed to fetch MEV pool payouts from Etherscan:", e);
+        }
+      }
+
+      // Optionally augment with consensus-layer rewards from beaconcha.in
+      let beaconTxs: CachedTransaction[] = [];
+      if (tracker.validatorPublicKey && (tracker.beaconApiKey || tracker.etherscanKey)) {
+        try {
+          beaconTxs = await fetchConsensusRewardsAsTransactions({
+            beaconApiKey: tracker.beaconApiKey || tracker.etherscanKey,
+            validatorPublicKey: tracker.validatorPublicKey,
+            trackerId: tracker.id,
+          });
+        } catch (e) {
+          console.warn("Failed to fetch consensus rewards from beaconcha.in:", e);
+        }
+      }
       
       // Filter transactions to only include those within the target year
-      const yearTxs = etherscanTxs.filter((tx) => {
-        const txTimestamp = parseInt(tx.timeStamp);
+      const allRawTxs = [...etherscanTxs, ...beaconTxs, ...mevPoolTxs];
+      const yearTxs = allRawTxs.filter((tx) => {
+        const txTimestamp = "timeStamp" in tx ? parseInt((tx as EtherscanTransaction).timeStamp) : (tx as CachedTransaction).timestamp;
         return txTimestamp >= startTimestamp && txTimestamp <= endTimestamp;
       });
       
@@ -609,7 +642,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       const missingDates: string[] = [];
       
       for (const tx of yearTxs) {
-        const dateKey = getDateKey(parseInt(tx.timeStamp));
+        const txTs = "timeStamp" in tx ? parseInt((tx as EtherscanTransaction).timeStamp) : (tx as CachedTransaction).timestamp;
+        const dateKey = getDateKey(txTs);
         uniqueDates.add(dateKey);
         
         // Get prices from centralized storage
@@ -636,20 +670,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       
       for (let i = 0; i < yearTxs.length; i++) {
         const tx = yearTxs[i];
-        const timestamp = parseInt(tx.timeStamp) * 1000;
+        const rawTs = "timeStamp" in tx ? parseInt((tx as EtherscanTransaction).timeStamp) : (tx as CachedTransaction).timestamp;
+        const timestamp = rawTs * 1000;
         const date = new Date(timestamp);
 
         // IMPORTANT: value units differ by reward type
         // - EVM rewards: value is in WEI  -> ETH = value / 1e18
         // - CL beacon withdrawals: value is in GWEI -> ETH = value / 1e9
-        const rawValue = parseFloat(tx.value);
+        const rawValue =
+          "value" in tx ? parseFloat((tx as EtherscanTransaction).value) : tx.ethAmount * 1e18;
         const ethAmount =
           tx.rewardType === "CL"
             ? rawValue / 1e9 // Gwei → ETH
             : rawValue / 1e18; // Wei → ETH
         
         // Get prices from centralized storage (prices are no longer stored in transactions)
-        const dateKey = getDateKey(parseInt(tx.timeStamp));
+        const dateKey = getDateKey(rawTs);
         const ethPriceEUR = datePriceMapEUR.get(dateKey) || 0;
         const ethPriceUSD = datePriceMapUSD.get(dateKey) || 0;
         
@@ -674,10 +710,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           ethPriceUSD: 0, // Not stored anymore, fetched from centralized storage
           taxRate: tracker.taxRate,
           taxesInEth,
-          transactionHash: tx.hash,
+          transactionHash: "hash" in tx ? (tx as EtherscanTransaction).hash : tx.transactionHash,
           status: "Unpaid",
-          timestamp: parseInt(tx.timeStamp),
-          rewardType: tx.rewardType || "EVM",
+          timestamp: rawTs,
+          rewardType: (tx as any).rewardType || "EVM",
+          rewardSubType: (tx as any).rewardSubType,
         } as CachedTransaction);
       }
     
@@ -975,7 +1012,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     return statusMap;
   }, [transactions, selectedYear, holdingStatusMap]);
 
-  // Calculate totals for ALL trackers (for All nodes overview)
+  // Calculate totals for ALL trackers (for All validators overview)
   const [allTrackersTotals, setAllTrackersTotals] = React.useState({
     totalRewards: 0,
     totalTaxes: 0,
@@ -1059,7 +1096,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
   const yearDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Calculate totals based on filtered transactions (for selected node)
+  // Calculate totals based on filtered transactions (for selected validator)
   // Use global currency for all calculations
   // Separate pending and non-pending transactions
   const pendingTransactions = filteredTransactions.filter((tx) => isPriceMissing(tx, globalCurrency));
@@ -1118,7 +1155,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const currencySymbol = globalCurrency === "EUR" ? "€" : "$";
   const valueLabel = globalCurrency === "EUR" ? "Value in EUR" : "Value in USD";
   const incomeTaxLabel = globalCurrency === "EUR" ? "Income tax (EUR)" : "Income tax (USD)";
-  const allNodesCurrencySymbol = globalCurrency === "EUR" ? "€" : "$";
+  const allValidatorsCurrencySymbol = globalCurrency === "EUR" ? "€" : "$";
   const activeIndex = trackers.findIndex((t) => t.id === activeTrackerId);
 
   // Human-readable description of the currently selected time range
@@ -1214,7 +1251,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     ];
     
     // Create header rows with tracker information
-    const trackerName = activeTracker.name || "Node Tracker";
+    const trackerName = activeTracker.name || "Validator Tracker";
     const trackerLocation = activeTracker.country || "Unknown";
     const consensusAddress = activeTracker.walletAddress || "";
     const executionAddress = activeTracker.feeRecipientAddress || activeTracker.walletAddress || "";
@@ -1237,7 +1274,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${(activeTracker.name || "node").replace(/\s+/g, "_")}_transactions_${year}.csv`;
+    a.download = `${(activeTracker.name || "validator").replace(/\s+/g, "_")}_transactions_${year}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1264,10 +1301,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   return (
     <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
-      {/* All Nodes Overview - Only show when there are trackers */}
+      {/* All Validators Overview - Only show when there are trackers */}
       {trackers.length > 0 && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All time nodes overview</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All time validator overview</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
         {/* First Card - TOTAL ETH EARNED */}
@@ -1302,7 +1339,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     fontSize: "0.85rem",
                     whiteSpace: "pre-line",
                   }}>
-                    Total ETH rewards received{'\n'}across all nodes and all years.
+                    Total ETH rewards received{'\n'}across all validators and all years.
                   </div>
                 </div>
               )}
@@ -1361,7 +1398,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     fontSize: "0.85rem",
                     whiteSpace: "pre-line",
                   }}>
-                    Total income tax accross all nodes and all years.
+                    Total income tax accross all validators and all years.
                   </div>
                 </div>
               )}
@@ -1448,8 +1485,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         </>
       )}
 
-      {/* Your Nodes */}
-      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your node trackers</h3>
+      {/* Your Validator Trackers */}
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validator trackers</h3>
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
         <div style={{ borderRadius: "13px", padding: "24px" }}>
           {trackers.length === 0 ? (
@@ -1458,7 +1495,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 No trackers yet
               </h2>
               <p style={{ margin: 0, marginBottom: "24px", color: "#aaaaaa", fontSize: "0.9rem" }}>
-                Create your first node tracker to get started.
+                Create your first validator tracker to get started.
               </p>
               <button
                 onClick={() => onAddTracker?.()}
@@ -1480,7 +1517,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   e.currentTarget.style.background = "#555555";
                 }}
               >
-                Add a node tracker
+                Add a validator tracker
               </button>
             </div>
           ) : (
@@ -1521,10 +1558,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 whiteSpace: "nowrap",
                 pointerEvents: "none"
               }}>
-                {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
+                {tracker.name || `Validator ${tracker.walletAddress.slice(0, 6)}...`}
               </span>
               <span style={{ fontWeight: activeTrackerId === tracker.id ? 600 : 400 }}>
-                {tracker.name || `Node ${tracker.walletAddress.slice(0, 6)}...`}
+                {tracker.name || `Validator ${tracker.walletAddress.slice(0, 6)}...`}
               </span>
             </button>
           ))}
@@ -1543,7 +1580,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 textTransform: "none",
               }}
             >
-              + Add node tracker
+              + Add validator tracker
             </button>
           )}
             </div>
@@ -1551,13 +1588,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         </div>
       </div>
 
-      {/* Node Selected + Incoming Rewards combined */}
+      {/* Validator Selected + Incoming Rewards combined */}
       {activeTracker && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Node selected</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Validator selected</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
             <div style={{ borderRadius: "13px", padding: "24px" }}>
-              {/* Header row: node name, wallet + copy, action buttons */}
+              {/* Header row: validator name, wallet + copy, action buttons */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, position: "relative" }}>
                   <h2 style={{ margin: 0, color: "#f0f0f0" }}>
@@ -1680,7 +1717,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 </div>
               </div>
 
-              {/* Node metadata */}
+              {/* Validator metadata */}
               <p
                 style={{
                   margin: "4px 0 0 0",
@@ -1688,7 +1725,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   color: "#aaaaaa",
                 }}
               >
-                Node location: {activeTracker.country || "—"} - Income tax rate:{" "}
+                Validator location: {activeTracker.country || "—"} - Income tax rate:{" "}
                 {typeof activeTracker.taxRate === "number"
                   ? `${formatNumber(activeTracker.taxRate, 0, globalCurrency)}%`
                   : "—"}
