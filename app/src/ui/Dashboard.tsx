@@ -602,10 +602,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
       // Optionally augment with consensus-layer rewards from beaconcha.in
       let beaconTxs: CachedTransaction[] = [];
-      if (tracker.validatorPublicKey && (tracker.beaconApiKey || tracker.etherscanKey)) {
+      if (tracker.validatorPublicKey && tracker.beaconApiKey) {
         try {
           beaconTxs = await fetchConsensusRewardsAsTransactions({
-            beaconApiKey: tracker.beaconApiKey || tracker.etherscanKey,
+            beaconApiKey: tracker.beaconApiKey,
             validatorPublicKey: tracker.validatorPublicKey,
             trackerId: tracker.id,
           });

@@ -40,6 +40,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [etherscanKey, setEtherscanKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [shakeNameInput, setShakeNameInput] = useState(false);
+  const [shakeBeaconValidator, setShakeBeaconValidator] = useState(false);
+  const [shakeBeaconApi, setShakeBeaconApi] = useState(false);
 
   // Get next available tracker name
   const getNextAvailableName = useMemo(() => {
@@ -153,6 +155,23 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       }
       return;
     }
+    if (step === 1) {
+      const key = validatorPublicKey.trim();
+      const validatorKeyValid = /^0x[a-fA-F0-9]{96}$/.test(key);
+      const apiValid = beaconApiKeyLocal.trim().length > 0;
+
+      if (!validatorKeyValid || !apiValid) {
+        if (!validatorKeyValid) {
+          setShakeBeaconValidator(true);
+          setTimeout(() => setShakeBeaconValidator(false), 500);
+        }
+        if (!apiValid) {
+          setShakeBeaconApi(true);
+          setTimeout(() => setShakeBeaconApi(false), 500);
+        }
+        return;
+      }
+    }
     if (step === 5) {
       // Save tracker and complete
       // Use placeholder name if name is empty
@@ -261,7 +280,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           </p>
           <input
             className="input"
-            placeholder={getNextAvailableName}
+            placeholder="Validator 1"
             value={name}
             onChange={(e) => setName(e.target.value)}
             style={{
@@ -290,6 +309,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             placeholder="0x... (98 characters long)"
             value={validatorPublicKey}
             onChange={(e) => setValidatorPublicKey(e.target.value.trim())}
+            style={{
+              borderColor: shakeBeaconValidator ? "#ef4444" : undefined,
+              borderWidth: shakeBeaconValidator ? "2px" : undefined,
+              animation: shakeBeaconValidator ? "shake 0.5s" : undefined,
+            }}
           />
           <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Your beaconcha.in API key
@@ -311,6 +335,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             placeholder="Beaconcha.in API key"
             value={beaconApiKeyLocal}
             onChange={(e) => setBeaconApiKeyLocal(e.target.value.trim())}
+            style={{
+              borderColor: shakeBeaconApi ? "#ef4444" : undefined,
+              borderWidth: shakeBeaconApi ? "2px" : undefined,
+              animation: shakeBeaconApi ? "shake 0.5s" : undefined,
+            }}
           />
         </div>
       )}
