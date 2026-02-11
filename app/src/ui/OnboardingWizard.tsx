@@ -96,24 +96,53 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       return true; // Allow empty name, will use default
     }
     if (step === 1) {
-      const walletValid = /^0x[a-fA-F0-9]{40}$/.test(walletAddress);
-      const feeRecipientValid = !feeRecipientAddress.trim() || /^0x[a-fA-F0-9]{40}$/.test(feeRecipientAddress.trim());
-      const noDuplicate = !duplicateTracker; // Prevent proceeding if address is duplicate
-      return walletValid && feeRecipientValid && noDuplicate;
+      // Beacon chain validator public key (98 chars including 0x)
+      const key = validatorPublicKey.trim();
+      const validatorKeyValid = /^0x[a-fA-F0-9]{96}$/.test(key);
+      return validatorKeyValid;
     }
-    if (step === 2) return currency === "EUR" || currency === "USD";
-    if (step === 3) return taxRate >= 0 && taxRate <= 100;
-    if (step === 4) return etherscanKey.trim().length > 0;
-    if (step === 5) {
-      const hasValidatorKey = validatorPublicKey.trim().length > 0;
-      const mevPoolValid =
-        mevMode !== "pool" && mevMode !== "mixed"
+    if (step === 2) {
+      // Execution rewards setup
+      const consensus = walletAddress.trim();
+      const consensusValid = /^0x[a-fA-F0-9]{40}$/.test(consensus);
+
+      const feeAddr = feeRecipientAddress.trim();
+      const feeRecipientValid =
+        mevMode !== "direct"
           ? true
-          : /^0x[a-fA-F0-9]{40}$/.test(mevPoolPayoutAddress.trim());
-      return hasValidatorKey && mevPoolValid;
+          : !feeAddr || /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
+
+      const mevPayout = mevPoolPayoutAddress.trim();
+      const mevPayoutValid =
+        mevMode !== "pool"
+          ? true
+          : !mevPayout || /^0x[a-fA-F0-9]{40}$/.test(mevPayout);
+
+      const noDuplicate = !duplicateTracker;
+      return consensusValid && feeRecipientValid && mevPayoutValid && noDuplicate;
     }
+    if (step === 3) {
+      // Etherscan API key - optional if no execution rewards
+      if (mevMode === "none") return true;
+      return etherscanKey.trim().length > 0;
+    }
+    if (step === 4) return taxRate >= 0 && taxRate <= 100;
+    if (step === 5) return currency === "EUR" || currency === "USD";
     return true;
-  }, [step, name, walletAddress, feeRecipientAddress, currency, taxRate, etherscanKey, validatorPublicKey, mevMode, mevPoolPayoutAddress, duplicateTracker, duplicateName]);
+  }, [
+    step,
+    name,
+    walletAddress,
+    feeRecipientAddress,
+    currency,
+    taxRate,
+    etherscanKey,
+    validatorPublicKey,
+    mevMode,
+    mevPoolPayoutAddress,
+    duplicateTracker,
+    duplicateName,
+  ]);
 
   const next = async () => {
     if (!canNext) {
@@ -132,6 +161,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       // Update global currency preference (already updated via handleCurrencyChange)
       
       // Add tracker (currency is now global, but we keep it in tracker for backward compatibility)
+      const trimmedMevPayout = mevPoolPayoutAddress.trim();
+      const effectiveMevPayout =
+        mevMode === "pool"
+          ? trimmedMevPayout || walletAddress.trim()
+          : undefined;
+
       addTracker({
         walletAddress,
         feeRecipientAddress: feeRecipientAddress.trim() || undefined,
@@ -144,10 +179,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         beaconApiProvider: beaconApiKeyLocal ? "beaconcha" : undefined,
         beaconApiKey: beaconApiKeyLocal.trim() || undefined,
         mevMode,
-        mevPoolPayoutAddress:
-          mevMode === "pool" || mevMode === "mixed"
-            ? mevPoolPayoutAddress.trim() || undefined
-            : undefined,
+        mevPoolPayoutAddress: effectiveMevPayout,
       });
       
       // Sync to Firestore if authenticated
@@ -185,7 +217,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     <section style={{ position: "relative", width: "100%", boxSizing: "border-box" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>
-          {isFirstTracker ? "Set up your first validator tracker" : "Set up your next validator tracker"}
+          {step === 0 && "Start by naming your validator"}
+          {step === 1 && "Add your validator public key and API key"}
+          {step === 2 && "Set up your execution rewards"}
+          {step === 3 && "Add your Etherscan API key"}
+          {step === 4 && "Set your taxation country"}
+          {step === 5 && "Chose your currency preference"}
         </h1>
         <button
           onClick={handleCancel}
@@ -213,12 +250,15 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           ×
         </button>
       </div>
-      <div className="steps" style={{ marginBottom: "32px" }}>Step {step + 1} of 5</div>
+      <div className="steps" style={{ marginBottom: "32px" }}>Step {step + 1} of 6</div>
       {step === 0 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Name:
+            Validator name
           </label>
+          <p className="muted" style={{ margin: "0 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            Give your validator a name to find it more easily later on.
+          </p>
           <input
             className="input"
             placeholder={getNextAvailableName}
@@ -240,10 +280,140 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       {step === 1 && (
         <div>
           <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Consensus layer withdrawal address
+            Beacon chain validator public key
           </label>
           <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Receives staking rewards directly from the beacon chain (partial withdrawals).
+            Used to identify your validator on the beacon chain (consensus layer).
+          </p>
+          <input
+            className="input"
+            placeholder="0x... (98 characters long)"
+            value={validatorPublicKey}
+            onChange={(e) => setValidatorPublicKey(e.target.value.trim())}
+          />
+          <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Your beaconcha.in API key
+          </label>
+          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            Get your API key by signing up for free on{" "}
+            <a
+              href="https://beaconcha.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#aaaaaa", textDecoration: "underline" }}
+            >
+              beaconcha.in
+            </a>
+            .
+          </p>
+          <input
+            className="input"
+            placeholder="Beaconcha.in API key"
+            value={beaconApiKeyLocal}
+            onChange={(e) => setBeaconApiKeyLocal(e.target.value.trim())}
+          />
+        </div>
+      )}
+      {step === 2 && (
+        <div>
+          <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            How do you receive execution rewards?
+          </label>
+          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            This helps us track MEV and priority fees accurately.
+          </p>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              type="button"
+              onClick={() => setMevMode("none")}
+              style={{
+                flex: 1,
+                padding: "12px 20px",
+                background: mevMode === "none" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
+                borderRadius: "10px",
+                color: mevMode === "none" ? "#f0f0f0" : "#aaaaaa",
+                textTransform: "none",
+                cursor: "pointer",
+                fontWeight: mevMode === "none" ? 600 : 400,
+                transition: "background 0.2s, color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (mevMode !== "none") {
+                  e.currentTarget.style.background = "#383838";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (mevMode !== "none") {
+                  e.currentTarget.style.background = "#1f1f1f";
+                }
+              }}
+            >
+              No execution rewards
+            </button>
+            <button
+              type="button"
+              onClick={() => setMevMode("direct")}
+              style={{
+                flex: 1,
+                padding: "12px 20px",
+                background: mevMode === "direct" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
+                borderRadius: "10px",
+                color: mevMode === "direct" ? "#f0f0f0" : "#aaaaaa",
+                textTransform: "none",
+                cursor: "pointer",
+                fontWeight: mevMode === "direct" ? 600 : 400,
+                transition: "background 0.2s, color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (mevMode !== "direct") {
+                  e.currentTarget.style.background = "#383838";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (mevMode !== "direct") {
+                  e.currentTarget.style.background = "#1f1f1f";
+                }
+              }}
+            >
+              Direct to fee recipient
+            </button>
+            <button
+              type="button"
+              onClick={() => setMevMode("pool")}
+              style={{
+                flex: 1,
+                padding: "12px 20px",
+                background: mevMode === "pool" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
+                borderRadius: "10px",
+                color: mevMode === "pool" ? "#f0f0f0" : "#aaaaaa",
+                textTransform: "none",
+                cursor: "pointer",
+                fontWeight: mevMode === "pool" ? 600 : 400,
+                transition: "background 0.2s, color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (mevMode !== "pool") {
+                  e.currentTarget.style.background = "#383838";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (mevMode !== "pool") {
+                  e.currentTarget.style.background = "#1f1f1f";
+                }
+              }}
+            >
+              Via MEV pool / smoothing
+            </button>
+          </div>
+
+          <label style={{ display: "block", marginTop: "24px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Consensus withdrawal address
+          </label>
+          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            Receives staking rewards directly from the beacon chain (withdrawals).
           </p>
           <input
             className="input"
@@ -257,143 +427,47 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           />
           {duplicateTracker && (
             <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-              ⚠ This validator is already being tracked in {duplicateTracker.name || `Validator Tracker ${trackers.findIndex((t) => t.id === duplicateTracker.id) + 1}`}.
+              ⚠ This validator is already being tracked in{" "}
+              {duplicateTracker.name || `Validator Tracker ${trackers.findIndex((t) => t.id === duplicateTracker.id) + 1}`}.
             </p>
           )}
-          <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Execution layer withdrawal address (optional)
-          </label>
-          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Receives MEV and priority fee rewards.
-          </p>
-          <input
-            className="input"
-            placeholder="0x... (leave empty if same as withdrawal address)"
-            value={feeRecipientAddress}
-            onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
-          />
-        </div>
-      )}
-      {step === 2 && (
-        <div>
-          <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Currency preference
-          </label>
-          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Applies to all validators.
-          </p>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button
-              type="button"
-                onClick={() => handleCurrencyChange("EUR")}
-              style={{
-                flex: 1,
-                padding: "12px 20px",
-                background: currency === "EUR" ? "#2b2b2b" : "#1f1f1f",
-                border: "none",
-                borderRadius: "10px",
-                color: currency === "EUR" ? "#f0f0f0" : "#aaaaaa",
-                textTransform: "none",
-                cursor: "pointer",
-                fontWeight: currency === "EUR" ? 600 : 400,
-                transition: "background 0.2s, color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (currency !== "EUR") {
-                  e.currentTarget.style.background = "#383838";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (currency !== "EUR") {
-                  e.currentTarget.style.background = "#1f1f1f";
-                }
-              }}
-            >
-              Euro
-            </button>
-            <button
-              type="button"
-                onClick={() => handleCurrencyChange("USD")}
-              style={{
-                flex: 1,
-                padding: "12px 20px",
-                background: currency === "USD" ? "#2b2b2b" : "#1f1f1f",
-                border: "none",
-                borderRadius: "10px",
-                color: currency === "USD" ? "#f0f0f0" : "#aaaaaa",
-                textTransform: "none",
-                cursor: "pointer",
-                fontWeight: currency === "USD" ? 600 : 400,
-                transition: "background 0.2s, color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (currency !== "USD") {
-                  e.currentTarget.style.background = "#383838";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (currency !== "USD") {
-                  e.currentTarget.style.background = "#1f1f1f";
-                }
-              }}
-            >
-              Dollar
-            </button>
-          </div>
+
+          {mevMode === "direct" && (
+            <>
+              <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                Execution rewards address (optional)
+              </label>
+              <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                Receives MEV and priority fee payouts.
+              </p>
+              <input
+                className="input"
+                placeholder="0x... (leave empty if same as withdrawal address)"
+                value={feeRecipientAddress}
+                onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
+              />
+            </>
+          )}
+
+          {mevMode === "pool" && (
+            <>
+              <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                MEV payout address
+              </label>
+              <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                Receives MEV and priority fee payouts.
+              </p>
+              <input
+                className="input"
+                placeholder="0x... (leave empty if same as withdrawal address)"
+                value={mevPoolPayoutAddress}
+                onChange={(e) => setMevPoolPayoutAddress(e.target.value.trim())}
+              />
+            </>
+          )}
         </div>
       )}
       {step === 3 && (
-        <div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-              marginBottom: "8px",
-            }}
-          >
-            <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Country
-            </label>
-            <div style={{ width: "120px", display: "flex", justifyContent: "flex-start" }}>
-              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-20px" }}>
-                Income tax rate
-              </label>
-            </div>
-          </div>
-          <div className="row">
-            <select
-              className="gradient-select"
-              value={country}
-              onChange={(e) => onChangeCountry(e.target.value)}
-              style={{ flex: 1 }}
-            >
-              {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                max={100}
-                step={0.1}
-                value={taxRate}
-                onChange={(e) => setTaxRate(parseFloat(e.target.value))}
-                style={{ width: "120px" }}
-              />
-              <span style={{ color: "#9aa0b4" }}>%</span>
-            </div>
-          </div>
-          <p className="muted" style={{ margin: "4px 0 3px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
-          </p>
-        </div>
-      )}
-      {step === 4 && (
         <div>
           <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Etherscan API key
@@ -453,101 +527,123 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           </div>
         </div>
       )}
-      {step === 5 && (
+      {step === 4 && (
         <div>
-          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Beaconcha validator public key
-          </label>
-          <input
-            className="input"
-            placeholder="0x... validator pubkey"
-            value={validatorPublicKey}
-            onChange={(e) => setValidatorPublicKey(e.target.value.trim())}
-          />
-          <p className="muted" style={{ margin: "8px 0 16px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Used to fetch consensus-layer staking rewards from the beacon chain.
-          </p>
-
-          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Beaconcha API key (optional)
-          </label>
-          <input
-            className="input"
-            placeholder="Beaconcha API key (can be shared across validators)"
-            value={beaconApiKeyLocal}
-            onChange={(e) => setBeaconApiKeyLocal(e.target.value.trim())}
-          />
-          <p className="muted" style={{ margin: "8px 0 16px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Free API key from beaconcha.in. If omitted, only execution-layer rewards will be tracked.
-          </p>
-
-          <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            How do you receive MEV rewards?
-          </label>
-          <div style={{ display: "flex", gap: "12px", marginBottom: "12px" }}>
-            <button
-              type="button"
-              onClick={() => setMevMode("none")}
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                background: mevMode === "none" ? "#2b2b2b" : "#1f1f1f",
-                border: "none",
-                borderRadius: "10px",
-                color: mevMode === "none" ? "#f0f0f0" : "#aaaaaa",
-                cursor: "pointer",
-              }}
-            >
-              No MEV
-            </button>
-            <button
-              type="button"
-              onClick={() => setMevMode("direct")}
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                background: mevMode === "direct" ? "#2b2b2b" : "#1f1f1f",
-                border: "none",
-                borderRadius: "10px",
-                color: mevMode === "direct" ? "#f0f0f0" : "#aaaaaa",
-                cursor: "pointer",
-              }}
-            >
-              Direct to fee recipient
-            </button>
-            <button
-              type="button"
-              onClick={() => setMevMode("pool")}
-              style={{
-                flex: 1,
-                padding: "10px 16px",
-                background: mevMode === "pool" ? "#2b2b2b" : "#1f1f1f",
-                border: "none",
-                borderRadius: "10px",
-                color: mevMode === "pool" ? "#f0f0f0" : "#aaaaaa",
-                cursor: "pointer",
-              }}
-            >
-              MEV pool / smoothing
-            </button>
-          </div>
-
-          {(mevMode === "pool" || mevMode === "mixed") && (
-            <>
-              <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                MEV pool payout address
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              marginBottom: "8px",
+            }}
+          >
+            <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+              Country
+            </label>
+            <div style={{ width: "120px", display: "flex", justifyContent: "flex-start" }}>
+              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-20px" }}>
+                Income tax rate
               </label>
+            </div>
+          </div>
+          <div className="row">
+            <select
+              className="gradient-select"
+              value={country}
+              onChange={(e) => onChangeCountry(e.target.value)}
+              style={{ flex: 1 }}
+            >
+              {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <input
                 className="input"
-                placeholder="0x... address receiving MEV pool payouts"
-                value={mevPoolPayoutAddress}
-                onChange={(e) => setMevPoolPayoutAddress(e.target.value.trim())}
+                type="number"
+                min={0}
+                max={100}
+                step={0.1}
+                value={taxRate}
+                onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+                style={{ width: "120px" }}
               />
-              <p className="muted" style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-                All incoming ETH to this address will be treated as MEV pool income.
-              </p>
-            </>
-          )}
+              <span style={{ color: "#9aa0b4" }}>%</span>
+            </div>
+          </div>
+          <p className="muted" style={{ margin: "4px 0 3px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
+          </p>
+        </div>
+      )}
+      {step === 5 && (
+        <div>
+          <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Currency preference
+          </label>
+          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            Applies to all validators.
+          </p>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              type="button"
+              onClick={() => handleCurrencyChange("EUR")}
+              style={{
+                flex: 1,
+                padding: "12px 20px",
+                background: currency === "EUR" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
+                borderRadius: "10px",
+                color: currency === "EUR" ? "#f0f0f0" : "#aaaaaa",
+                textTransform: "none",
+                cursor: "pointer",
+                fontWeight: currency === "EUR" ? 600 : 400,
+                transition: "background 0.2s, color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (currency !== "EUR") {
+                  e.currentTarget.style.background = "#383838";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currency !== "EUR") {
+                  e.currentTarget.style.background = "#1f1f1f";
+                }
+              }}
+            >
+              Euro
+            </button>
+            <button
+              type="button"
+              onClick={() => handleCurrencyChange("USD")}
+              style={{
+                flex: 1,
+                padding: "12px 20px",
+                background: currency === "USD" ? "#2b2b2b" : "#1f1f1f",
+                border: "none",
+                borderRadius: "10px",
+                color: currency === "USD" ? "#f0f0f0" : "#aaaaaa",
+                textTransform: "none",
+                cursor: "pointer",
+                fontWeight: currency === "USD" ? 600 : 400,
+                transition: "background 0.2s, color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                if (currency !== "USD") {
+                  e.currentTarget.style.background = "#383838";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (currency !== "USD") {
+                  e.currentTarget.style.background = "#1f1f1f";
+                }
+              }}
+            >
+              Dollar
+            </button>
+          </div>
         </div>
       )}
       <div
@@ -632,7 +728,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               e.currentTarget.style.background = canNext ? "#555555" : "#3a3a3a";
             }}
           >
-            Next
+            {step === 5 ? "Finish" : "Next"}
           </button>
         </div>
       </div>
