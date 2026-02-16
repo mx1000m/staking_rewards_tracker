@@ -281,6 +281,9 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
         beaconApiKey: data.beaconApiKey || undefined,
         mevMode: data.mevMode || undefined,
         mevPoolPayoutAddress: data.mevPoolPayoutAddress || undefined,
+        lastSyncedEpoch: data.lastSyncedEpoch ?? undefined,
+        validatorStatus: data.validatorStatus || undefined,
+        validatorBalanceEth: data.validatorBalanceEth ?? undefined,
       });
     });
     

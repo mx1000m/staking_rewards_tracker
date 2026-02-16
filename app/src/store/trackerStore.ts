@@ -20,6 +20,10 @@ export interface Tracker {
   beaconApiKey?: string; // Optional per-tracker override; typically stored per user
   mevMode?: "none" | "direct" | "pool" | "mixed"; // How MEV rewards are received
   mevPoolPayoutAddress?: string; // Execution-layer address receiving MEV pool payouts
+  // Set by beacon-sync script (read-only in app)
+  lastSyncedEpoch?: number | null;
+  validatorStatus?: string; // e.g. active_ongoing
+  validatorBalanceEth?: number;
 }
 
 interface TrackerStore {

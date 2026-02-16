@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
 import { getTransactions, getMevPoolPayoutTransactions, EtherscanTransaction } from "../api/etherscan";
-import { fetchConsensusRewardsAsTransactions } from "../utils/beaconRewardsAdapter";
 import { getDateKey } from "../utils/priceCache";
 
 // Country to timezone mapping
@@ -600,22 +599,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         }
       }
 
-      // Optionally augment with consensus-layer rewards from beaconcha.in
-      let beaconTxs: CachedTransaction[] = [];
-      if (tracker.validatorPublicKey && tracker.beaconApiKey) {
+      // CL (beacon-chain) rewards are synced by the beacon-sync GitHub Action; load from Firestore only.
+      let clFromFirestore: CachedTransaction[] = [];
+      if (user && tracker.validatorPublicKey) {
         try {
-          beaconTxs = await fetchConsensusRewardsAsTransactions({
-            beaconApiKey: tracker.beaconApiKey,
-            validatorPublicKey: tracker.validatorPublicKey,
-            trackerId: tracker.id,
-          });
+          const allFirestore = await getFirestoreTransactions(user.uid, tracker.id);
+          clFromFirestore = allFirestore.filter(
+            (ftx) => ftx.rewardType === "CL" && ftx.timestamp >= startTimestamp && ftx.timestamp <= endTimestamp
+          );
         } catch (e) {
-          console.warn("Failed to fetch consensus rewards from beaconcha.in:", e);
+          console.warn("Failed to load CL transactions from Firestore:", e);
         }
       }
-      
-      // Filter transactions to only include those within the target year
-      const allRawTxs = [...etherscanTxs, ...beaconTxs, ...mevPoolTxs];
+      const allRawTxs: (EtherscanTransaction | CachedTransaction)[] = [...etherscanTxs, ...mevPoolTxs, ...clFromFirestore];
       const yearTxs = allRawTxs.filter((tx) => {
         const txTimestamp = "timeStamp" in tx ? parseInt((tx as EtherscanTransaction).timeStamp) : (tx as CachedTransaction).timestamp;
         return txTimestamp >= startTimestamp && txTimestamp <= endTimestamp;
@@ -668,53 +664,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // Step 2: Process all transactions using prices from centralized storage
       const processedTxs: CachedTransaction[] = [];
       
+      const timezone = getTimezoneForCountry(tracker.country);
       for (let i = 0; i < yearTxs.length; i++) {
         const tx = yearTxs[i];
-        const rawTs = "timeStamp" in tx ? parseInt((tx as EtherscanTransaction).timeStamp) : (tx as CachedTransaction).timestamp;
+        // CL transactions from Firestore are already CachedTransaction; use as-is.
+        if (!("timeStamp" in tx)) {
+          const c = tx as CachedTransaction;
+          setLoadingProgress({ current: i + 1, total: yearTxs.length, progressPercent: ((i + 1) / yearTxs.length) * 100 });
+          processedTxs.push({
+            ...c,
+            date: formatDate(new Date(c.timestamp * 1000), timezone, globalCurrency),
+            time: new Date(c.timestamp * 1000).toLocaleTimeString("en-GB", { timeZone: timezone, hour12: false }),
+          });
+          continue;
+        }
+        const rawTs = parseInt((tx as EtherscanTransaction).timeStamp);
         const timestamp = rawTs * 1000;
         const date = new Date(timestamp);
 
         // IMPORTANT: value units differ by reward type
         // - EVM rewards: value is in WEI  -> ETH = value / 1e18
         // - CL beacon withdrawals: value is in GWEI -> ETH = value / 1e9
-        const rawValue =
-          "value" in tx ? parseFloat((tx as EtherscanTransaction).value) : tx.ethAmount * 1e18;
+        const rawValue = parseFloat((tx as EtherscanTransaction).value);
         const ethAmount =
-          tx.rewardType === "CL"
+          (tx as EtherscanTransaction).rewardType === "CL"
             ? rawValue / 1e9 // Gwei → ETH
             : rawValue / 1e18; // Wei → ETH
         
-        // Get prices from centralized storage (prices are no longer stored in transactions)
         const dateKey = getDateKey(rawTs);
         const ethPriceEUR = datePriceMapEUR.get(dateKey) || 0;
         const ethPriceUSD = datePriceMapUSD.get(dateKey) || 0;
         
-        // Update progress
-        setLoadingProgress({ 
-          current: i + 1, // Show current transaction being processed
-          total: yearTxs.length,
-          progressPercent: ((i + 1) / yearTxs.length) * 100
-        });
+        setLoadingProgress({ current: i + 1, total: yearTxs.length, progressPercent: ((i + 1) / yearTxs.length) * 100 });
         
         const taxesInEth = ethAmount * (tracker.taxRate / 100);
         
-        // Note: We no longer store ethPriceEUR/ethPriceUSD in transactions
-        // Prices are fetched from centralized storage on-the-fly
-        // Use tracker's country timezone for date/time display
-        const timezone = getTimezoneForCountry(tracker.country);
         processedTxs.push({
           date: formatDate(date, timezone, globalCurrency),
           time: date.toLocaleTimeString("en-GB", { timeZone: timezone, hour12: false }),
           ethAmount,
-          ethPriceEUR: 0, // Not stored anymore, fetched from centralized storage
-          ethPriceUSD: 0, // Not stored anymore, fetched from centralized storage
+          ethPriceEUR: 0,
+          ethPriceUSD: 0,
           taxRate: tracker.taxRate,
           taxesInEth,
-          transactionHash: "hash" in tx ? (tx as EtherscanTransaction).hash : tx.transactionHash,
+          transactionHash: (tx as EtherscanTransaction).hash,
           status: "Unpaid",
           timestamp: rawTs,
-          rewardType: (tx as any).rewardType || "EVM",
-          rewardSubType: (tx as any).rewardSubType,
+          rewardType: (tx as EtherscanTransaction).rewardType || "EVM",
+          rewardSubType: (tx as EtherscanTransaction).rewardSubType,
         } as CachedTransaction);
       }
     

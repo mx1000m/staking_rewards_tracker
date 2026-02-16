@@ -1,0 +1,29 @@
+name: Beacon Chain Sync
+
+on:
+  schedule:
+    # Run daily at 01:00 UTC (after daily transaction sync)
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  beacon-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: |
+          npm install firebase-admin tsx --save
+
+      - name: Run beacon sync
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: npx tsx scripts/beacon-sync.ts
