@@ -6,7 +6,7 @@
  * Does not backfill; starts from the day the validator is added.
  */
 
-import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { initializeApp, getApps, getApp, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
 const ETH_PRICES_URL =
@@ -104,12 +104,27 @@ async function loadEthPrices(): Promise<Record<string, { eur?: number; usd?: num
   return (await res.json()) as Record<string, { eur?: number; usd?: number }>;
 }
 
+// Initialize Firebase app and Firestore, and log which project we're using
+let app;
 if (getApps().length === 0) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || "{}");
-  initializeApp({ credential: cert(serviceAccount) });
+  const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || "{}";
+  try {
+    const serviceAccount = JSON.parse(rawServiceAccount);
+    app = initializeApp({ credential: cert(serviceAccount) });
+    console.log("Initialized Firebase app from service account.");
+  } catch (e) {
+    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT JSON. Using default app config.", e);
+    app = initializeApp();
+  }
+} else {
+  app = getApp();
 }
 
-const db = getFirestore();
+const db = getFirestore(app);
+// This helps verify the GitHub Action is pointed at the same project as the frontend
+// (compare with your frontend Firebase config's projectId)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+console.log("Using Firebase project:", (app.options as any)?.projectId || "(unknown)");
 
 const RATE_LIMIT_MS = 1100; // 1 req/sec
 
@@ -119,7 +134,14 @@ async function processTracker(
   prices: Record<string, { eur?: number; usd?: number }>
 ): Promise<number> {
   const { id: trackerId, validatorPublicKey, beaconApiKey, taxRate = 24 } = tracker;
-  if (!validatorPublicKey || !beaconApiKey) return 0;
+  if (!validatorPublicKey || !beaconApiKey) {
+    console.log(
+      `  [${trackerId}] Skipping tracker (missing validatorPublicKey or beaconApiKey). validatorPublicKey present? ${
+        !!validatorPublicKey
+      }, beaconApiKey present? ${!!beaconApiKey}`
+    );
+    return 0;
+  }
 
   const trackerRef = db.collection("users").doc(uid).collection("trackers").doc(trackerId);
   const trackerSnap = await trackerRef.get();
@@ -130,6 +152,7 @@ async function processTracker(
   let written = 0;
 
   try {
+    console.log(`  [${trackerId}] Calling Beaconcha rewards-aggregate for validator ${validatorPublicKey}...`);
     const agg = await fetchDailyAggregate(beaconApiKey, validatorPublicKey);
     await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
 
@@ -180,6 +203,7 @@ async function processTracker(
   }
 
   try {
+    console.log(`  [${trackerId}] Calling Beaconcha validators overview for validator ${validatorPublicKey}...`);
     const overview = await fetchValidatorOverview(beaconApiKey, validatorPublicKey);
     if (overview?.status != null) {
       const balanceEth = overview.balanceWei ? Number(overview.balanceWei) / 1e18 : undefined;
@@ -188,9 +212,12 @@ async function processTracker(
         validatorBalanceEth: balanceEth,
         beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
       });
+      console.log(`  [${trackerId}] Updated validatorStatus to ${overview.status}, balanceEth=${balanceEth ?? "n/a"}`);
+    } else {
+      console.warn(`  [${trackerId}] Validator overview returned no status for ${validatorPublicKey}.`);
     }
-  } catch {
-    // optional
+  } catch (e) {
+    console.warn(`  [${trackerId}] validator overview failed:`, e);
   }
 
   return written;
@@ -202,15 +229,24 @@ async function main() {
   console.log(`Loaded ${Object.keys(prices).length} date keys from ETH prices.`);
 
   const usersSnap = await db.collection("users").get();
+  console.log(`Found ${usersSnap.size} user(s) in Firestore.`);
   let totalWritten = 0;
 
   for (const userDoc of usersSnap.docs) {
     const uid = userDoc.id;
     const trackersSnap = await db.collection("users").doc(uid).collection("trackers").get();
+    console.log(`User ${uid}: found ${trackersSnap.size} tracker(s).`);
 
     for (const doc of trackersSnap.docs) {
       const data = doc.data();
-      if (!data.validatorPublicKey || !data.beaconApiKey) continue;
+      if (!data.validatorPublicKey || !data.beaconApiKey) {
+        console.log(
+          `  [${uid}/${doc.id}] Skipping tracker in main loop (missing validatorPublicKey or beaconApiKey). validatorPublicKey present? ${
+            !!data.validatorPublicKey
+          }, beaconApiKey present? ${!!data.beaconApiKey}`
+        );
+        continue;
+      }
       const tracker: TrackerDoc = {
         id: doc.id,
         validatorPublicKey: data.validatorPublicKey,
