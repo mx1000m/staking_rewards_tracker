@@ -1,26 +1,16 @@
 /**
  * Beacon-chain sync: forward-only CL rewards per validator.
  * Runs in GitHub Actions; reads validatorPublicKey + beaconApiKey from Firestore,
- * fetches new epochs from Beaconcha, writes CL transactions to Firestore.
- * Does not backfill; starts from current epoch when tracker has no lastSyncedEpoch.
+ * fetches daily aggregated rewards (24h window) from Beaconcha, writes one
+ * CL transaction per day to Firestore.
+ * Does not backfill; starts from the day the validator is added.
  */
 
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
 
-const BEACON_GENESIS = 1606824023;
-const SECONDS_PER_EPOCH = 32 * 12; // 384
-
 const ETH_PRICES_URL =
   "https://raw.githubusercontent.com/mx1000m/staking_rewards_tracker/main/data/eth-prices.json";
-
-function getCurrentEpoch(): number {
-  return Math.floor((Date.now() / 1000 - BEACON_GENESIS) / SECONDS_PER_EPOCH);
-}
-
-function getEpochEndTimestamp(epoch: number): number {
-  return BEACON_GENESIS + (epoch + 1) * SECONDS_PER_EPOCH - 1;
-}
 
 function getDateKey(timestamp: number): string {
   const date = new Date(timestamp * 1000);
@@ -35,29 +25,27 @@ interface TrackerDoc {
   validatorPublicKey?: string;
   beaconApiKey?: string;
   taxRate?: number;
-  lastSyncedEpoch?: number | null;
-  trackingStartEpoch?: number | null;
+  lastClSyncDateKey?: string | null;
   validatorStatus?: string;
   validatorBalanceEth?: number;
   validatorTotalRewardsEth?: number;
 }
 
-interface RewardsListResponse {
-  data?: Array<{
-    total_reward?: string;
+interface RewardsAggregateResponse {
+  data?: {
     total?: string;
-    validator?: { index: number; public_key: string };
+    total_reward?: string;
+    total_penalty?: string;
     [k: string]: unknown;
-  }>;
-  range?: { epoch?: { start?: number; end?: number }; timestamp?: { start?: number; end?: number } };
+  };
+  range?: { timestamp?: { start?: number; end?: number } };
 }
 
-async function fetchRewardsForEpoch(
+async function fetchDailyAggregate(
   apiKey: string,
-  validatorPublicKey: string,
-  epoch: number
-): Promise<RewardsListResponse> {
-  const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/rewards-list", {
+  validatorPublicKey: string
+): Promise<RewardsAggregateResponse> {
+  const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/rewards-aggregate", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -66,15 +54,16 @@ async function fetchRewardsForEpoch(
     body: JSON.stringify({
       validator: { validator_identifiers: [validatorPublicKey] },
       chain: "mainnet",
-      page_size: 10,
-      epoch,
+      range: {
+        evaluation_window: "24h",
+      },
     }),
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Beaconcha rewards-list ${res.status}: ${text}`);
+    throw new Error(`Beaconcha rewards-aggregate ${res.status}: ${text}`);
   }
-  return (await res.json()) as RewardsListResponse;
+  return (await res.json()) as RewardsAggregateResponse;
 }
 
 async function fetchValidatorOverview(
@@ -122,7 +111,6 @@ if (getApps().length === 0) {
 
 const db = getFirestore();
 
-const MAX_EPOCHS_PER_RUN = 33; // ~1000/month if run daily
 const RATE_LIMIT_MS = 1100; // 1 req/sec
 
 async function processTracker(
@@ -136,74 +124,31 @@ async function processTracker(
   const trackerRef = db.collection("users").doc(uid).collection("trackers").doc(trackerId);
   const trackerSnap = await trackerRef.get();
   const data = trackerSnap.data() || {};
-  let lastSyncedEpoch = data.lastSyncedEpoch ?? null;
-  const currentEpoch = getCurrentEpoch();
-
-  if (lastSyncedEpoch == null) {
-    lastSyncedEpoch = currentEpoch;
-    await trackerRef.update({
-      lastSyncedEpoch: currentEpoch,
-      trackingStartEpoch: currentEpoch,
-      beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
-    });
-    console.log(`  [${trackerId}] Forward-only: set lastSyncedEpoch=${currentEpoch}, no backfill.`);
-    const overview = await fetchValidatorOverview(beaconApiKey, validatorPublicKey);
-    if (overview?.status != null) {
-      const balanceEth = overview.balanceWei ? Number(overview.balanceWei) / 1e18 : undefined;
-      await trackerRef.update({
-        validatorStatus: overview.status,
-        validatorBalanceEth: balanceEth,
-        beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
-      });
-    }
-    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
-    return 0;
-  }
-
-  const startEpoch = lastSyncedEpoch + 1;
-  const endEpoch = Math.min(lastSyncedEpoch + MAX_EPOCHS_PER_RUN, currentEpoch);
-  if (startEpoch > endEpoch) {
-    const overview = await fetchValidatorOverview(beaconApiKey, validatorPublicKey);
-    if (overview?.status != null) {
-      const balanceEth = overview.balanceWei ? Number(overview.balanceWei) / 1e18 : undefined;
-      await trackerRef.update({
-        validatorStatus: overview.status,
-        validatorBalanceEth: balanceEth,
-        beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
-      });
-    }
-    return 0;
-  }
+  let lastClSyncDateKey: string | null = data.lastClSyncDateKey ?? null;
 
   const txsRef = db.collection("users").doc(uid).collection("trackers").doc(trackerId).collection("transactions");
   let written = 0;
-  let newLastEpoch = lastSyncedEpoch;
 
-  for (let epoch = startEpoch; epoch <= endEpoch; epoch++) {
-    try {
-      const rewards = await fetchRewardsForEpoch(beaconApiKey, validatorPublicKey, epoch);
-      await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+  try {
+    const agg = await fetchDailyAggregate(beaconApiKey, validatorPublicKey);
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
 
-      const items = rewards.data ?? [];
-      const item = items.find((i) => (i.validator?.public_key ?? "").toLowerCase() === validatorPublicKey.toLowerCase()) ?? items[0];
-      if (!item) continue;
+    const totalWei = agg.data?.total_reward ?? agg.data?.total ?? "0";
+    const ethAmount = Number(totalWei) / 1e18;
+    const endTs = agg.range?.timestamp?.end ?? Math.floor(Date.now() / 1000);
+    const dateKey = getDateKey(endTs - 1);
 
-      const totalRewardWei = item.total_reward ?? item.total ?? "0";
-      const ethAmount = Number(totalRewardWei) / 1e18;
-      if (ethAmount <= 0) {
-        newLastEpoch = epoch;
-        continue;
-      }
-
-      const timestamp = rewards.range?.timestamp?.end ?? getEpochEndTimestamp(epoch);
-      const dateKey = getDateKey(timestamp);
+    // Forward-only: if we've already recorded this dateKey, skip.
+    if (lastClSyncDateKey === dateKey) {
+      console.log(`  [${trackerId}] CL already synced for ${dateKey}, skipping.`);
+    } else if (ethAmount > 0) {
       const priceEntry = prices[dateKey];
       const ethPriceEUR = priceEntry?.eur ?? 0;
       const ethPriceUSD = priceEntry?.usd ?? 0;
       const taxesInEth = ethAmount * (taxRate / 100);
+      const date = new Date(endTs * 1000);
+      const txHash = `cl_${trackerId}_${dateKey}`;
 
-      const date = new Date(timestamp * 1000);
-      const txHash = `cl_${trackerId}_${epoch}`;
       await txsRef.doc(txHash).set(
         {
           date: date.toISOString().slice(0, 10),
@@ -216,24 +161,23 @@ async function processTracker(
           taxesInEth,
           transactionHash: txHash,
           status: "Unpaid",
-          timestamp,
+          timestamp: endTs,
           rewardType: "CL",
           updatedAt: FieldValue.serverTimestamp(),
         },
         { merge: true }
       );
-      written++;
-      newLastEpoch = epoch;
-    } catch (e) {
-      console.warn(`  [${trackerId}] Epoch ${epoch} failed:`, e);
-      break;
+      written = 1;
+      lastClSyncDateKey = dateKey;
     }
-  }
 
-  await trackerRef.update({
-    lastSyncedEpoch: newLastEpoch,
-    beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
-  });
+    await trackerRef.update({
+      lastClSyncDateKey: lastClSyncDateKey ?? dateKey,
+      beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
+    });
+  } catch (e) {
+    console.warn(`  [${trackerId}] daily aggregate failed:`, e);
+  }
 
   try {
     const overview = await fetchValidatorOverview(beaconApiKey, validatorPublicKey);
@@ -272,8 +216,7 @@ async function main() {
         validatorPublicKey: data.validatorPublicKey,
         beaconApiKey: data.beaconApiKey,
         taxRate: data.taxRate ?? 24,
-        lastSyncedEpoch: data.lastSyncedEpoch ?? null,
-        trackingStartEpoch: data.trackingStartEpoch ?? null,
+        lastClSyncDateKey: data.lastClSyncDateKey ?? null,
       };
       console.log(`Processing ${uid} / ${doc.id}`);
       const n = await processTracker(uid, tracker, prices);
