@@ -1957,30 +1957,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     })}
                   </div>
                 </div>
-                {/* Status row: validator status + execution rewards status */}
-                <div style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                  <span>
-                    Status:{" "}
-                    <span style={{ color: "#4ade80", fontWeight: 600 }}>
-                      {(activeTracker.validatorStatus || "UNKNOWN").toUpperCase()}
-                    </span>
-                  </span>
-                  <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
-                  <span>
-                    Execution rewards:{" "}
-                    <span
-                      style={{
-                        color:
-                          activeTracker.mevMode && activeTracker.mevMode !== "none"
-                            ? "#4ade80"
-                            : "#f97373",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {activeTracker.mevMode && activeTracker.mevMode !== "none" ? "ACTIVE" : "INACTIVE"}
-                    </span>
-                  </span>
-                </div>
               </div>
 
               {/* Description of the selected time range */}
