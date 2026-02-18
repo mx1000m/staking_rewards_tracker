@@ -1298,7 +1298,94 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   return (
     <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
-      {/* Validator overview - across all validators for now */}
+      {/* Your validators */}
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validators</h3>
+      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
+        <div style={{ borderRadius: "13px", padding: "24px" }}>
+          {trackers.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
+                No trackers yet
+              </h2>
+              <p style={{ margin: 0, marginBottom: "24px", color: "#aaaaaa", fontSize: "0.9rem" }}>
+                Create your first validator tracker to get started.
+              </p>
+              <button
+                onClick={() => onAddTracker?.()}
+                style={{
+                  background: "#555555",
+                  border: "none",
+                  borderRadius: "10px",
+                  padding: "10px 20px",
+                  color: "#f0f0f0",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "#666666";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "#555555";
+                }}
+              >
+                Add a validator tracker
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+              {trackers.map((tracker) => (
+                <button
+                  key={tracker.id}
+                  onClick={() => setActiveTracker(tracker.id)}
+                  style={{
+                    background: activeTrackerId === tracker.id ? "#555555" : "#2b2b2b",
+                    padding: "12px 20px",
+                    border: "none",
+                    borderRadius: "10px",
+                    color: activeTrackerId === tracker.id ? "white" : "#aaaaaa",
+                    cursor: "pointer",
+                    fontWeight: activeTrackerId === tracker.id ? 600 : 400,
+                    transition: "background 0.2s, color 0.2s, transform 0.2s",
+                    transitionProperty: "background, color, transform",
+                    position: "relative",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (activeTrackerId !== tracker.id) {
+                      e.currentTarget.style.background = "#383838";
+                      e.currentTarget.style.transform = "scale(1.05)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (activeTrackerId !== tracker.id) {
+                      e.currentTarget.style.background = "#2b2b2b";
+                      e.currentTarget.style.transform = "scale(1)";
+                    }
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      visibility: "hidden",
+                      position: "absolute",
+                      whiteSpace: "nowrap",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {tracker.name || `Validator ${tracker.walletAddress.slice(0, 6)}...`}
+                  </span>
+                  <span style={{ fontWeight: 600 }}>
+                    {tracker.name || `Validator ${tracker.walletAddress.slice(0, 6)}...`}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Validator overview - for the selected validator's rewards (all years) */}
       {trackers.length > 0 && (
         <>
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Validator overview</h3>
