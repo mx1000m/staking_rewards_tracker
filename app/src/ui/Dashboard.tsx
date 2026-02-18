@@ -1298,10 +1298,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   return (
     <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
-      {/* All Validators Overview - Only show when there are trackers */}
+      {/* Validator overview - across all validators for now */}
       {trackers.length > 0 && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>All time validator overview</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Validator overview</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
         {/* First Card - TOTAL ETH EARNED */}
@@ -1482,8 +1482,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         </>
       )}
 
-      {/* Your Validator Trackers */}
-      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validator trackers</h3>
+      {/* Your validators */}
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validators</h3>
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
         <div style={{ borderRadius: "13px", padding: "24px" }}>
           {trackers.length === 0 ? (
@@ -1591,11 +1591,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Validator selected</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
             <div style={{ borderRadius: "13px", padding: "24px" }}>
-              {/* Header row: validator name, wallet + copy, action buttons */}
+              {/* Header row: validator name, validator pubkey + copy, action buttons */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, position: "relative" }}>
                   <h2 style={{ margin: 0, color: "#f0f0f0" }}>
-                    {activeTracker.name || `${activeTracker.walletAddress.slice(0, 10)}...`}
+                    {activeTracker.name || `${(activeTracker.validatorPublicKey || activeTracker.walletAddress).slice(0, 10)}...`}
                   </h2>
                   <div style={{ width: "1px", height: "16px", background: "#aaaaaa" }}></div>
                   <div
@@ -1619,10 +1619,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     onMouseUp={(e) => {
                       (e.currentTarget as HTMLDivElement).style.transform = "scale(1)";
                     }}
-                    onClick={() => copyToClipboard(activeTracker.walletAddress, "Wallet address")}
+                    onClick={() =>
+                      copyToClipboard(
+                        activeTracker.validatorPublicKey || activeTracker.walletAddress,
+                        activeTracker.validatorPublicKey ? "Validator public key" : "Wallet address"
+                      )
+                    }
                   >
                     <p style={{ margin: 0, fontSize: "0.85rem", color: "#aaaaaa", transition: "color 0.2s" }}>
-                      {activeTracker.walletAddress.slice(0, 7)}...{activeTracker.walletAddress.slice(-5)}
+                      {(activeTracker.validatorPublicKey || activeTracker.walletAddress).slice(0, 7)}...
+                      {(activeTracker.validatorPublicKey || activeTracker.walletAddress).slice(-5)}
                     </p>
                     <img
                       src="/staking_rewards_tracker/icons/copy_icon.svg"
@@ -1924,6 +1930,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       );
                     })}
                   </div>
+                </div>
+                {/* Status row: validator status + execution rewards status */}
+                <div style={{ marginTop: "8px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+                  <span>
+                    Status:{" "}
+                    <span style={{ color: "#4ade80", fontWeight: 600 }}>
+                      {(activeTracker.validatorStatus || "UNKNOWN").toUpperCase()}
+                    </span>
+                  </span>
+                  <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
+                  <span>
+                    Execution rewards:{" "}
+                    <span
+                      style={{
+                        color:
+                          activeTracker.mevMode && activeTracker.mevMode !== "none"
+                            ? "#4ade80"
+                            : "#f97373",
+                        fontWeight: 600,
+                      }}
+                    >
+                      {activeTracker.mevMode && activeTracker.mevMode !== "none" ? "ACTIVE" : "INACTIVE"}
+                    </span>
+                  </span>
                 </div>
               </div>
 
