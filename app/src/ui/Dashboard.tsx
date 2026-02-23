@@ -624,7 +624,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       setLoadingProgress({ current: 0, total: yearTxs.length, progressPercent: 0 });
       
       if (yearTxs.length === 0) {
-        setError(`⚠ No incoming rewards found for this wallet in ${targetYear}.`);
+        const hasValidator = !!tracker.validatorPublicKey;
+        const clHint = hasValidator
+          ? " Consensus (beacon) rewards appear after the daily Beacon Chain Sync runs in GitHub Actions—check that it finds your project and processes this validator."
+          : "";
+        setError(`No incoming rewards found for this wallet in ${targetYear}.${clHint}`);
         setTransactions([]);
         setLoading(false);
         return;
