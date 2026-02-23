@@ -110,8 +110,20 @@ if (getApps().length === 0) {
   const rawServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || "{}";
   try {
     const serviceAccount = JSON.parse(rawServiceAccount);
-    app = initializeApp({ credential: cert(serviceAccount) });
-    console.log("Initialized Firebase app from service account.");
+    const explicitProjectId =
+      (serviceAccount && (serviceAccount as { project_id?: string }).project_id) ||
+      process.env.GOOGLE_CLOUD_PROJECT ||
+      process.env.GCLOUD_PROJECT ||
+      undefined;
+
+    app = initializeApp({
+      credential: cert(serviceAccount),
+      projectId: explicitProjectId,
+    });
+
+    console.log(
+      "Initialized Firebase app from service account.",
+    );
   } catch (e) {
     console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT JSON. Using default app config.", e);
     app = initializeApp();
