@@ -226,6 +226,18 @@ export async function saveFirestoreTracker(
   tracker: Tracker
 ): Promise<void> {
   try {
+    // Ensure the root user document exists so backend scripts (like beacon-sync)
+    // can discover this user via db.collection("users").get()
+    const userRef = doc(db, "users", uid);
+    await setDoc(
+      userRef,
+      {
+        // Keep it minimal; more user-level fields can be added later if needed
+        createdAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
+
     const trackerRef = doc(db, getUserTrackersPath(uid), tracker.id);
     await setDoc(trackerRef, {
       name: tracker.name,
