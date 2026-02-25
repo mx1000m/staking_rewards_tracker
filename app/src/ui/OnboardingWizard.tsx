@@ -410,31 +410,21 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             </button>
             <button
               type="button"
-              onClick={() => setMevMode("pool")}
+              disabled
               style={{
                 flex: 1,
                 padding: "12px 20px",
-                background: mevMode === "pool" ? "#2b2b2b" : "#1f1f1f",
+                background: "#1a1a1a",
                 border: "none",
                 borderRadius: "10px",
-                color: mevMode === "pool" ? "#f0f0f0" : "#aaaaaa",
+                color: "#555555",
                 textTransform: "none",
-                cursor: "pointer",
-                fontWeight: mevMode === "pool" ? 600 : 400,
-                transition: "background 0.2s, color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (mevMode !== "pool") {
-                  e.currentTarget.style.background = "#383838";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (mevMode !== "pool") {
-                  e.currentTarget.style.background = "#1f1f1f";
-                }
+                cursor: "not-allowed",
+                fontWeight: 400,
+                opacity: 0.6,
               }}
             >
-              Via MEV pool / smoothing
+              Via MEV pool / smoothing (coming soon)
             </button>
           </div>
 
@@ -478,22 +468,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             </>
           )}
 
-          {mevMode === "pool" && (
-            <>
-              <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                MEV payout address
-              </label>
-              <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-                Receives MEV and priority fee payouts.
-              </p>
-              <input
-                className="input"
-                placeholder="0x... (leave empty if same as withdrawal address)"
-                value={mevPoolPayoutAddress}
-                onChange={(e) => setMevPoolPayoutAddress(e.target.value.trim())}
-              />
-            </>
-          )}
+          {/* MEV pool / smoothing configuration is disabled for now. */}
         </div>
       )}
       {step === 3 && (

@@ -574,29 +574,52 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // Use fee recipient address if provided, otherwise default to withdrawal address
       const feeRecipientAddress = tracker.feeRecipientAddress || tracker.walletAddress;
       
-      console.log("Fetching transactions for:", {
-        withdrawalAddress: tracker.walletAddress,
-        feeRecipientAddress: feeRecipientAddress,
-        year: targetYear,
-        from: new Date(startTimestamp * 1000).toLocaleDateString()
-      });
-      const etherscanTxs = await getTransactions(tracker.walletAddress, feeRecipientAddress, tracker.etherscanKey, startTimestamp);
-
-      // If user uses MEV pool smoothing and provided a payout address, fetch those payouts as well.
+      // ===== Execution-layer (EVM) rewards via Etherscan =====
+      // Respect execution rewards mode:
+      // - "none": do not track any EVM income at all.
+      // - "direct": track EVM rewards via fee recipient / withdrawal address (current behavior).
+      // - "pool" / "mixed": MEV pool support will be added later; keep API surface but skip for now if no payout address.
+      let etherscanTxs: EtherscanTransaction[] = [];
       let mevPoolTxs: EtherscanTransaction[] = [];
-      if (
-        (tracker.mevMode === "pool" || tracker.mevMode === "mixed") &&
-        tracker.mevPoolPayoutAddress
-      ) {
+
+      if (tracker.mevMode !== "none" && tracker.etherscanKey) {
+        console.log("Fetching EVM transactions for:", {
+          withdrawalAddress: tracker.walletAddress,
+          feeRecipientAddress: feeRecipientAddress,
+          year: targetYear,
+          from: new Date(startTimestamp * 1000).toLocaleDateString()
+        });
+
         try {
-          mevPoolTxs = await getMevPoolPayoutTransactions(
-            tracker.mevPoolPayoutAddress,
+          etherscanTxs = await getTransactions(
+            tracker.walletAddress,
+            feeRecipientAddress,
             tracker.etherscanKey,
             startTimestamp
           );
         } catch (e) {
-          console.warn("Failed to fetch MEV pool payouts from Etherscan:", e);
+          console.error("Failed to fetch EVM transactions from Etherscan:", e);
+          // Leave etherscanTxs empty; CL rewards from Firestore will still be shown.
         }
+
+        if (
+          (tracker.mevMode === "pool" || tracker.mevMode === "mixed") &&
+          tracker.mevPoolPayoutAddress
+        ) {
+          try {
+            mevPoolTxs = await getMevPoolPayoutTransactions(
+              tracker.mevPoolPayoutAddress,
+              tracker.etherscanKey,
+              startTimestamp
+            );
+          } catch (e) {
+            console.warn("Failed to fetch MEV pool payouts from Etherscan:", e);
+          }
+        }
+      } else {
+        console.log(
+          "Skipping EVM transaction fetch because execution rewards mode is 'none' or no Etherscan key is provided."
+        );
       }
 
       // CL (beacon-chain) rewards are synced by the beacon-sync GitHub Action; load from Firestore only.
