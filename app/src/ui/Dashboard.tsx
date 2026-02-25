@@ -846,7 +846,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     return Array.from(years).sort((a, b) => b - a); // Sort descending
   }, [transactions]);
 
-  // Filter transactions by selected year and month
+  // Filter transactions by selected year, month, and execution rewards mode
   const filteredTransactions = React.useMemo(() => {
     return transactions.filter((tx) => {
       const txDate = new Date(tx.timestamp * 1000);
@@ -855,9 +855,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       
       if (txYear !== selectedYear) return false;
       if (selectedMonth !== null && txMonth !== selectedMonth) return false;
+
+      // If execution rewards are disabled for this tracker, hide any EVM rewards
+      if (activeTracker && activeTracker.mevMode === "none" && tx.rewardType === "EVM") {
+        return false;
+      }
+
       return true;
     });
-  }, [transactions, selectedYear, selectedMonth]);
+  }, [transactions, selectedYear, selectedMonth, activeTracker]);
 
   // Get available months from filtered transactions (for the selected year)
   const availableMonths = React.useMemo(() => {
