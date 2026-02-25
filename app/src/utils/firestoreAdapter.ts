@@ -125,21 +125,24 @@ export async function hasFirestoreTransactionsForYear(
 ): Promise<boolean> {
   try {
     const transactionsRef = collection(db, getTrackerTransactionsPath(uid, trackerId));
-    
-    // Calculate year boundaries in UTC
-    const yearStart = Timestamp.fromMillis(Date.UTC(year, 0, 1, 0, 0, 0));
-    const yearEnd = Timestamp.fromMillis(Date.UTC(year, 11, 31, 23, 59, 59));
-    
-    // Query for transactions within the year range
-    const q = query(
-      transactionsRef,
-      where("timestamp", ">=", yearStart),
-      where("timestamp", "<=", yearEnd),
-      limit(1) // We only need to know if at least one exists
-    );
-    
+
+    // Some transactions store `timestamp` as Firestore Timestamp, others as a number of seconds.
+    // To keep this helper robust, read a small set and check the year in JavaScript instead of
+    // relying on Firestore range queries with a specific timestamp type.
+    const q = query(transactionsRef, orderBy("timestamp", "desc"), limit(20));
     const snapshot = await getDocs(q);
-    return !snapshot.empty;
+
+    for (const docSnap of snapshot.docs) {
+      const data = docSnap.data();
+      const tsSeconds = timestampToNumber(data.timestamp);
+      if (!tsSeconds) continue;
+      const txYear = new Date(tsSeconds * 1000).getUTCFullYear();
+      if (txYear === year) {
+        return true;
+      }
+    }
+
+    return false;
   } catch (error) {
     console.error("Error checking Firestore transactions for year:", error);
     return false; // On error, assume no transactions (will trigger fetch)
