@@ -84,6 +84,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [ethPricesLoaded, setEthPricesLoaded] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
+  const validatorStatusLabel =
+    activeTracker && activeTracker.validatorStatus
+      ? activeTracker.validatorStatus.toUpperCase()
+      : activeTracker && activeTracker.validatorPublicKey
+      ? "PENDING_SYNC"
+      : "UNKNOWN";
+  const validatorStatusColor =
+    activeTracker && activeTracker.validatorStatus
+      ? "#4ade80"
+      : activeTracker && activeTracker.validatorPublicKey
+      ? "#facc15"
+      : "#f97373";
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
   
   // Current ETH price state (from Coinbase API)
@@ -1767,8 +1779,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               <div style={{ marginTop: "4px", fontSize: "0.85rem", color: "#aaaaaa" }}>
                 <span>
                   Status:{" "}
-                  <span style={{ color: "#4ade80", fontWeight: 600 }}>
-                    {(activeTracker.validatorStatus || "UNKNOWN").toUpperCase()}
+                  <span style={{ color: validatorStatusColor, fontWeight: 600 }}>
+                    {validatorStatusLabel}
                   </span>
                 </span>
                 <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
