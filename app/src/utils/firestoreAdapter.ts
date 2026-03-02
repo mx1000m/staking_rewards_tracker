@@ -107,25 +107,21 @@ export async function getFirestoreTransactions(
 ): Promise<CachedTransaction[]> {
   try {
     const transactionsRef = collection(db, getTrackerTransactionsPath(uid, trackerId));
-    let q = query(transactionsRef, orderBy("timestamp", "desc"));
-    
-    // If we have a last fetched timestamp, only get newer transactions
-    if (lastFetchedTimestamp) {
-      q = query(
-        transactionsRef,
-        where("timestamp", ">", Timestamp.fromMillis(lastFetchedTimestamp * 1000)),
-        orderBy("timestamp", "desc")
-      );
-    }
-    
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(transactionsRef);
     const transactions: CachedTransaction[] = [];
     
     snapshot.forEach((docSnap) => {
       const data = docSnap.data();
-      transactions.push(firestoreToTransaction(data, docSnap.id));
+      const tx = firestoreToTransaction(data, docSnap.id);
+      // If lastFetchedTimestamp is provided, only return newer transactions
+      if (!lastFetchedTimestamp || tx.timestamp > lastFetchedTimestamp) {
+        transactions.push(tx);
+      }
     });
-    
+
+    // Sort newest first to match previous behaviour
+    transactions.sort((a, b) => b.timestamp - a.timestamp);
+
     return transactions;
   } catch (error) {
     console.error("Error fetching Firestore transactions:", error);
