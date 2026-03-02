@@ -141,17 +141,37 @@ export async function hasFirestoreTransactionsForYear(
   try {
     const transactionsRef = collection(db, getTrackerTransactionsPath(uid, trackerId));
 
-    // Some transactions store `timestamp` as Firestore Timestamp, others as a number of seconds.
-    // To keep this helper robust, read a small set and check the year in JavaScript instead of
-    // relying on Firestore range queries with a specific timestamp type.
+    // Some transactions store `timestamp` as Firestore Timestamp, others as a number or string
+    // of seconds. To keep this helper robust, read a small set and check the year in JavaScript.
     const q = query(transactionsRef, orderBy("timestamp", "desc"), limit(20));
     const snapshot = await getDocs(q);
+
+    console.log(
+      "[hasFirestoreTransactionsForYear] docs:",
+      snapshot.size,
+      "uid:",
+      uid,
+      "trackerId:",
+      trackerId,
+      "targetYear:",
+      year
+    );
 
     for (const docSnap of snapshot.docs) {
       const data = docSnap.data();
       const tsSeconds = timestampToNumber(data.timestamp);
       if (!tsSeconds) continue;
       const txYear = new Date(tsSeconds * 1000).getUTCFullYear();
+      console.log(
+        "[hasFirestoreTransactionsForYear] doc",
+        docSnap.id,
+        "timestamp raw:",
+        data.timestamp,
+        "seconds:",
+        tsSeconds,
+        "year:",
+        txYear
+      );
       if (txYear === year) {
         return true;
       }

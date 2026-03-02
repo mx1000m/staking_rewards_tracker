@@ -557,9 +557,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       
       // Check Firestore first to see if we already have transactions for this year
       if (user && !forceRefresh) {
-        const hasTransactions = await hasFirestoreTransactionsForYear(user.uid, tracker.id, targetYear);
+        const hasTransactions = await hasFirestoreTransactionsForYear(
+          user.uid,
+          tracker.id,
+          targetYear
+        );
+        console.log(
+          "[fetchTransactions] hasFirestoreTransactionsForYear result:",
+          hasTransactions,
+          "for year",
+          targetYear,
+          "trackerId",
+          tracker.id
+        );
         if (hasTransactions) {
-          console.log(`Transactions for ${targetYear} already exist in Firestore, loading from cache/Firestore`);
+          console.log(
+            `Transactions for ${targetYear} already exist in Firestore, loading from cache/Firestore`
+          );
           // Load from cache/Firestore instead of fetching from Etherscan
           await loadTransactions(tracker);
           return;
@@ -627,8 +641,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       if (user && tracker.validatorPublicKey) {
         try {
           const allFirestore = await getFirestoreTransactions(user.uid, tracker.id);
-          clFromFirestore = allFirestore.filter(
-            (ftx) => ftx.rewardType === "CL" && ftx.timestamp >= startTimestamp && ftx.timestamp <= endTimestamp
+          console.log(
+            "[fetchTransactions] loaded Firestore txs:",
+            allFirestore.length,
+            "for tracker",
+            tracker.id
+          );
+          clFromFirestore = allFirestore.filter((ftx) => {
+            const inYear = ftx.timestamp >= startTimestamp && ftx.timestamp <= endTimestamp;
+            const isCl = ftx.rewardType === "CL";
+            if (!isCl || !inYear) {
+              return false;
+            }
+            return true;
+          });
+          console.log(
+            "[fetchTransactions] CL txs after year filter:",
+            clFromFirestore.length,
+            "start",
+            startTimestamp,
+            "end",
+            endTimestamp
           );
         } catch (e) {
           console.warn("Failed to load CL transactions from Firestore:", e);
