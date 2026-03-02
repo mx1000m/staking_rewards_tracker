@@ -555,31 +555,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // Use provided year or default to current year
       const targetYear = year ?? new Date().getUTCFullYear();
       
-      // Check Firestore first to see if we already have transactions for this year
-      if (user && !forceRefresh) {
-        const hasTransactions = await hasFirestoreTransactionsForYear(
-          user.uid,
-          tracker.id,
-          targetYear
-        );
-        console.log(
-          "[fetchTransactions] hasFirestoreTransactionsForYear result:",
-          hasTransactions,
-          "for year",
-          targetYear,
-          "trackerId",
-          tracker.id
-        );
-        if (hasTransactions) {
-          console.log(
-            `Transactions for ${targetYear} already exist in Firestore, loading from cache/Firestore`
-          );
-          // Load from cache/Firestore instead of fetching from Etherscan
-          await loadTransactions(tracker);
-          return;
-        }
-      }
-      
       // Start from Jan 1 of target year (00:01 UTC) to include entire-year history
       const startTimestamp = Math.floor(Date.UTC(targetYear, 0, 1, 0, 1, 0) / 1000);
       // End at Dec 31 of target year (23:59:59 UTC)
