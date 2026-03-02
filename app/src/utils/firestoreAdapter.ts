@@ -25,11 +25,30 @@ const getUserTrackersPath = (uid: string) => `users/${uid}/trackers`;
 const getTrackerTransactionsPath = (uid: string, trackerId: string) => 
   `users/${uid}/trackers/${trackerId}/transactions`;
 
-// Convert Firestore timestamp to number
+// Convert Firestore timestamp to epoch seconds (number)
 const timestampToNumber = (ts: any): number => {
   if (!ts) return 0;
-  if (ts instanceof Timestamp) return ts.toMillis() / 1000;
-  if (typeof ts === "number") return ts;
+
+  // Firestore Timestamp object
+  if (ts instanceof Timestamp) {
+    return ts.toMillis() / 1000;
+  }
+
+  // Stored as a numeric epoch-seconds value
+  if (typeof ts === "number") {
+    return ts;
+  }
+
+  // Some server-side writers (like beacon-sync) may store timestamps as
+  // stringified epoch seconds. Handle that gracefully.
+  if (typeof ts === "string") {
+    const parsed = Number(ts);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  // Fallback for unexpected types
   return 0;
 };
 
