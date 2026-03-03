@@ -167,6 +167,21 @@ async function fetchValidatorOverview(
 
       const text = await res.text();
 
+      // Special case: v2 "no validators found" – this commonly happens for
+      // validators that are DEPOSITED but have not yet been assigned an index
+      // in the active set. For UX purposes we treat this as "deposited"
+      // instead of leaving the status unknown, and will overwrite it on later
+      // runs once the validator becomes pending/active.
+      if (res.status === 404 && text.includes("no validators found")) {
+        console.warn(
+          `[fetchValidatorOverview] v2 404 no validators found for ${shortKey} – assuming status=deposited until validator index exists. Body: ${text.slice(
+            0,
+            200
+          )}`
+        );
+        return { status: "deposited", balanceWei: undefined };
+      }
+
       if (res.status === 429 && attempt < maxAttempts - 1) {
         const delayMs = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
         console.warn(
