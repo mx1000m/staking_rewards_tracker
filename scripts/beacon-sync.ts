@@ -335,13 +335,19 @@ async function processTracker(
     // Respect rate limit before any further Beaconcha calls
     await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
     if (overview?.status != null) {
-      const balanceEth = overview.balanceWei ? Number(overview.balanceWei) / 1e18 : undefined;
-      await trackerRef.update({
+      const updateData: Record<string, unknown> = {
         validatorStatus: overview.status,
-        validatorBalanceEth: balanceEth,
         beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
-      });
-      console.log(`  [${trackerId}] Updated validatorStatus to ${overview.status}, balanceEth=${balanceEth ?? "n/a"}`);
+      };
+      if (overview.balanceWei) {
+        updateData.validatorBalanceEth = Number(overview.balanceWei) / 1e18;
+      }
+      await trackerRef.update(updateData);
+      console.log(
+        `  [${trackerId}] Updated validatorStatus to ${overview.status}, balanceEth=${
+          updateData.validatorBalanceEth ?? "n/a"
+        }`
+      );
     } else {
       console.warn(`  [${trackerId}] Validator overview returned no status for ${validatorPublicKey}.`);
     }
