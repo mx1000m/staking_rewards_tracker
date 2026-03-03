@@ -76,23 +76,34 @@ async function fetchValidatorOverview(
       ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
       : validatorPublicKey;
 
-  try {
-    // Primary path: v1 Validators overview endpoint
-    const url = `https://beaconcha.in/api/v1/validator/${encodeURIComponent(validatorPublicKey)}`;
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        // Beaconcha.in expects the API key as "apikey" header or query parameter.
-        apikey: apiKey,
-      } as any,
-    });
+  // Try up to two forms: as-is, then without 0x prefix (some tools differ here).
+  const candidates = validatorPublicKey.startsWith("0x")
+    ? [validatorPublicKey, validatorPublicKey.slice(2)]
+    : [validatorPublicKey];
 
-    if (!res.ok) {
-      const text = await res.text();
-      console.warn(
-        `[fetchValidatorOverview] v1 endpoint failed (${res.status}) for ${shortKey}: ${text}`
-      );
-    } else {
+  for (const candidate of candidates) {
+    try {
+      const url = `https://beaconcha.in/api/v1/validator/${encodeURIComponent(candidate)}`;
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          // Beaconcha.in expects the API key as "apikey" header or query parameter.
+          apikey: apiKey,
+        } as any,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.warn(
+          `[fetchValidatorOverview] v1 failed (${res.status}) for ${shortKey} (candidate: ${candidate.slice(
+            0,
+            12
+          )}...): ${text}`
+        );
+        // If this is the first candidate and we have an alternate form, try the next one.
+        continue;
+      }
+
       const json = (await res.json()) as {
         data?:
           | {
@@ -106,96 +117,56 @@ async function fetchValidatorOverview(
       };
 
       const payload = Array.isArray(json.data) ? json.data[0] : json.data;
-      if (payload) {
-        const status = payload.status;
-        const balanceWei =
-          typeof payload.balance === "number"
-            ? (BigInt(Math.trunc(payload.balance)) * 1_000_000_000n).toString()
-            : undefined;
-
-        console.log(
-          `[fetchValidatorOverview] v1 status for ${shortKey}:`,
-          status,
-          "balanceWei:",
-          balanceWei ?? "n/a"
-        );
-
-        if (status || balanceWei) {
-          return { status, balanceWei };
-        } else {
-          console.warn(
-            `[fetchValidatorOverview] v1 returned payload without status/balance for ${shortKey}:`,
-            JSON.stringify(payload)
-          );
-        }
-      } else {
+      if (!payload) {
         console.warn(
-          `[fetchValidatorOverview] v1 returned no data for ${shortKey}:`,
-          JSON.stringify(json)
+          `[fetchValidatorOverview] v1 returned no data for ${shortKey} (candidate: ${candidate.slice(
+            0,
+            12
+          )}...): ${JSON.stringify(json)}`
         );
+        continue;
       }
+
+      const status = payload.status;
+      const balanceWei =
+        typeof payload.balance === "number"
+          ? (BigInt(Math.trunc(payload.balance)) * 1_000_000_000n).toString()
+          : undefined;
+
+      console.log(
+        `[fetchValidatorOverview] v1 status for ${shortKey} (candidate: ${candidate.slice(
+          0,
+          12
+        )}...):`,
+        status,
+        "balanceWei:",
+        balanceWei ?? "n/a"
+      );
+
+      if (status || balanceWei) {
+        return { status, balanceWei };
+      }
+
+      console.warn(
+        `[fetchValidatorOverview] v1 payload missing status/balance for ${shortKey} (candidate: ${candidate.slice(
+          0,
+          12
+        )}...): ${JSON.stringify(payload)}`
+      );
+      // Try next candidate if available
+    } catch (e) {
+      console.warn(
+        `[fetchValidatorOverview] v1 threw for ${shortKey} (candidate: ${candidate.slice(
+          0,
+          12
+        )}...):`,
+        e
+      );
     }
-  } catch (e) {
-    console.warn(`[fetchValidatorOverview] v1 threw for ${shortKey}:`, e);
   }
 
-  // Fallback path: v2 validators endpoint (more expensive; use only when v1 fails)
-  try {
-    const resV2 = await fetch("https://beaconcha.in/api/v2/ethereum/validators", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        validator: { validator_identifiers: [validatorPublicKey] },
-        chain: "mainnet",
-        page_size: 1,
-      }),
-    });
-
-    if (!resV2.ok) {
-      const text = await resV2.text();
-      console.warn(
-        `[fetchValidatorOverview] v2 endpoint failed (${resV2.status}) for ${shortKey}: ${text}`
-      );
-      return null;
-    }
-
-    const jsonV2 = (await resV2.json()) as {
-      data?: Array<{
-        status?: string;
-        balances?: { current?: string };
-      }>;
-    };
-
-    const first = jsonV2.data?.[0];
-    if (!first) {
-      console.warn(
-        `[fetchValidatorOverview] v2 returned no data array for ${shortKey}:`,
-        JSON.stringify(jsonV2)
-      );
-      return null;
-    }
-
-    const status = first.status;
-    const currentWei = first.balances?.current;
-
-    console.log(
-      `[fetchValidatorOverview] v2 status for ${shortKey}:`,
-      status,
-      "balanceWei:",
-      currentWei ?? "n/a"
-    );
-
-    return {
-      status,
-      balanceWei: currentWei,
-    };
-  } catch (e) {
-    console.warn(`[fetchValidatorOverview] v2 threw for ${shortKey}:`, e);
-    return null;
-  }
+  // All attempts failed
+  return null;
 }
 
 async function loadEthPrices(): Promise<Record<string, { eur?: number; usd?: number }>> {
