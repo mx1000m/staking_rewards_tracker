@@ -209,10 +209,9 @@ const db = getFirestore(app);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 console.log("Using Firebase project:", (app.options as any)?.projectId || "(unknown)");
 
-// Beaconcha free tier: 1 request per minute per API key.
-// To stay comfortably within this, we enforce a 60s delay between
-// *all* Beaconcha API calls made by this script for a given run.
-const RATE_LIMIT_MS = 60_000;
+// Light per-request backoff. The dominant limit for the free tier is
+// the *monthly* quota; we keep a small delay here mainly to be polite.
+const RATE_LIMIT_MS = 1100; // ~1 req/sec
 
 async function processTracker(
   uid: string,
