@@ -209,7 +209,10 @@ const db = getFirestore(app);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 console.log("Using Firebase project:", (app.options as any)?.projectId || "(unknown)");
 
-const RATE_LIMIT_MS = 1100; // 1 req/sec
+// Beaconcha free tier: 1 request per minute per API key.
+// To stay comfortably within this, we enforce a 60s delay between
+// *all* Beaconcha API calls made by this script for a given run.
+const RATE_LIMIT_MS = 60_000;
 
 async function processTracker(
   uid: string,
@@ -288,6 +291,8 @@ async function processTracker(
   try {
     console.log(`  [${trackerId}] Calling Beaconcha validators overview for validator ${validatorPublicKey}...`);
     const overview = await fetchValidatorOverview(beaconApiKey, validatorPublicKey);
+    // Respect rate limit before any further Beaconcha calls
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
     if (overview?.status != null) {
       const balanceEth = overview.balanceWei ? Number(overview.balanceWei) / 1e18 : undefined;
       await trackerRef.update({
