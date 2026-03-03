@@ -45,25 +45,67 @@ async function fetchDailyAggregate(
   apiKey: string,
   validatorPublicKey: string
 ): Promise<RewardsAggregateResponse> {
-  const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/rewards-aggregate", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      validator: { validator_identifiers: [validatorPublicKey] },
-      chain: "mainnet",
-      range: {
-        evaluation_window: "24h",
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/rewards-aggregate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
-    }),
-  });
-  if (!res.ok) {
+      body: JSON.stringify({
+        validator: { validator_identifiers: [validatorPublicKey] },
+        chain: "mainnet",
+        range: {
+          evaluation_window: "24h",
+        },
+      }),
+    });
+
+    if (res.ok) {
+      return (await res.json()) as RewardsAggregateResponse;
+    }
+
     const text = await res.text();
-    throw new Error(`Beaconcha rewards-aggregate ${res.status}: ${text}`);
+
+    // 404 means "no rewards yet" for this validator / time range – treat as empty result, not fatal.
+    if (res.status === 404) {
+      console.log(
+        `[fetchDailyAggregate] 404 (no rewards yet) for ${shortKey}:`,
+        text.slice(0, 200)
+      );
+      return {
+        data: { total: "0", total_reward: "0", total_penalty: "0" },
+        range: {},
+      };
+    }
+
+    // 429 – rate limited. Apply exponential backoff and retry a few times.
+    if (res.status === 429 && attempt < maxAttempts - 1) {
+      const delayMs = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
+      console.warn(
+        `[fetchDailyAggregate] 429 Too Many Requests for ${shortKey}, attempt ${
+          attempt + 1
+        }/${maxAttempts}, retrying after ${delayMs}ms. Body: ${text.slice(0, 200)}`
+      );
+      await new Promise((r) => setTimeout(r, delayMs));
+      continue;
+    }
+
+    // Other errors – give up and let caller decide what to do.
+    throw new Error(`Beaconcha rewards-aggregate ${res.status} for ${shortKey}: ${text}`);
   }
-  return (await res.json()) as RewardsAggregateResponse;
+
+  // Should not reach here, but TypeScript wants a return.
+  return {
+    data: { total: "0", total_reward: "0", total_penalty: "0" },
+    range: {},
+  };
 }
 
 async function fetchValidatorOverview(
@@ -82,86 +124,104 @@ async function fetchValidatorOverview(
     : [validatorPublicKey];
 
   for (const candidate of candidates) {
-    try {
-      const url = `https://beaconcha.in/api/v1/validator/${encodeURIComponent(candidate)}`;
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          // Beaconcha.in expects the API key as "apikey" header or query parameter.
-          apikey: apiKey,
-        } as any,
-      });
+    const maxAttempts = 3;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const url = `https://beaconcha.in/api/v1/validator/${encodeURIComponent(candidate)}`;
+        const res = await fetch(url, {
+          method: "GET",
+          headers: {
+            // Beaconcha.in expects the API key as "apikey" header or query parameter.
+            apikey: apiKey,
+          } as any,
+        });
 
-      if (!res.ok) {
+        if (res.ok) {
+          const json = (await res.json()) as {
+            data?:
+              | {
+                  status?: string;
+                  balance?: number;
+                }
+              | Array<{
+                  status?: string;
+                  balance?: number;
+                }>;
+          };
+
+          const payload = Array.isArray(json.data) ? json.data[0] : json.data;
+          if (!payload) {
+            console.warn(
+              `[fetchValidatorOverview] v1 returned no data for ${shortKey} (candidate: ${candidate.slice(
+                0,
+                12
+              )}...): ${JSON.stringify(json)}`
+            );
+            break; // don't keep retrying this candidate
+          }
+
+          const status = payload.status;
+          const balanceWei =
+            typeof payload.balance === "number"
+              ? (BigInt(Math.trunc(payload.balance)) * 1_000_000_000n).toString()
+              : undefined;
+
+          console.log(
+            `[fetchValidatorOverview] v1 status for ${shortKey} (candidate: ${candidate.slice(
+              0,
+              12
+            )}...):`,
+            status,
+            "balanceWei:",
+            balanceWei ?? "n/a"
+          );
+
+          if (status || balanceWei) {
+            return { status, balanceWei };
+          }
+
+          console.warn(
+            `[fetchValidatorOverview] v1 payload missing status/balance for ${shortKey} (candidate: ${candidate.slice(
+              0,
+              12
+            )}...): ${JSON.stringify(payload)}`
+          );
+          break;
+        }
+
         const text = await res.text();
+
+        if (res.status === 429 && attempt < maxAttempts - 1) {
+          const delayMs = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
+          console.warn(
+            `[fetchValidatorOverview] 429 Too Many Requests for ${shortKey} (candidate: ${candidate.slice(
+              0,
+              12
+            )}...), attempt ${attempt + 1}/${maxAttempts}, retrying after ${delayMs}ms. Body: ${text.slice(
+              0,
+              200
+            )}`
+          );
+          await new Promise((r) => setTimeout(r, delayMs));
+          continue;
+        }
+
         console.warn(
           `[fetchValidatorOverview] v1 failed (${res.status}) for ${shortKey} (candidate: ${candidate.slice(
             0,
             12
           )}...): ${text}`
         );
-        // If this is the first candidate and we have an alternate form, try the next one.
-        continue;
-      }
-
-      const json = (await res.json()) as {
-        data?:
-          | {
-              status?: string;
-              balance?: number;
-            }
-          | Array<{
-              status?: string;
-              balance?: number;
-            }>;
-      };
-
-      const payload = Array.isArray(json.data) ? json.data[0] : json.data;
-      if (!payload) {
+        break; // don't keep retrying this candidate for non-429 errors
+      } catch (e) {
         console.warn(
-          `[fetchValidatorOverview] v1 returned no data for ${shortKey} (candidate: ${candidate.slice(
+          `[fetchValidatorOverview] v1 threw for ${shortKey} (candidate: ${candidate.slice(
             0,
             12
-          )}...): ${JSON.stringify(json)}`
+          )}...), attempt ${attempt + 1}/${maxAttempts}:`,
+          e
         );
-        continue;
       }
-
-      const status = payload.status;
-      const balanceWei =
-        typeof payload.balance === "number"
-          ? (BigInt(Math.trunc(payload.balance)) * 1_000_000_000n).toString()
-          : undefined;
-
-      console.log(
-        `[fetchValidatorOverview] v1 status for ${shortKey} (candidate: ${candidate.slice(
-          0,
-          12
-        )}...):`,
-        status,
-        "balanceWei:",
-        balanceWei ?? "n/a"
-      );
-
-      if (status || balanceWei) {
-        return { status, balanceWei };
-      }
-
-      console.warn(
-        `[fetchValidatorOverview] v1 payload missing status/balance for ${shortKey} (candidate: ${candidate.slice(
-          0,
-          12
-        )}...): ${JSON.stringify(payload)}`
-      );
-      // Try next candidate if available
-    } catch (e) {
-      console.warn(
-        `[fetchValidatorOverview] v1 threw for ${shortKey} (candidate: ${candidate.slice(
-          0,
-          12
-        )}...):`,
-        e
-      );
     }
   }
 
