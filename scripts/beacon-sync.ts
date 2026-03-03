@@ -69,31 +69,53 @@ async function fetchDailyAggregate(
 async function fetchValidatorOverview(
   apiKey: string,
   validatorPublicKey: string
-): Promise<{ status?: string; balanceWei?: string; totalRewardsWei?: string } | null> {
+): Promise<{ status?: string; balanceWei?: string } | null> {
   try {
-    const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators", {
-      method: "POST",
+    // Use the official v1 Validators overview endpoint:
+    //   GET /api/v1/validator/{indexOrPubkey}
+    // It accepts a single pubkey and returns either a single object or an array.
+    const url = `https://beaconcha.in/api/v1/validator/${encodeURIComponent(validatorPublicKey)}`;
+    const res = await fetch(url, {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        validator: { validator_identifiers: [validatorPublicKey] },
-        chain: "mainnet",
-        page_size: 1,
-      }),
+        // Beaconcha.in expects the API key as "apikey" header or query parameter.
+        apikey: apiKey,
+      } as any,
     });
-    if (!res.ok) return null;
-    const json = (await res.json()) as { data?: Array<{ status?: string; balances?: { current?: string }; validator?: unknown }> };
-    const first = json.data?.[0];
-    if (!first) return null;
-    const currentWei = (first as { balances?: { current?: string } }).balances?.current;
-    return {
-      status: first.status,
-      balanceWei: currentWei,
-      totalRewardsWei: currentWei, // total rewards = balance - 32 ETH; we can compute if needed
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.warn(
+        `fetchValidatorOverview failed with status ${res.status} for ${validatorPublicKey}: ${text}`
+      );
+      return null;
+    }
+
+    const json = (await res.json()) as {
+      data?:
+        | {
+            status?: string;
+            balance?: number;
+          }
+        | Array<{
+            status?: string;
+            balance?: number;
+          }>;
     };
-  } catch {
+
+    const payload = Array.isArray(json.data) ? json.data[0] : json.data;
+    if (!payload) return null;
+
+    const status = payload.status;
+    // v1 validator balance is in gwei as a number; convert to wei string for consistency
+    const balanceWei =
+      typeof payload.balance === "number"
+        ? (BigInt(Math.trunc(payload.balance)) * 1_000_000_000n).toString()
+        : undefined;
+
+    return { status, balanceWei };
+  } catch (e) {
+    console.warn("fetchValidatorOverview threw:", e);
     return null;
   }
 }
