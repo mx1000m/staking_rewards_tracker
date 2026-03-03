@@ -70,10 +70,14 @@ async function fetchValidatorOverview(
   apiKey: string,
   validatorPublicKey: string
 ): Promise<{ status?: string; balanceWei?: string } | null> {
+  // Helper to log a compact identifier for this validator
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
   try {
-    // Use the official v1 Validators overview endpoint:
-    //   GET /api/v1/validator/{indexOrPubkey}
-    // It accepts a single pubkey and returns either a single object or an array.
+    // Primary path: v1 Validators overview endpoint
     const url = `https://beaconcha.in/api/v1/validator/${encodeURIComponent(validatorPublicKey)}`;
     const res = await fetch(url, {
       method: "GET",
@@ -86,36 +90,110 @@ async function fetchValidatorOverview(
     if (!res.ok) {
       const text = await res.text();
       console.warn(
-        `fetchValidatorOverview failed with status ${res.status} for ${validatorPublicKey}: ${text}`
+        `[fetchValidatorOverview] v1 endpoint failed (${res.status}) for ${shortKey}: ${text}`
+      );
+    } else {
+      const json = (await res.json()) as {
+        data?:
+          | {
+              status?: string;
+              balance?: number;
+            }
+          | Array<{
+              status?: string;
+              balance?: number;
+            }>;
+      };
+
+      const payload = Array.isArray(json.data) ? json.data[0] : json.data;
+      if (payload) {
+        const status = payload.status;
+        const balanceWei =
+          typeof payload.balance === "number"
+            ? (BigInt(Math.trunc(payload.balance)) * 1_000_000_000n).toString()
+            : undefined;
+
+        console.log(
+          `[fetchValidatorOverview] v1 status for ${shortKey}:`,
+          status,
+          "balanceWei:",
+          balanceWei ?? "n/a"
+        );
+
+        if (status || balanceWei) {
+          return { status, balanceWei };
+        } else {
+          console.warn(
+            `[fetchValidatorOverview] v1 returned payload without status/balance for ${shortKey}:`,
+            JSON.stringify(payload)
+          );
+        }
+      } else {
+        console.warn(
+          `[fetchValidatorOverview] v1 returned no data for ${shortKey}:`,
+          JSON.stringify(json)
+        );
+      }
+    }
+  } catch (e) {
+    console.warn(`[fetchValidatorOverview] v1 threw for ${shortKey}:`, e);
+  }
+
+  // Fallback path: v2 validators endpoint (more expensive; use only when v1 fails)
+  try {
+    const resV2 = await fetch("https://beaconcha.in/api/v2/ethereum/validators", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        validator: { validator_identifiers: [validatorPublicKey] },
+        chain: "mainnet",
+        page_size: 1,
+      }),
+    });
+
+    if (!resV2.ok) {
+      const text = await resV2.text();
+      console.warn(
+        `[fetchValidatorOverview] v2 endpoint failed (${resV2.status}) for ${shortKey}: ${text}`
       );
       return null;
     }
 
-    const json = (await res.json()) as {
-      data?:
-        | {
-            status?: string;
-            balance?: number;
-          }
-        | Array<{
-            status?: string;
-            balance?: number;
-          }>;
+    const jsonV2 = (await resV2.json()) as {
+      data?: Array<{
+        status?: string;
+        balances?: { current?: string };
+      }>;
     };
 
-    const payload = Array.isArray(json.data) ? json.data[0] : json.data;
-    if (!payload) return null;
+    const first = jsonV2.data?.[0];
+    if (!first) {
+      console.warn(
+        `[fetchValidatorOverview] v2 returned no data array for ${shortKey}:`,
+        JSON.stringify(jsonV2)
+      );
+      return null;
+    }
 
-    const status = payload.status;
-    // v1 validator balance is in gwei as a number; convert to wei string for consistency
-    const balanceWei =
-      typeof payload.balance === "number"
-        ? (BigInt(Math.trunc(payload.balance)) * 1_000_000_000n).toString()
-        : undefined;
+    const status = first.status;
+    const currentWei = first.balances?.current;
 
-    return { status, balanceWei };
+    console.log(
+      `[fetchValidatorOverview] v2 status for ${shortKey}:`,
+      status,
+      "balanceWei:",
+      currentWei ?? "n/a"
+    );
+
+    return {
+      status,
+      balanceWei: currentWei,
+    };
   } catch (e) {
-    console.warn("fetchValidatorOverview threw:", e);
+    console.warn(`[fetchValidatorOverview] v2 threw for ${shortKey}:`, e);
     return null;
   }
 }
