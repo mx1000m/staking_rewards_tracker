@@ -668,10 +668,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       
       if (yearTxs.length === 0) {
         const hasValidator = !!tracker.validatorPublicKey;
-        const clHint = hasValidator
-          ? " Consensus (beacon) rewards appear after the daily Beacon Chain Sync runs in GitHub Actions—check that it finds your project and processes this validator."
-          : "";
-        setError(`No incoming rewards found for this wallet in ${targetYear}.${clHint}`);
+        const isDeposited =
+          typeof tracker.validatorStatus === "string" &&
+          tracker.validatorStatus.toLowerCase() === "deposited";
+
+        if (isDeposited && hasValidator) {
+          // Validator is deposited but not yet active – show neutral queue message
+          setError(
+            "Validator is DEPOSITED and waiting in the activation queue. Rewards will appear once it becomes ACTIVE."
+          );
+        } else {
+          const clHint = hasValidator
+            ? " Consensus (beacon) rewards appear after the daily Beacon Chain Sync runs in GitHub Actions—check that it finds your project and processes this validator."
+            : "";
+          setError(`No incoming rewards found for this wallet in ${targetYear}.${clHint}`);
+        }
         setTransactions([]);
         setLoading(false);
         return;
