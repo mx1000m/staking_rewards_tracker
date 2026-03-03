@@ -112,120 +112,87 @@ async function fetchValidatorOverview(
   apiKey: string,
   validatorPublicKey: string
 ): Promise<{ status?: string; balanceWei?: string } | null> {
-  // Helper to log a compact identifier for this validator
   const shortKey =
     validatorPublicKey.length > 18
       ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
       : validatorPublicKey;
 
-  // Try up to two forms: as-is, then without 0x prefix (some tools differ here).
-  const candidates = validatorPublicKey.startsWith("0x")
-    ? [validatorPublicKey, validatorPublicKey.slice(2)]
-    : [validatorPublicKey];
+  const maxAttempts = 3;
 
-  for (const candidate of candidates) {
-    const maxAttempts = 3;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      try {
-        const url = `https://beaconcha.in/api/v1/validator/${encodeURIComponent(candidate)}`;
-        const res = await fetch(url, {
-          method: "GET",
-          headers: {
-            // Beaconcha.in expects the API key as "apikey" header or query parameter.
-            apikey: apiKey,
-          } as any,
-        });
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          validator: { validator_identifiers: [validatorPublicKey] },
+          chain: "mainnet",
+          page_size: 1,
+        }),
+      });
 
-        if (res.ok) {
-          const json = (await res.json()) as {
-            data?:
-              | {
-                  status?: string;
-                  balance?: number;
-                }
-              | Array<{
-                  status?: string;
-                  balance?: number;
-                }>;
-          };
+      if (res.ok) {
+        const json = (await res.json()) as {
+          data?: Array<{
+            status?: string;
+            balances?: { current?: string };
+          }>;
+        };
 
-          const payload = Array.isArray(json.data) ? json.data[0] : json.data;
-          if (!payload) {
-            console.warn(
-              `[fetchValidatorOverview] v1 returned no data for ${shortKey} (candidate: ${candidate.slice(
-                0,
-                12
-              )}...): ${JSON.stringify(json)}`
-            );
-            break; // don't keep retrying this candidate
-          }
-
-          const status = payload.status;
-          const balanceWei =
-            typeof payload.balance === "number"
-              ? (BigInt(Math.trunc(payload.balance)) * 1_000_000_000n).toString()
-              : undefined;
-
-          console.log(
-            `[fetchValidatorOverview] v1 status for ${shortKey} (candidate: ${candidate.slice(
-              0,
-              12
-            )}...):`,
-            status,
-            "balanceWei:",
-            balanceWei ?? "n/a"
-          );
-
-          if (status || balanceWei) {
-            return { status, balanceWei };
-          }
-
+        const first = json.data?.[0];
+        if (!first) {
           console.warn(
-            `[fetchValidatorOverview] v1 payload missing status/balance for ${shortKey} (candidate: ${candidate.slice(
-              0,
-              12
-            )}...): ${JSON.stringify(payload)}`
-          );
-          break;
-        }
-
-        const text = await res.text();
-
-        if (res.status === 429 && attempt < maxAttempts - 1) {
-          const delayMs = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
-          console.warn(
-            `[fetchValidatorOverview] 429 Too Many Requests for ${shortKey} (candidate: ${candidate.slice(
-              0,
-              12
-            )}...), attempt ${attempt + 1}/${maxAttempts}, retrying after ${delayMs}ms. Body: ${text.slice(
-              0,
-              200
+            `[fetchValidatorOverview] v2 returned no data for ${shortKey}: ${JSON.stringify(
+              json
             )}`
           );
-          await new Promise((r) => setTimeout(r, delayMs));
-          continue;
+          return null;
         }
 
-        console.warn(
-          `[fetchValidatorOverview] v1 failed (${res.status}) for ${shortKey} (candidate: ${candidate.slice(
-            0,
-            12
-          )}...): ${text}`
+        console.log(
+          `[fetchValidatorOverview] v2 status for ${shortKey}:`,
+          first.status,
+          "balanceWei:",
+          first.balances?.current ?? "n/a"
         );
-        break; // don't keep retrying this candidate for non-429 errors
-      } catch (e) {
-        console.warn(
-          `[fetchValidatorOverview] v1 threw for ${shortKey} (candidate: ${candidate.slice(
-            0,
-            12
-          )}...), attempt ${attempt + 1}/${maxAttempts}:`,
-          e
-        );
+
+        return {
+          status: first.status,
+          balanceWei: first.balances?.current,
+        };
       }
+
+      const text = await res.text();
+
+      if (res.status === 429 && attempt < maxAttempts - 1) {
+        const delayMs = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
+        console.warn(
+          `[fetchValidatorOverview] v2 429 Too Many Requests for ${shortKey}, attempt ${
+            attempt + 1
+          }/${maxAttempts}, retrying after ${delayMs}ms. Body: ${text.slice(0, 200)}`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+
+      console.warn(
+        `[fetchValidatorOverview] v2 failed (${res.status}) for ${shortKey}: ${text.slice(
+          0,
+          200
+        )}`
+      );
+      return null;
+    } catch (e) {
+      console.warn(
+        `[fetchValidatorOverview] v2 threw for ${shortKey}, attempt ${attempt + 1}/${maxAttempts}:`,
+        e
+      );
     }
   }
 
-  // All attempts failed
   return null;
 }
 
