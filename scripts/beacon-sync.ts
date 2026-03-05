@@ -111,7 +111,7 @@ async function fetchDailyAggregate(
 async function fetchValidatorOverview(
   apiKey: string,
   validatorPublicKey: string
-): Promise<{ status?: string; balanceWei?: string } | null> {
+): Promise<{ status?: string; balanceWei?: string; withdrawalAddress?: string } | null> {
   const shortKey =
     validatorPublicKey.length > 18
       ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
@@ -139,6 +139,7 @@ async function fetchValidatorOverview(
           data?: Array<{
             status?: string;
             balances?: { current?: string };
+            validator?: { withdrawal_credentials?: string };
           }>;
         };
 
@@ -158,10 +159,22 @@ async function fetchValidatorOverview(
           "balanceWei:",
           first.balances?.current ?? "n/a"
         );
+        const withdrawalCreds = first.validator?.withdrawal_credentials;
+        let withdrawalAddress: string | undefined;
+        if (
+          typeof withdrawalCreds === "string" &&
+          withdrawalCreds.startsWith("0x01") &&
+          withdrawalCreds.length === 2 + 64
+        ) {
+          // 0x01 + 11 zero bytes + 20 byte execution address (40 hex chars)
+          const addrHex = withdrawalCreds.slice(-40);
+          withdrawalAddress = `0x${addrHex.toLowerCase()}`;
+        }
 
         return {
           status: first.status,
           balanceWei: first.balances?.current,
+          withdrawalAddress,
         };
       }
 
@@ -179,7 +192,7 @@ async function fetchValidatorOverview(
             200
           )}`
         );
-        return { status: "deposited", balanceWei: undefined };
+        return { status: "deposited", balanceWei: undefined, withdrawalAddress: undefined };
       }
 
       if (res.status === 429 && attempt < maxAttempts - 1) {
@@ -341,6 +354,9 @@ async function processTracker(
       };
       if (overview.balanceWei) {
         updateData.validatorBalanceEth = Number(overview.balanceWei) / 1e18;
+      }
+      if (overview.withdrawalAddress) {
+        updateData.walletAddress = overview.withdrawalAddress;
       }
       await trackerRef.update(updateData);
       console.log(
