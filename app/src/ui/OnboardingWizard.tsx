@@ -43,13 +43,18 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [shakeBeaconValidator, setShakeBeaconValidator] = useState(false);
   const [shakeBeaconApi, setShakeBeaconApi] = useState(false);
 
-  // Get next available tracker name
+  // Get next available validator name
   const getNextAvailableName = useMemo(() => {
     let num = 1;
-    while (trackers.some((t) => t.name === `Validator Tracker ${num}`)) {
+    // Support both old "Validator Tracker X" and new "Validator X" naming
+    while (
+      trackers.some(
+        (t) => t.name === `Validator ${num}` || t.name === `Validator Tracker ${num}`
+      )
+    ) {
       num++;
     }
-    return `Validator Tracker ${num}`;
+    return `Validator ${num}`;
   }, [trackers]);
 
   // Check for duplicate name
@@ -174,8 +179,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     }
     if (step === 5) {
       // Save tracker and complete
-      // Use placeholder name if name is empty
-      const defaultName = name.trim() || `Validator Tracker ${trackers.length + 1}`;
+      // Use generated validator name if name is empty
+      const defaultName = name.trim() || getNextAvailableName;
       
       // Update global currency preference (already updated via handleCurrencyChange)
       
