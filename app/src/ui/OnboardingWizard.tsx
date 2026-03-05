@@ -45,6 +45,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [shakeBeaconApi, setShakeBeaconApi] = useState(false);
   const [shakeFeeRecipient, setShakeFeeRecipient] = useState(false);
   const [shakeEtherscanKey, setShakeEtherscanKey] = useState(false);
+  const [feeRecipientError, setFeeRecipientError] = useState<string | null>(null);
+  const [etherscanKeyError, setEtherscanKeyError] = useState<string | null>(null);
 
   // Get next available validator name
   const getNextAvailableName = useMemo(() => {
@@ -109,27 +111,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       return validatorKeyValid;
     }
     if (step === 2) {
-      // Execution rewards setup
-      const feeAddr = feeRecipientAddress.trim();
-      const mevPayout = mevPoolPayoutAddress.trim();
-      const mevPayoutValid =
-        mevMode !== "pool"
-          ? true
-          : !mevPayout || /^0x[a-fA-F0-9]{40}$/.test(mevPayout);
-
-      // When execution rewards are disabled, no additional requirements
-      if (mevMode === "none") {
-        return mevPayoutValid;
-      }
-
-      // For direct execution rewards, require a valid ETH address and a non-empty Etherscan key
-      if (mevMode === "direct") {
-        const feeRecipientValid = /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
-        const etherscanValid = etherscanKey.trim().length > 0;
-        return mevPayoutValid && feeRecipientValid && etherscanValid;
-      }
-
-      return mevPayoutValid;
+      // Always allow clicking "Next" on execution rewards step;
+      // validation is handled inside the next() handler with visual feedback.
+      return true;
     }
     if (step === 3) return taxRate >= 0 && taxRate <= 100;
     if (step === 4) return currency === "EUR" || currency === "USD";
@@ -150,26 +134,42 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   ]);
 
   const next = async () => {
+    // Custom validation for execution rewards step
+    if (step === 2) {
+      // Clear previous errors
+      setFeeRecipientError(null);
+      setEtherscanKeyError(null);
+
+      if (mevMode === "direct") {
+        const feeAddr = feeRecipientAddress.trim();
+        const feeRecipientValid = /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
+        const etherscanValid = etherscanKey.trim().length > 0;
+        let hasError = false;
+
+        if (!feeRecipientValid) {
+          setFeeRecipientError("Please enter a valid ethereum address.");
+          setShakeFeeRecipient(true);
+          setTimeout(() => setShakeFeeRecipient(false), 500);
+          hasError = true;
+        }
+        if (!etherscanValid) {
+          setEtherscanKeyError("Please enter a valid Etherscan API key.");
+          setShakeEtherscanKey(true);
+          setTimeout(() => setShakeEtherscanKey(false), 500);
+          hasError = true;
+        }
+
+        if (hasError) {
+          return;
+        }
+      }
+    }
+
     if (!canNext) {
       // Trigger shake animation if trying to proceed with duplicate name
       if (step === 0 && duplicateName) {
         setShakeNameInput(true);
         setTimeout(() => setShakeNameInput(false), 500);
-      }
-      // Trigger validation shake on execution rewards step for required fields
-      if (step === 2 && mevMode === "direct") {
-        const feeAddr = feeRecipientAddress.trim();
-        const feeRecipientValid = /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
-        const etherscanValid = etherscanKey.trim().length > 0;
-
-        if (!feeRecipientValid) {
-          setShakeFeeRecipient(true);
-          setTimeout(() => setShakeFeeRecipient(false), 500);
-        }
-        if (!etherscanValid) {
-          setShakeEtherscanKey(true);
-          setTimeout(() => setShakeEtherscanKey(false), 500);
-        }
       }
       return;
     }
@@ -483,11 +483,24 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                   value={feeRecipientAddress}
                   onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
                   style={{
-                    borderColor: shakeFeeRecipient ? "#ef4444" : undefined,
-                    borderWidth: shakeFeeRecipient ? "2px" : undefined,
+                    borderColor:
+                      shakeFeeRecipient || feeRecipientError ? "#ef4444" : undefined,
+                    borderWidth:
+                      shakeFeeRecipient || feeRecipientError ? "2px" : undefined,
                     animation: shakeFeeRecipient ? "shake 0.5s" : undefined,
                   }}
                 />
+                {feeRecipientError && (
+                  <p
+                    style={{
+                      margin: "6px 0 0 0",
+                      fontSize: "0.8rem",
+                      color: "#ef4444",
+                    }}
+                  >
+                    {feeRecipientError}
+                  </p>
+                )}
 
                 <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
                   Etherscan API key
@@ -513,8 +526,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                     onChange={(e) => setEtherscanKey(e.target.value)}
                     style={{
                       paddingRight: "40px",
-                      borderColor: shakeEtherscanKey ? "#ef4444" : undefined,
-                      borderWidth: shakeEtherscanKey ? "2px" : undefined,
+                      borderColor:
+                        shakeEtherscanKey || etherscanKeyError ? "#ef4444" : undefined,
+                      borderWidth:
+                        shakeEtherscanKey || etherscanKeyError ? "2px" : undefined,
                       animation: shakeEtherscanKey ? "shake 0.5s" : undefined,
                     }}
                   />
