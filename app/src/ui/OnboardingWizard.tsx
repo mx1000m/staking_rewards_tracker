@@ -353,8 +353,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 alignItems: "center",
                 gap: "10px",
                 cursor: "pointer",
-                color: "#f0f0f0",
+                color: mevMode === "none" ? "#ffffff" : "#747474",
                 fontSize: "0.9rem",
+                fontWeight: mevMode === "none" ? 600 : 400,
               }}
             >
               <input
@@ -374,8 +375,9 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 alignItems: "center",
                 gap: "10px",
                 cursor: "pointer",
-                color: "#f0f0f0",
+                color: mevMode === "direct" ? "#ffffff" : "#747474",
                 fontSize: "0.9rem",
+                fontWeight: mevMode === "direct" ? 600 : 400,
               }}
             >
               <input
@@ -399,78 +401,87 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 transition: "max-height 0.25s ease, opacity 0.25s ease",
               }}
             >
-              <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                Execution rewards address (optional)
-              </label>
-              <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-                Receives MEV and priority fee payouts.
-              </p>
-              <input
-                className="input"
-                placeholder="0x... (leave empty if same as withdrawal address)"
-                value={feeRecipientAddress}
-                onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
-              />
-
-              <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                Etherscan API key
-              </label>
-              <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-                Create an account on{" "}
-                <a
-                  href="https://etherscan.io/apidashboard"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "#aaaaaa", textDecoration: "underline" }}
-                >
-                  Etherscan
-                </a>{" "}
-                for free to get an API key.
-              </p>
-              <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  background: "#2b2b2b",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  border: "1px solid #3a3a3a",
+                }}
+              >
+                <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                  Execution rewards address (optional)
+                </label>
+                <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                  Receives MEV and priority fee payouts.
+                </p>
                 <input
                   className="input"
-                  placeholder="Etherscan API key"
-                  type={showApiKey ? "text" : "password"}
-                  value={etherscanKey}
-                  onChange={(e) => setEtherscanKey(e.target.value)}
-                  style={{ paddingRight: "40px" }}
+                  placeholder="0x... (leave empty if same as withdrawal address)"
+                  value={feeRecipientAddress}
+                  onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  style={{
-                    position: "absolute",
-                    right: "12px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#9aa0b4",
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "#e8e8f0";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "#9aa0b4";
-                  }}
-                >
-                  <img
-                    src={
-                      showApiKey
-                        ? "/staking_rewards_tracker/icons/eye_off_icon.svg"
-                        : "/staking_rewards_tracker/icons/eye_icon.svg"
-                    }
-                    alt={showApiKey ? "Hide" : "Show"}
-                    style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+
+                <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                  Etherscan API key
+                </label>
+                <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                  Create an account on{" "}
+                  <a
+                    href="https://etherscan.io/apidashboard"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#aaaaaa", textDecoration: "underline" }}
+                  >
+                    Etherscan
+                  </a>{" "}
+                  for free to get an API key.
+                </p>
+                <div style={{ position: "relative" }}>
+                  <input
+                    className="input"
+                    placeholder="Etherscan API key"
+                    type={showApiKey ? "text" : "password"}
+                    value={etherscanKey}
+                    onChange={(e) => setEtherscanKey(e.target.value)}
+                    style={{ paddingRight: "40px" }}
                   />
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#9aa0b4",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#e8e8f0";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#9aa0b4";
+                    }}
+                  >
+                    <img
+                      src={
+                        showApiKey
+                          ? "/staking_rewards_tracker/icons/eye_off_icon.svg"
+                          : "/staking_rewards_tracker/icons/eye_icon.svg"
+                      }
+                      alt={showApiKey ? "Hide" : "Show"}
+                      style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
