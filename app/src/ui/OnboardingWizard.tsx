@@ -394,7 +394,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             <div
               style={{
                 marginLeft: "28px",
-                marginTop: "4px",
+                marginTop: mevMode === "direct" ? "4px" : "0px",
                 overflow: "hidden",
                 maxHeight: mevMode === "direct" ? "500px" : "0px",
                 opacity: mevMode === "direct" ? 1 : 0,
