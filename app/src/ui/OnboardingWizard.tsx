@@ -495,6 +495,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 color: "#555555",
                 fontSize: "0.9rem",
                 opacity: 0.6,
+                marginTop: "-8px",
               }}
             >
               <input
