@@ -43,6 +43,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [shakeNameInput, setShakeNameInput] = useState(false);
   const [shakeBeaconValidator, setShakeBeaconValidator] = useState(false);
   const [shakeBeaconApi, setShakeBeaconApi] = useState(false);
+  const [shakeFeeRecipient, setShakeFeeRecipient] = useState(false);
+  const [shakeEtherscanKey, setShakeEtherscanKey] = useState(false);
 
   // Get next available validator name
   const getNextAvailableName = useMemo(() => {
@@ -109,21 +111,25 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     if (step === 2) {
       // Execution rewards setup
       const feeAddr = feeRecipientAddress.trim();
-      const feeRecipientValid =
-        mevMode !== "direct"
-          ? true
-          : !feeAddr || /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
-
       const mevPayout = mevPoolPayoutAddress.trim();
       const mevPayoutValid =
         mevMode !== "pool"
           ? true
           : !mevPayout || /^0x[a-fA-F0-9]{40}$/.test(mevPayout);
-      // Etherscan API key - required only if execution rewards are enabled
+
+      // When execution rewards are disabled, no additional requirements
       if (mevMode === "none") {
         return mevPayoutValid;
       }
-      return feeRecipientValid && mevPayoutValid && etherscanKey.trim().length > 0;
+
+      // For direct execution rewards, require a valid ETH address and a non-empty Etherscan key
+      if (mevMode === "direct") {
+        const feeRecipientValid = /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
+        const etherscanValid = etherscanKey.trim().length > 0;
+        return mevPayoutValid && feeRecipientValid && etherscanValid;
+      }
+
+      return mevPayoutValid;
     }
     if (step === 3) return taxRate >= 0 && taxRate <= 100;
     if (step === 4) return currency === "EUR" || currency === "USD";
@@ -149,6 +155,21 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       if (step === 0 && duplicateName) {
         setShakeNameInput(true);
         setTimeout(() => setShakeNameInput(false), 500);
+      }
+      // Trigger validation shake on execution rewards step for required fields
+      if (step === 2 && mevMode === "direct") {
+        const feeAddr = feeRecipientAddress.trim();
+        const feeRecipientValid = /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
+        const etherscanValid = etherscanKey.trim().length > 0;
+
+        if (!feeRecipientValid) {
+          setShakeFeeRecipient(true);
+          setTimeout(() => setShakeFeeRecipient(false), 500);
+        }
+        if (!etherscanValid) {
+          setShakeEtherscanKey(true);
+          setTimeout(() => setShakeEtherscanKey(false), 500);
+        }
       }
       return;
     }
@@ -461,6 +482,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                   placeholder="0x..."
                   value={feeRecipientAddress}
                   onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
+                  style={{
+                    borderColor: shakeFeeRecipient ? "#ef4444" : undefined,
+                    borderWidth: shakeFeeRecipient ? "2px" : undefined,
+                    animation: shakeFeeRecipient ? "shake 0.5s" : undefined,
+                  }}
                 />
 
                 <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
@@ -485,7 +511,12 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                     type={showApiKey ? "text" : "password"}
                     value={etherscanKey}
                     onChange={(e) => setEtherscanKey(e.target.value)}
-                    style={{ paddingRight: "40px" }}
+                    style={{
+                      paddingRight: "40px",
+                      borderColor: shakeEtherscanKey ? "#ef4444" : undefined,
+                      borderWidth: shakeEtherscanKey ? "2px" : undefined,
+                      animation: shakeEtherscanKey ? "shake 0.5s" : undefined,
+                    }}
                   />
                   <button
                     type="button"
