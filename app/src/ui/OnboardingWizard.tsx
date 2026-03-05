@@ -235,9 +235,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           {step === 0 && "Start by naming your validator"}
           {step === 1 && "Add your validator public key and API key"}
           {step === 2 && "Set up your execution rewards"}
-          {step === 3 && "Add your Etherscan API key"}
-          {step === 4 && "Set your taxation country"}
-          {step === 5 && "Chose your currency preference"}
+          {step === 3 && "Set your taxation country"}
+          {step === 4 && "Chose your currency preference"}
         </h1>
         <button
           onClick={handleCancel}
@@ -347,160 +346,160 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
             This helps us track MEV and priority fees accurately.
           </p>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button
-              type="button"
-              onClick={() => setMevMode("none")}
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+            <label
               style={{
-                flex: 1,
-                padding: "12px 20px",
-                background: mevMode === "none" ? "#2b2b2b" : "#1f1f1f",
-                border: "none",
-                borderRadius: "10px",
-                color: mevMode === "none" ? "#f0f0f0" : "#aaaaaa",
-                textTransform: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
                 cursor: "pointer",
-                fontWeight: mevMode === "none" ? 600 : 400,
-                transition: "background 0.2s, color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (mevMode !== "none") {
-                  e.currentTarget.style.background = "#383838";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (mevMode !== "none") {
-                  e.currentTarget.style.background = "#1f1f1f";
-                }
+                color: "#f0f0f0",
+                fontSize: "0.9rem",
               }}
             >
-              No execution rewards
-            </button>
-            <button
-              type="button"
-              onClick={() => setMevMode("direct")}
+              <input
+                type="radio"
+                name="executionRewardsMode"
+                value="none"
+                checked={mevMode === "none"}
+                onChange={() => setMevMode("none")}
+                style={{ accentColor: "#f0f0f0" }}
+              />
+              <span>No execution rewards</span>
+            </label>
+
+            <label
               style={{
-                flex: 1,
-                padding: "12px 20px",
-                background: mevMode === "direct" ? "#2b2b2b" : "#1f1f1f",
-                border: "none",
-                borderRadius: "10px",
-                color: mevMode === "direct" ? "#f0f0f0" : "#aaaaaa",
-                textTransform: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
                 cursor: "pointer",
-                fontWeight: mevMode === "direct" ? 600 : 400,
-                transition: "background 0.2s, color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                if (mevMode !== "direct") {
-                  e.currentTarget.style.background = "#383838";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (mevMode !== "direct") {
-                  e.currentTarget.style.background = "#1f1f1f";
-                }
+                color: "#f0f0f0",
+                fontSize: "0.9rem",
               }}
             >
-              Direct to fee recipient
-            </button>
-            <button
-              type="button"
-              disabled
+              <input
+                type="radio"
+                name="executionRewardsMode"
+                value="direct"
+                checked={mevMode === "direct"}
+                onChange={() => setMevMode("direct")}
+                style={{ accentColor: "#f0f0f0" }}
+              />
+              <span>Direct to fee recipient</span>
+            </label>
+
+            <label
               style={{
-                flex: 1,
-                padding: "12px 20px",
-                background: "#1a1a1a",
-                border: "none",
-                borderRadius: "10px",
-                color: "#555555",
-                textTransform: "none",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
                 cursor: "not-allowed",
-                fontWeight: 400,
+                color: "#555555",
+                fontSize: "0.9rem",
                 opacity: 0.6,
               }}
             >
-              Via MEV pool / smoothing (coming soon)
-            </button>
+              <input
+                type="radio"
+                name="executionRewardsMode"
+                value="pool"
+                disabled
+                checked={mevMode === "pool"}
+                onChange={() => {}}
+                style={{ accentColor: "#555555" }}
+              />
+              <span>Via MEV pool / smoothing (coming soon)</span>
+            </label>
           </div>
 
-          {mevMode === "direct" && (
-            <>
-              <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                Execution rewards address (optional)
-              </label>
-              <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-                Receives MEV and priority fee payouts.
-              </p>
-              <input
-                className="input"
-                placeholder="0x... (leave empty if same as withdrawal address)"
-                value={feeRecipientAddress}
-                onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
-              />
-
-              <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                Etherscan API key
-              </label>
-              <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-                Create an account on{" "}
-                <a
-                  href="https://etherscan.io/apidashboard"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "#aaaaaa", textDecoration: "underline" }}
-                >
-                  Etherscan
-                </a>{" "}
-                for free to get an API key.
-              </p>
-              <div style={{ position: "relative" }}>
+          <div
+            style={{
+              marginTop: "16px",
+              overflow: "hidden",
+              maxHeight: mevMode === "direct" ? "500px" : "0px",
+              opacity: mevMode === "direct" ? 1 : 0,
+              transition: "max-height 0.25s ease, opacity 0.25s ease",
+            }}
+          >
+            {mevMode === "direct" && (
+              <>
+                <label style={{ display: "block", marginTop: "4px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                  Execution rewards address (optional)
+                </label>
+                <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                  Receives MEV and priority fee payouts.
+                </p>
                 <input
                   className="input"
-                  placeholder="Etherscan API key"
-                  type={showApiKey ? "text" : "password"}
-                  value={etherscanKey}
-                  onChange={(e) => setEtherscanKey(e.target.value)}
-                  style={{ paddingRight: "40px" }}
+                  placeholder="0x... (leave empty if same as withdrawal address)"
+                  value={feeRecipientAddress}
+                  onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                  style={{
-                    position: "absolute",
-                    right: "12px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "4px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#9aa0b4",
-                    transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = "#e8e8f0";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = "#9aa0b4";
-                  }}
-                >
-                  <img
-                    src={
-                      showApiKey
-                        ? "/staking_rewards_tracker/icons/eye_off_icon.svg"
-                        : "/staking_rewards_tracker/icons/eye_icon.svg"
-                    }
-                    alt={showApiKey ? "Hide" : "Show"}
-                    style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+
+                <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                  Etherscan API key
+                </label>
+                <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                  Create an account on{" "}
+                  <a
+                    href="https://etherscan.io/apidashboard"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "#aaaaaa", textDecoration: "underline" }}
+                  >
+                    Etherscan
+                  </a>{" "}
+                  for free to get an API key.
+                </p>
+                <div style={{ position: "relative" }}>
+                  <input
+                    className="input"
+                    placeholder="Etherscan API key"
+                    type={showApiKey ? "text" : "password"}
+                    value={etherscanKey}
+                    onChange={(e) => setEtherscanKey(e.target.value)}
+                    style={{ paddingRight: "40px" }}
                   />
-                </button>
-              </div>
-            </>
-          )}
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "transparent",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "4px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#9aa0b4",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "#e8e8f0";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#9aa0b4";
+                    }}
+                  >
+                    <img
+                      src={
+                        showApiKey
+                          ? "/staking_rewards_tracker/icons/eye_off_icon.svg"
+                          : "/staking_rewards_tracker/icons/eye_icon.svg"
+                      }
+                      alt={showApiKey ? "Hide" : "Show"}
+                      style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+                    />
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
 
           {/* MEV pool / smoothing configuration is disabled for now. */}
         </div>
@@ -706,7 +705,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               e.currentTarget.style.background = canNext ? "#555555" : "#3a3a3a";
             }}
           >
-            {step === 5 ? "Finish" : "Next"}
+            {step === 4 ? "Finish" : "Next"}
           </button>
         </div>
       </div>
