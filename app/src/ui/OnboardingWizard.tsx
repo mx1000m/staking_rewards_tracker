@@ -378,6 +378,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 color: mevMode === "direct" ? "#ffffff" : "#747474",
                 fontSize: "0.9rem",
                 fontWeight: mevMode === "direct" ? 600 : 400,
+                marginTop: "5px",
               }}
             >
               <input
