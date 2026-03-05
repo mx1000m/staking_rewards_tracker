@@ -451,14 +451,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 }}
               >
                 <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                  Execution rewards address (optional)
+                  Execution rewards address
                 </label>
                 <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
                   Receives MEV and priority fee payouts.
                 </p>
                 <input
                   className="input"
-                  placeholder="0x... (leave empty if same as withdrawal address)"
+                  placeholder="0x..."
                   value={feeRecipientAddress}
                   onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
                 />
