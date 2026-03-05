@@ -66,14 +66,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
 
   // Check for duplicate consensus layer address
   const duplicateTracker = useMemo(() => {
-    if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-      return null;
-    }
-    const normalizedAddress = walletAddress.toLowerCase();
-    return trackers.find(
-      (t) => t.walletAddress.toLowerCase() === normalizedAddress
-    ) || null;
-  }, [walletAddress, trackers]);
+    // We no longer ask for consensus withdrawal address in the wizard;
+    // duplicate detection based on walletAddress is handled after the first
+    // sync when the withdrawal address is known.
+    return null;
+  }, [trackers]);
 
   // Prevent background scrolling while the wizard is open
   useEffect(() => {
@@ -110,9 +107,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     }
     if (step === 2) {
       // Execution rewards setup
-      const consensus = walletAddress.trim();
-      const consensusValid = /^0x[a-fA-F0-9]{40}$/.test(consensus);
-
       const feeAddr = feeRecipientAddress.trim();
       const feeRecipientValid =
         mevMode !== "direct"
@@ -124,9 +118,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         mevMode !== "pool"
           ? true
           : !mevPayout || /^0x[a-fA-F0-9]{40}$/.test(mevPayout);
-
-      const noDuplicate = !duplicateTracker;
-      return consensusValid && feeRecipientValid && mevPayoutValid && noDuplicate;
+      return feeRecipientValid && mevPayoutValid;
     }
     if (step === 3) {
       // Etherscan API key - optional if no execution rewards
@@ -192,7 +184,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           : undefined;
 
       addTracker({
-        walletAddress,
+        walletAddress: "", // will be filled from Beaconcha withdrawal_credentials by beacon-sync
         feeRecipientAddress: feeRecipientAddress.trim() || undefined,
         currency, // Keep for backward compatibility, but global currency is used for display
         country,
@@ -432,29 +424,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               Via MEV pool / smoothing (coming soon)
             </button>
           </div>
-
-          <label style={{ display: "block", marginTop: "24px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Consensus withdrawal address
-          </label>
-          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Receives staking rewards directly from the beacon chain (withdrawals).
-          </p>
-          <input
-            className="input"
-            placeholder="0x..."
-            value={walletAddress}
-            onChange={(e) => setWalletAddress(e.target.value.trim())}
-            style={{
-              borderColor: duplicateTracker ? "#ef4444" : undefined,
-              borderWidth: duplicateTracker ? "2px" : undefined,
-            }}
-          />
-          {duplicateTracker && (
-            <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-              ⚠ This validator is already being tracked in{" "}
-              {duplicateTracker.name || `Validator Tracker ${trackers.findIndex((t) => t.id === duplicateTracker.id) + 1}`}.
-            </p>
-          )}
 
           {mevMode === "direct" && (
             <>
