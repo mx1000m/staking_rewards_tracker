@@ -346,7 +346,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
             This helps us track MEV and priority fees accurately.
           </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "11px" }}>
             <label
               style={{
                 display: "flex",
@@ -378,7 +378,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 color: mevMode === "direct" ? "#ffffff" : "#747474",
                 fontSize: "0.9rem",
                 fontWeight: mevMode === "direct" ? 600 : 400,
-                marginTop: "5px",
+                marginTop: "3px",
               }}
             >
               <input
@@ -495,7 +495,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 color: "#555555",
                 fontSize: "0.9rem",
                 opacity: 0.6,
-                marginTop: "-8px",
+                marginTop: mevMode === "direct" ? "0px" : "-8px",
               }}
             >
               <input
