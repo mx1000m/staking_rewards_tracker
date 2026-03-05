@@ -118,15 +118,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         mevMode !== "pool"
           ? true
           : !mevPayout || /^0x[a-fA-F0-9]{40}$/.test(mevPayout);
-      return feeRecipientValid && mevPayoutValid;
+      // Etherscan API key - required only if execution rewards are enabled
+      if (mevMode === "none") {
+        return mevPayoutValid;
+      }
+      return feeRecipientValid && mevPayoutValid && etherscanKey.trim().length > 0;
     }
-    if (step === 3) {
-      // Etherscan API key - optional if no execution rewards
-      if (mevMode === "none") return true;
-      return etherscanKey.trim().length > 0;
-    }
-    if (step === 4) return taxRate >= 0 && taxRate <= 100;
-    if (step === 5) return currency === "EUR" || currency === "USD";
+    if (step === 3) return taxRate >= 0 && taxRate <= 100;
+    if (step === 4) return currency === "EUR" || currency === "USD";
     return true;
   }, [
     step,
@@ -169,7 +168,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         return;
       }
     }
-    if (step === 5) {
+    if (step === 4) {
       // Save tracker and complete
       // Use generated validator name if name is empty
       const defaultName = name.trim() || getNextAvailableName;
@@ -266,7 +265,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           ×
         </button>
       </div>
-      <div className="steps" style={{ marginBottom: "32px" }}>Step {step + 1} of 6</div>
+      <div className="steps" style={{ marginBottom: "32px" }}>Step {step + 1} of 5</div>
       {step === 0 && (
         <div>
           <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
@@ -439,6 +438,67 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 value={feeRecipientAddress}
                 onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
               />
+
+              <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                Etherscan API key
+              </label>
+              <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                Create an account on{" "}
+                <a
+                  href="https://etherscan.io/apidashboard"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#aaaaaa", textDecoration: "underline" }}
+                >
+                  Etherscan
+                </a>{" "}
+                for free to get an API key.
+              </p>
+              <div style={{ position: "relative" }}>
+                <input
+                  className="input"
+                  placeholder="Etherscan API key"
+                  type={showApiKey ? "text" : "password"}
+                  value={etherscanKey}
+                  onChange={(e) => setEtherscanKey(e.target.value)}
+                  style={{ paddingRight: "40px" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  style={{
+                    position: "absolute",
+                    right: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "4px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#9aa0b4",
+                    transition: "color 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.color = "#e8e8f0";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.color = "#9aa0b4";
+                  }}
+                >
+                  <img
+                    src={
+                      showApiKey
+                        ? "/staking_rewards_tracker/icons/eye_off_icon.svg"
+                        : "/staking_rewards_tracker/icons/eye_icon.svg"
+                    }
+                    alt={showApiKey ? "Hide" : "Show"}
+                    style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+                  />
+                </button>
+              </div>
             </>
           )}
 
@@ -446,66 +506,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         </div>
       )}
       {step === 3 && (
-        <div>
-          <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Etherscan API key
-          </label>
-          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Create an account on{" "}
-            <a
-              href="https://etherscan.io/apidashboard"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#aaaaaa", textDecoration: "underline" }}
-            >
-              Etherscan
-            </a>{" "}
-            for free to get an API key.
-          </p>
-          <div style={{ position: "relative" }}>
-            <input
-              className="input"
-              placeholder="Etherscan API key"
-              type={showApiKey ? "text" : "password"}
-              value={etherscanKey}
-              onChange={(e) => setEtherscanKey(e.target.value)}
-              style={{ paddingRight: "40px" }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowApiKey(!showApiKey)}
-              style={{
-                position: "absolute",
-                right: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#9aa0b4",
-                transition: "color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#e8e8f0";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#9aa0b4";
-              }}
-            >
-              <img
-                src={showApiKey ? "/staking_rewards_tracker/icons/eye_off_icon.svg" : "/staking_rewards_tracker/icons/eye_icon.svg"}
-                alt={showApiKey ? "Hide" : "Show"}
-                style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
-              />
-            </button>
-          </div>
-        </div>
-      )}
-      {step === 4 && (
         <div>
           <div
             style={{
@@ -556,7 +556,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           </p>
         </div>
       )}
-      {step === 5 && (
+      {step === 4 && (
         <div>
           <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
             Currency preference
