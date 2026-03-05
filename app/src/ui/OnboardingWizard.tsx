@@ -39,6 +39,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
   const [etherscanKey, setEtherscanKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showBeaconApiKey, setShowBeaconApiKey] = useState(false);
   const [shakeNameInput, setShakeNameInput] = useState(false);
   const [shakeBeaconValidator, setShakeBeaconValidator] = useState(false);
   const [shakeBeaconApi, setShakeBeaconApi] = useState(false);
@@ -325,17 +326,56 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
             </a>
             .
           </p>
-          <input
-            className="input"
-            placeholder="Beaconcha.in API key"
-            value={beaconApiKeyLocal}
-            onChange={(e) => setBeaconApiKeyLocal(e.target.value.trim())}
-            style={{
-              borderColor: shakeBeaconApi ? "#ef4444" : undefined,
-              borderWidth: shakeBeaconApi ? "2px" : undefined,
-              animation: shakeBeaconApi ? "shake 0.5s" : undefined,
-            }}
-          />
+          <div style={{ position: "relative" }}>
+            <input
+              className="input"
+              placeholder="Beaconcha.in API key"
+              type={showBeaconApiKey ? "text" : "password"}
+              value={beaconApiKeyLocal}
+              onChange={(e) => setBeaconApiKeyLocal(e.target.value.trim())}
+              style={{
+                borderColor: shakeBeaconApi ? "#ef4444" : undefined,
+                borderWidth: shakeBeaconApi ? "2px" : undefined,
+                animation: shakeBeaconApi ? "shake 0.5s" : undefined,
+                paddingRight: "40px",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowBeaconApiKey(!showBeaconApiKey)}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#9aa0b4",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#e8e8f0";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#9aa0b4";
+              }}
+            >
+              <img
+                src={
+                  showBeaconApiKey
+                    ? "/staking_rewards_tracker/icons/eye_off_icon.svg"
+                    : "/staking_rewards_tracker/icons/eye_icon.svg"
+                }
+                alt={showBeaconApiKey ? "Hide" : "Show"}
+                style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+              />
+            </button>
+          </div>
         </div>
       )}
       {step === 2 && (
