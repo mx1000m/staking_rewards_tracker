@@ -359,6 +359,11 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               value={validatorPublicKey}
               onChange={(e) => setValidatorPublicKey(e.target.value.trim())}
             />
+            {validatorPublicKey !== (tracker.validatorPublicKey || "") && (
+              <p style={{ margin: "6px 0 0 0", fontSize: "0.8rem", color: "#d9b569" }}>
+                ⚠ Changing the beacon chain validator public key will replace the current validator and permanently delete all collected data.
+              </p>
+            )}
           </div>
 
           {/* Beaconcha.in API key */}
