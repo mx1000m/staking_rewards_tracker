@@ -22,6 +22,9 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [name, setName] = useState(tracker.name);
   const [walletAddress, setWalletAddress] = useState(tracker.walletAddress);
   const [feeRecipientAddress, setFeeRecipientAddress] = useState(tracker.feeRecipientAddress || "");
+  const [validatorPublicKey, setValidatorPublicKey] = useState(tracker.validatorPublicKey || "");
+  const [beaconApiKeyLocal, setBeaconApiKeyLocal] = useState(tracker.beaconApiKey || "");
+  const [mevMode, setMevMode] = useState<"none" | "direct" | "pool" | "mixed">(tracker.mevMode || "none");
   const [currency, setCurrencyLocal] = useState<Currency>(globalCurrency);
   
   // Update local currency when global currency changes
@@ -42,10 +45,15 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [deleteNameInput, setDeleteNameInput] = useState("");
   const [deleteNameError, setDeleteNameError] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
+  const [showBeaconApiKey, setShowBeaconApiKey] = useState(false);
   const [saveButtonText, setSaveButtonText] = useState("Save");
   const [animationState, setAnimationState] = useState<"enter" | "exit">("enter");
   const [shakeNameInput, setShakeNameInput] = useState(false);
   const [shakeAddressInput, setShakeAddressInput] = useState(false);
+  const [shakeFeeRecipient, setShakeFeeRecipient] = useState(false);
+  const [shakeEtherscanKey, setShakeEtherscanKey] = useState(false);
+  const [feeRecipientError, setFeeRecipientError] = useState<string | null>(null);
+  const [etherscanKeyError, setEtherscanKeyError] = useState<string | null>(null);
   const closeTimeoutRef = useRef<number | null>(null);
   const MODAL_ANIMATION_DURATION = 175;
 
@@ -105,33 +113,37 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       return;
     }
     if (duplicateName) {
-      // Trigger shake animation for name input
       setShakeNameInput(true);
       setTimeout(() => setShakeNameInput(false), 500);
-      return;
-    }
-    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-      alert("Please enter a valid Ethereum withdrawal address.");
-      return;
-    }
-    if (duplicateTracker) {
-      // Trigger shake animation for address input
-      setShakeAddressInput(true);
-      setTimeout(() => setShakeAddressInput(false), 500);
-      return;
-    }
-    // Validate fee recipient address if provided
-    if (feeRecipientAddress.trim() && !/^0x[a-fA-F0-9]{40}$/.test(feeRecipientAddress.trim())) {
-      alert("Please enter a valid Ethereum fee recipient address or leave it empty.");
       return;
     }
     if (taxRate < 0 || taxRate > 100) {
       alert("Tax rate must be between 0 and 100.");
       return;
     }
-    if (!etherscanKey.trim()) {
-      alert("Please enter an Etherscan API key.");
-      return;
+
+    // Validate execution rewards fields when direct mode is selected
+    if (mevMode === "direct") {
+      const feeAddr = feeRecipientAddress.trim();
+      const feeRecipientValid = /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
+      const etherscanValid = etherscanKey.trim().length > 0;
+      let hasError = false;
+      setFeeRecipientError(null);
+      setEtherscanKeyError(null);
+
+      if (!feeRecipientValid) {
+        setFeeRecipientError("Please enter a valid ethereum address.");
+        setShakeFeeRecipient(true);
+        setTimeout(() => setShakeFeeRecipient(false), 500);
+        hasError = true;
+      }
+      if (!etherscanValid) {
+        setEtherscanKeyError("Please enter a valid Etherscan API key.");
+        setShakeEtherscanKey(true);
+        setTimeout(() => setShakeEtherscanKey(false), 500);
+        hasError = true;
+      }
+      if (hasError) return;
     }
 
     const walletChanged = walletAddress.toLowerCase() !== tracker.walletAddress.toLowerCase();
@@ -151,19 +163,20 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       await clearCache(tracker.id);
     }
 
-    // Normalize fee recipient address: if empty, don't store it (will default to walletAddress)
-    const normalizedFeeRecipient = feeRecipientAddress.trim() || undefined;
+    // Normalize fee recipient address
+    const normalizedFeeRecipient = mevMode === "direct" ? (feeRecipientAddress.trim() || undefined) : undefined;
     
-    // Update global currency preference (already updated via handleCurrencyChange)
-    
-    // Update tracker (currency is now global, so we don't store it per-tracker)
     updateTracker(tracker.id, {
       name: name.trim(),
       walletAddress,
       feeRecipientAddress: normalizedFeeRecipient,
+      validatorPublicKey: validatorPublicKey.trim() || undefined,
+      beaconApiProvider: beaconApiKeyLocal.trim() ? "beaconcha" : undefined,
+      beaconApiKey: beaconApiKeyLocal.trim() || undefined,
+      mevMode,
       country,
       taxRate,
-      etherscanKey,
+      etherscanKey: mevMode === "direct" ? etherscanKey : tracker.etherscanKey,
     });
     
     // Sync to Firestore if authenticated
@@ -309,13 +322,14 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "30px" }}>
+          {/* Name */}
           <div>
             <label style={{ display: "block", marginBottom: "8px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Name
             </label>
             <input
               className="input"
-              placeholder="Validator Tracker 1"
+              placeholder="Validator 1"
               value={name}
               onChange={(e) => setName(e.target.value)}
               style={{
@@ -331,46 +345,273 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             )}
           </div>
 
+          {/* Beacon chain validator public key */}
           <div>
             <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Consensus layer withdrawal address
+              Beacon chain validator public key
             </label>
             <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-              Receives staking rewards directly from the beacon chain (partial withdrawals).
+              Used to identify your validator on the beacon chain (consensus layer).
             </p>
             <input
               className="input"
-              placeholder="0x..."
-              value={walletAddress}
-              onChange={(e) => setWalletAddress(e.target.value.trim())}
-              style={{
-                borderColor: duplicateTracker ? "#ef4444" : undefined,
-                borderWidth: duplicateTracker ? "2px" : undefined,
-                animation: shakeAddressInput ? "shake 0.5s" : undefined,
-              }}
+              placeholder="0x... (98 characters long)"
+              value={validatorPublicKey}
+              onChange={(e) => setValidatorPublicKey(e.target.value.trim())}
             />
-            {duplicateTracker && (
-              <p style={{ margin: "8px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-                ⚠ This validator is already being tracked in {duplicateTracker.name || "another tracker"}.
-              </p>
-            )}
           </div>
 
+          {/* Beaconcha.in API key */}
           <div>
             <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Execution layer withdrawal address (optional)
+              Your beaconcha.in API key
             </label>
             <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-              Receives MEV and priority fee rewards.
+              Get your API key by signing up for free on{" "}
+              <a
+                href="https://beaconcha.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ color: "#aaaaaa", textDecoration: "underline" }}
+              >
+                beaconcha.in
+              </a>
+              .
             </p>
-            <input
-              className="input"
-              placeholder="0x... (leave empty if same as withdrawal address)"
-              value={feeRecipientAddress}
-              onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                className="input"
+                placeholder="Beaconcha.in API key"
+                type={showBeaconApiKey ? "text" : "password"}
+                value={beaconApiKeyLocal}
+                onChange={(e) => setBeaconApiKeyLocal(e.target.value.trim())}
+                style={{ paddingRight: "40px" }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowBeaconApiKey(!showBeaconApiKey)}
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#9aa0b4",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#e8e8f0";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#9aa0b4";
+                }}
+              >
+                <img
+                  src={showBeaconApiKey ? "/staking_rewards_tracker/icons/eye_off_icon.svg" : "/staking_rewards_tracker/icons/eye_icon.svg"}
+                  alt={showBeaconApiKey ? "Hide" : "Show"}
+                  style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+                />
+              </button>
+            </div>
           </div>
 
+          {/* Execution rewards */}
+          <div>
+            <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+              Execution rewards
+            </label>
+            <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+              Track MEV and priority fees accurately.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "8px" }}>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "pointer",
+                  color: mevMode === "none" ? "#ffffff" : "#747474",
+                  fontSize: "0.9rem",
+                  fontWeight: mevMode === "none" ? 600 : 400,
+                }}
+              >
+                <input
+                  type="radio"
+                  name="settingsExecutionRewardsMode"
+                  value="none"
+                  checked={mevMode === "none"}
+                  onChange={() => setMevMode("none")}
+                  style={{ accentColor: "#f0f0f0" }}
+                />
+                <span>No execution rewards</span>
+              </label>
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "pointer",
+                  color: mevMode === "direct" ? "#ffffff" : "#747474",
+                  fontSize: "0.9rem",
+                  fontWeight: mevMode === "direct" ? 600 : 400,
+                  marginTop: "3px",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="settingsExecutionRewardsMode"
+                  value="direct"
+                  checked={mevMode === "direct"}
+                  onChange={() => setMevMode("direct")}
+                  style={{ accentColor: "#f0f0f0" }}
+                />
+                <span>Direct to fee recipient</span>
+              </label>
+
+              <div
+                style={{
+                  marginLeft: "28px",
+                  marginTop: mevMode === "direct" ? "4px" : "0px",
+                  overflow: "hidden",
+                  maxHeight: mevMode === "direct" ? "500px" : "0px",
+                  opacity: mevMode === "direct" ? 1 : 0,
+                  transition: "max-height 0.25s ease, opacity 0.25s ease",
+                }}
+              >
+                <div
+                  style={{
+                    background: "#2b2b2b",
+                    borderRadius: "12px",
+                    padding: "16px",
+                    border: "1px solid #3a3a3a",
+                  }}
+                >
+                  <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                    Execution rewards address
+                  </label>
+                  <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                    Receives MEV and priority fee payouts.
+                  </p>
+                  <input
+                    className="input"
+                    placeholder="0x..."
+                    value={feeRecipientAddress}
+                    onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
+                    style={{
+                      borderColor: shakeFeeRecipient || feeRecipientError ? "#ef4444" : undefined,
+                      borderWidth: shakeFeeRecipient || feeRecipientError ? "2px" : undefined,
+                      animation: shakeFeeRecipient ? "shake 0.5s" : undefined,
+                    }}
+                  />
+                  {feeRecipientError && (
+                    <p style={{ margin: "6px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
+                      {feeRecipientError}
+                    </p>
+                  )}
+
+                  <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+                    Etherscan API key
+                  </label>
+                  <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+                    Create an account on{" "}
+                    <a
+                      href="https://etherscan.io/apidashboard"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#aaaaaa", textDecoration: "underline" }}
+                    >
+                      Etherscan
+                    </a>{" "}
+                    for free to get an API key.
+                  </p>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      className="input"
+                      placeholder="Etherscan API key"
+                      type={showApiKey ? "text" : "password"}
+                      value={etherscanKey}
+                      onChange={(e) => setEtherscanKey(e.target.value)}
+                      style={{
+                        paddingRight: "40px",
+                        borderColor: shakeEtherscanKey || etherscanKeyError ? "#ef4444" : undefined,
+                        borderWidth: shakeEtherscanKey || etherscanKeyError ? "2px" : undefined,
+                        animation: shakeEtherscanKey ? "shake 0.5s" : undefined,
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      style={{
+                        position: "absolute",
+                        right: "12px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        background: "transparent",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "4px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#9aa0b4",
+                        transition: "color 0.2s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = "#e8e8f0";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = "#9aa0b4";
+                      }}
+                    >
+                      <img
+                        src={showApiKey ? "/staking_rewards_tracker/icons/eye_off_icon.svg" : "/staking_rewards_tracker/icons/eye_icon.svg"}
+                        alt={showApiKey ? "Hide" : "Show"}
+                        style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
+                      />
+                    </button>
+                  </div>
+                  {etherscanKeyError && (
+                    <p style={{ margin: "6px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
+                      {etherscanKeyError}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  cursor: "not-allowed",
+                  color: "#555555",
+                  fontSize: "0.9rem",
+                  opacity: 0.6,
+                  marginTop: mevMode === "direct" ? "0px" : "-8px",
+                }}
+              >
+                <input
+                  type="radio"
+                  name="settingsExecutionRewardsMode"
+                  value="pool"
+                  disabled
+                  checked={mevMode === "pool"}
+                  onChange={() => {}}
+                  style={{ accentColor: "#555555" }}
+                />
+                <span>Via MEV pool / smoothing (coming soon)</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Currency preference */}
           <div>
             <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Currency preference
@@ -438,6 +679,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             </div>
           </div>
 
+          {/* Country / Income tax rate */}
           <div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "8px" }}>
               <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem" }}>
@@ -479,65 +721,6 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             <p className="muted" style={{ margin: "4px 0 3px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
               The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
             </p>
-          </div>
-
-          <div>
-            <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Etherscan API key
-            </label>
-            <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-              Create an account on{" "}
-              <a
-                href="https://etherscan.io/apidashboard"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ color: "#aaaaaa", textDecoration: "underline" }}
-              >
-                Etherscan
-              </a>{" "}
-              for free to get an API key.
-            </p>
-            <div style={{ position: "relative" }}>
-              <input
-                className="input"
-                placeholder="ETHERSCAN_API_KEY"
-                type={showApiKey ? "text" : "password"}
-                value={etherscanKey}
-                onChange={(e) => setEtherscanKey(e.target.value)}
-                style={{ paddingRight: "40px" }}
-              />
-              <button
-                type="button"
-                onClick={() => setShowApiKey(!showApiKey)}
-                style={{
-                  position: "absolute",
-                  right: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "4px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#9aa0b4",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "#e8e8f0";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "#9aa0b4";
-                }}
-              >
-                <img
-                  src={showApiKey ? "/staking_rewards_tracker/icons/eye_off_icon.svg" : "/staking_rewards_tracker/icons/eye_icon.svg"}
-                  alt={showApiKey ? "Hide" : "Show"}
-                  style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
-                />
-              </button>
-            </div>
           </div>
         </div>
 
