@@ -2,8 +2,8 @@ name: Beacon Chain Sync
 
 on:
   schedule:
-    # Run daily at 01:00 UTC (after daily transaction sync)
-    - cron: '0 1 * * *'
+    # Run daily at 23:10 UTC (10 min after daily-sync writes ETH prices)
+    - cron: '10 23 * * *'
   workflow_dispatch:
 
 permissions:
