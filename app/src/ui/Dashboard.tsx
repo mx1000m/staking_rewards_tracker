@@ -2102,26 +2102,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 </div>
               </div>
 
-              {/* Error Message */}
+              {/* Error / Warning Message */}
               {error && (
-                <div
-                  style={{
-                    padding: "12px",
-                    background: "#2a1a1a",
-                    border: "1px solid #ff4444",
-                    borderRadius: "8px",
-                    color: "#ff8888",
-                    marginBottom: "16px",
-                  }}
-                >
-                  {error.startsWith("PRICE_WARNING:") ? (
-                    <>
-                      ⚠ Ethereum price pending for <strong>{error.split(":")[1]} reward{parseInt(error.split(":")[1]) > 1 ? 's' : ''}</strong>. Price updates daily at 00:00 CET.
-                    </>
-                  ) : (
-                    error
-                  )}
-                </div>
+                (() => {
+                  const isPriceWarning = error.startsWith("PRICE_WARNING:");
+                  return (
+                    <div
+                      style={{
+                        padding: "12px",
+                        background: isPriceWarning ? "#2f2613" : "#2a1a1a",
+                        border: isPriceWarning ? "1px solid #bc8e2c" : "1px solid #ff4444",
+                        borderRadius: "8px",
+                        color: isPriceWarning ? "#d9b569" : "#ff8888",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      {isPriceWarning ? (
+                        <>
+                          ⚠ Ethereum price pending for <strong>{error.split(":")[1]} reward{parseInt(error.split(":")[1]) > 1 ? 's' : ''}</strong>. Price updates daily at 00:00 CET.
+                        </>
+                      ) : (
+                        error
+                      )}
+                    </div>
+                  );
+                })()
               )}
 
               {/* Incoming rewards table */}
