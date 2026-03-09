@@ -626,11 +626,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               onChange={(e) => onChangeCountry(e.target.value)}
               style={{ flex: 1 }}
             >
-              {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
+              {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => {
+                const isDisabled = c !== "Croatia";
+                return (
+                  <option key={c} value={c} disabled={isDisabled}>
+                    {c}{isDisabled ? " (coming soon)" : ""}
+                  </option>
+                );
+              })}
             </select>
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <input
