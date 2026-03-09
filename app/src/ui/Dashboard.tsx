@@ -1274,8 +1274,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       const ethPrice = getEthPriceForDisplay(tx, globalCurrency);
       const rewardsInCurrency = getRewardsInCurrency(tx, globalCurrency);
       const taxesInCurrency = getTaxesInCurrency(tx, globalCurrency);
+      const priceMissing = ethPrice === 0;
+      const datePrefix = priceMissing ? `⚠ - ${tx.date || ""} - ETH PRICE MISSING` : (tx.date || "");
       return [
-        tx.date || "",
+        datePrefix,
         tx.time || "",
         tx.rewardType || "EVM",
         formatNumber(tx.ethAmount || 0, 6, globalCurrency),
