@@ -86,7 +86,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
   const validatorStatusLabel =
     activeTracker && activeTracker.validatorStatus
-      ? activeTracker.validatorStatus.toUpperCase()
+      ? activeTracker.validatorStatus.toUpperCase().replace(/_/g, " ")
       : activeTracker && activeTracker.validatorPublicKey
       ? "PENDING_SYNC"
       : "UNKNOWN";
