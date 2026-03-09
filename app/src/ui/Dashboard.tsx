@@ -675,7 +675,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         if (isDeposited && hasValidator) {
           // Validator is deposited but not yet active – show neutral queue message
           setError(
-            "Validator is DEPOSITED and waiting in the activation queue. Rewards will appear once it becomes ACTIVE."
+            "DEPOSITED_WARNING:Validator is DEPOSITED and waiting in the activation queue. Rewards will appear once it becomes ACTIVE."
           );
         } else {
           const clHint = hasValidator
@@ -2106,20 +2106,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               {error && (
                 (() => {
                   const isPriceWarning = error.startsWith("PRICE_WARNING:");
+                  const isDepositedWarning = error.startsWith("DEPOSITED_WARNING:");
+                  const isInfoWarning = isPriceWarning || isDepositedWarning;
                   return (
                     <div
                       style={{
                         padding: "12px",
-                        background: isPriceWarning ? "#2f2613" : "#2a1a1a",
-                        border: isPriceWarning ? "1px solid #bc8e2c" : "1px solid #ff4444",
+                        background: isInfoWarning ? "#2f2613" : "#2a1a1a",
+                        border: isInfoWarning ? "1px solid #bc8e2c" : "1px solid #ff4444",
                         borderRadius: "8px",
-                        color: isPriceWarning ? "#d9b569" : "#ff8888",
+                        color: isInfoWarning ? "#d9b569" : "#ff8888",
                         marginBottom: "16px",
                       }}
                     >
                       {isPriceWarning ? (
                         <>
-                          ⚠ Ethereum price pending for <strong>{error.split(":")[1]} reward{parseInt(error.split(":")[1]) > 1 ? 's' : ''}</strong>. Price updates daily at 00:00 CET.
+                          ⚠ Ethereum price pending for <strong>{error.split(":")[1]} reward{parseInt(error.split(":")[1]) > 1 ? 's' : ''}</strong>. Ethereum's price updates daily at 00:00 CET.
+                        </>
+                      ) : isDepositedWarning ? (
+                        <>
+                          ⚠ Validator is <strong>DEPOSITED</strong> and waiting in the activation queue. Rewards will appear once it becomes <strong>ACTIVE</strong>.
                         </>
                       ) : (
                         error
