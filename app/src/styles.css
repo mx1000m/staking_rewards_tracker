@@ -76,7 +76,7 @@ body {
   outline: none;
   color: #f0f0f0;
   border: 1px solid #555555;
-  background: #2b2b2b;
+  background-color: #2b2b2b;
 }
 .gradient-select option {
   background: #181818;
