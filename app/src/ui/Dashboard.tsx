@@ -1265,11 +1265,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       "Time",
       "Reward type",
       "Reward (ETH)",
-      `ETH Price (${currencySymbol})`,
+      `ETH price (${currencySymbol})`,
       `Value in ${currencyCode} (${currencySymbol})`,
-      "Tax Rate (%)",
       `Income tax (${currencyCode})`,
-      "Transaction Hash",
+      "Transaction hash",
     ];
     const rows = yearTransactions.map((tx) => {
       const ethPrice = getEthPriceForDisplay(tx, globalCurrency);
@@ -1282,7 +1281,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         formatNumber(tx.ethAmount || 0, 6, globalCurrency),
         formatNumber(ethPrice, 2, globalCurrency),
         formatNumber(rewardsInCurrency, 2, globalCurrency),
-        (tx.taxRate || 0).toString(),
         formatNumber(taxesInCurrency, 2, globalCurrency),
         tx.rewardType === "CL" ? "" : (tx.transactionHash || ""),
       ];
@@ -1301,30 +1299,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     // Create total row
     const totalRow = [
       "TOTAL",
-      "", // Time
-      "", // Reward type
+      "",
+      "",
       formatNumber(totalEthRewards, 6, globalCurrency),
-      "", // ETH Price
+      "",
       formatNumber(totalRewardsInCurrency, 2, globalCurrency),
-      taxRate.toString(),
       formatNumber(totalTaxesInCurrency, 2, globalCurrency),
-      "", // Transaction Hash
+      "",
     ];
     
     // Create header rows with tracker information
-    const trackerName = activeTracker.name || "Validator Tracker";
+    const trackerName = activeTracker.name || "Validator";
     const trackerLocation = activeTracker.country || "Unknown";
+    const trackerTaxRate = activeTracker.taxRate ?? 0;
+    const beaconPubKey = activeTracker.validatorPublicKey || "";
     const consensusAddress = activeTracker.walletAddress || "";
-    const executionAddress = activeTracker.feeRecipientAddress || activeTracker.walletAddress || "";
+    const executionAddress =
+      activeTracker.mevMode === "none" || !activeTracker.mevMode
+        ? "No execution rewards"
+        : activeTracker.feeRecipientAddress || activeTracker.walletAddress || "";
     
     // Number of columns in the table
     const numColumns = headers.length;
     
     // Header rows (text in first column only, rest empty - will appear to span when opened in Excel)
     const headerRows = [
-      [`${trackerName} - Location: ${trackerLocation}`, ...Array(numColumns - 1).fill("")],
+      [`Name: ${trackerName} - Location: ${trackerLocation} - Income tax rate: ${trackerTaxRate}%`, ...Array(numColumns - 1).fill("")],
+      [`Beacon chain public key: ${beaconPubKey}`, ...Array(numColumns - 1).fill("")],
       [`Consensus layer withdrawal address: ${consensusAddress}`, ...Array(numColumns - 1).fill("")],
-      [`Execution layer withdrawal address: ${executionAddress}`, ...Array(numColumns - 1).fill("")],
+      [`Execution withdrawal address: ${executionAddress}`, ...Array(numColumns - 1).fill("")],
       Array(numColumns).fill(""), // Empty row for spacing
     ];
     
