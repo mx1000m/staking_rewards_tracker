@@ -322,24 +322,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   }, [ethPricesLoaded, ethPrices, globalCurrency]);
 
-  // Clear price warning and transactions immediately when switching trackers to prevent showing wrong tracker's warnings
+  // Clear any tracker-specific warnings/errors and transactions when switching trackers
   React.useEffect(() => {
     // Only run if we have trackers, an active tracker, and an authenticated user
     if (trackers.length > 0 && activeTracker && user) {
       // Reset to current year when switching trackers
       const currentYear = new Date().getFullYear();
       setSelectedYear(currentYear);
-      // Clear informational warnings (price/deposited) immediately when switching trackers
-      setError((currentError) => {
-        if (
-          currentError &&
-          (currentError.startsWith("PRICE_WARNING:") ||
-            currentError.startsWith("DEPOSITED_WARNING:"))
-        ) {
-          return null;
-        }
-        return currentError; // Keep other errors
-      });
+      // Clear any existing error/warning; new tracker will set its own if needed
+      setError(null);
       // Clear transactions to prevent stale data from previous tracker
       setTransactions([]);
       // Load transactions for the new tracker
