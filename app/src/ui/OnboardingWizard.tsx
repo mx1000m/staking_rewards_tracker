@@ -297,7 +297,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           </p>
           <input
             className="input"
-            placeholder="Validator 1"
+            placeholder={getNextAvailableName}
             value={name}
             onChange={(e) => setName(e.target.value)}
             style={{
