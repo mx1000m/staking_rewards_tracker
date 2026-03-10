@@ -329,9 +329,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       // Reset to current year when switching trackers
       const currentYear = new Date().getFullYear();
       setSelectedYear(currentYear);
-      // Clear price warning immediately when switching trackers
+      // Clear informational warnings (price/deposited) immediately when switching trackers
       setError((currentError) => {
-        if (currentError && currentError.startsWith("PRICE_WARNING:")) {
+        if (
+          currentError &&
+          (currentError.startsWith("PRICE_WARNING:") ||
+            currentError.startsWith("DEPOSITED_WARNING:"))
+        ) {
           return null;
         }
         return currentError; // Keep other errors
