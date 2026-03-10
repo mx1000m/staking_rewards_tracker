@@ -718,9 +718,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             hasValidator &&
             (statusUpper === "PENDING_SYNC" || statusUpper === "PENDING" || !statusUpper)
           ) {
-            setError(
-              "Your validator is currently pending; it will be updated today at 00:10 CET."
-            );
+            setError("PENDING_WARNING:");
           } else {
             const clHint = hasValidator
               ? " Consensus (beacon) rewards appear after the daily Beacon Chain Sync runs in GitHub Actions—check that it finds your project and processes this validator."
@@ -2157,7 +2155,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 (() => {
                   const isPriceWarning = error.startsWith("PRICE_WARNING:");
                   const isDepositedWarning = error.startsWith("DEPOSITED_WARNING:");
-                  const isInfoWarning = isPriceWarning || isDepositedWarning;
+                  const isPendingWarning = error.startsWith("PENDING_WARNING:");
+                  const isInfoWarning = isPriceWarning || isDepositedWarning || isPendingWarning;
                   return (
                     <div
                       style={{
@@ -2176,6 +2175,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       ) : isDepositedWarning ? (
                         <>
                           ⚠ Validator is <strong>DEPOSITED</strong> and waiting in the activation queue. Rewards will appear once it becomes <strong>ACTIVE</strong>.
+                        </>
+                      ) : isPendingWarning ? (
+                        <>
+                          ⚠ Your validator is currently <strong>PENDING</strong>, it will be updated later today at 00:10 CET.
                         </>
                       ) : (
                         error
