@@ -84,18 +84,54 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [ethPricesLoaded, setEthPricesLoaded] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
-  const validatorStatusLabel =
-    activeTracker && activeTracker.validatorStatus
-      ? activeTracker.validatorStatus.toUpperCase().replace(/_/g, " ")
-      : activeTracker && activeTracker.validatorPublicKey
-      ? "PENDING_SYNC"
-      : "UNKNOWN";
-  const validatorStatusColor =
-    activeTracker && activeTracker.validatorStatus
-      ? "#4ade80"
-      : activeTracker && activeTracker.validatorPublicKey
-      ? "#facc15"
-      : "#f97373";
+
+  // Normalized validator status label for display
+  const validatorStatusLabel = (() => {
+    if (!activeTracker) return "UNKNOWN";
+    const raw = activeTracker.validatorStatus;
+    const upper = raw ? raw.toUpperCase() : null;
+
+    if (upper === "ACTIVE_ONGOING" || upper === "ACTIVE") {
+      return "ACTIVE";
+    }
+    if (upper === "PENDING_SYNC" || upper === "PENDING") {
+      return "PENDING";
+    }
+    if (upper) {
+      return upper.replace(/_/g, " ");
+    }
+    // No explicit status but we have a validator public key → treat as pending
+    if (activeTracker.validatorPublicKey) {
+      return "PENDING";
+    }
+    return "UNKNOWN";
+  })();
+
+  // Status color mapping (green for active, yellow for pending/deposited, red for problem)
+  const validatorStatusColor = (() => {
+    if (!activeTracker) return "#f97373";
+    const raw = activeTracker.validatorStatus;
+    const upper = raw ? raw.toUpperCase() : null;
+
+    if (upper === "ACTIVE_ONGOING" || upper === "ACTIVE") {
+      return "#4ade80";
+    }
+    if (
+      upper === "PENDING_SYNC" ||
+      upper === "PENDING" ||
+      (!upper && activeTracker.validatorPublicKey)
+    ) {
+      return "#facc15";
+    }
+    if (upper === "DEPOSITED") {
+      return "#facc15";
+    }
+    if (!upper && !activeTracker.validatorPublicKey) {
+      return "#f97373";
+    }
+    // Default to green for any other known non-error status
+    return "#4ade80";
+  })();
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
   
   // Current ETH price state (from Coinbase API)
@@ -673,10 +709,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             "DEPOSITED_WARNING:Validator is DEPOSITED and waiting in the activation queue. Rewards will appear once it becomes ACTIVE."
           );
         } else {
-          const clHint = hasValidator
-            ? " Consensus (beacon) rewards appear after the daily Beacon Chain Sync runs in GitHub Actions—check that it finds your project and processes this validator."
+          const statusUpper = tracker.validatorStatus
+            ? tracker.validatorStatus.toUpperCase()
             : "";
-          setError(`No incoming rewards found for this wallet in ${targetYear}.${clHint}`);
+
+          // Pending validators get a friendlier, time-based message
+          if (
+            hasValidator &&
+            (statusUpper === "PENDING_SYNC" || statusUpper === "PENDING" || !statusUpper)
+          ) {
+            setError(
+              "Your validator is currently pending; it will be updated today at 00:10 CET."
+            );
+          } else {
+            const clHint = hasValidator
+              ? " Consensus (beacon) rewards appear after the daily Beacon Chain Sync runs in GitHub Actions—check that it finds your project and processes this validator."
+              : "";
+            setError(`No incoming rewards found for this wallet in ${targetYear}.${clHint}`);
+          }
         }
         setTransactions([]);
         setLoading(false);
