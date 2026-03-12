@@ -68,6 +68,8 @@ const transactionToFirestore = (tx: CachedTransaction): any => ({
   timestamp: Timestamp.fromMillis(tx.timestamp * 1000),
   swapHash: (tx as any).swapHash || null,
   rewardType: tx.rewardType || null,
+  epochStart: typeof tx.epochStart === "number" ? tx.epochStart : null,
+  epochEnd: typeof tx.epochEnd === "number" ? tx.epochEnd : null,
   updatedAt: serverTimestamp(),
   // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly
 });
@@ -92,6 +94,8 @@ const firestoreToTransaction = (data: any, txHash: string): CachedTransaction =>
     timestamp: timestampToNumber(data.timestamp),
     swapHash: data.swapHash || undefined,
     rewardType: data.rewardType || undefined,
+    epochStart: typeof data.epochStart === "number" ? data.epochStart : undefined,
+    epochEnd: typeof data.epochEnd === "number" ? data.epochEnd : undefined,
     // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly
   };
 };

@@ -19,6 +19,9 @@ export interface CachedTransaction {
   rewardType?: "CL" | "EVM"; // Consensus Layer (beacon withdrawals) or Execution Layer (fee recipient)
   // Optional finer-grained classification of rewards (used for MEV reporting)
   rewardSubType?: "staking" | "direct_mev" | "mev_pool" | "priority_fee";
+  // Optional consensus-layer epoch range for daily aggregate rewards
+  epochStart?: number;
+  epochEnd?: number;
   // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly using prices from centralized storage
 }
 

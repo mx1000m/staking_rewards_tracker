@@ -38,7 +38,10 @@ interface RewardsAggregateResponse {
     total_penalty?: string;
     [k: string]: unknown;
   };
-  range?: { timestamp?: { start?: number; end?: number } };
+  range?: {
+    timestamp?: { start?: number; end?: number };
+    epoch?: { start?: number; end?: number };
+  };
 }
 
 async function fetchDailyAggregate(
@@ -300,6 +303,8 @@ async function processTracker(
     const ethAmount = Number(totalWei) / 1e18;
     const endTs = agg.range?.timestamp?.end ?? Math.floor(Date.now() / 1000);
     const dateKey = getDateKey(endTs - 1);
+    const epochStart = agg.range?.epoch?.start;
+    const epochEnd = agg.range?.epoch?.end;
 
     // Forward-only: if we've already recorded this dateKey, skip.
     if (lastClSyncDateKey === dateKey) {
@@ -312,24 +317,30 @@ async function processTracker(
       const date = new Date(endTs * 1000);
       const txHash = `cl_${trackerId}_${dateKey}`;
 
-      await txsRef.doc(txHash).set(
-        {
-          date: date.toISOString().slice(0, 10),
-          time: date.toISOString().slice(11, 19),
-          ethAmount,
-          ethPriceEUR,
-          ethPriceUSD,
-          ethPrice: ethPriceEUR || ethPriceUSD,
-          taxRate,
-          taxesInEth,
-          transactionHash: txHash,
-          status: "Unpaid",
-          timestamp: endTs,
-          rewardType: "CL",
-          updatedAt: FieldValue.serverTimestamp(),
-        },
-        { merge: true }
-      );
+      const docData: Record<string, unknown> = {
+        date: date.toISOString().slice(0, 10),
+        time: date.toISOString().slice(11, 19),
+        ethAmount,
+        ethPriceEUR,
+        ethPriceUSD,
+        ethPrice: ethPriceEUR || ethPriceUSD,
+        taxRate,
+        taxesInEth,
+        transactionHash: txHash,
+        status: "Unpaid",
+        timestamp: endTs,
+        rewardType: "CL",
+        updatedAt: FieldValue.serverTimestamp(),
+      };
+
+      if (typeof epochStart === "number") {
+        docData.epochStart = epochStart;
+      }
+      if (typeof epochEnd === "number") {
+        docData.epochEnd = epochEnd;
+      }
+
+      await txsRef.doc(txHash).set(docData, { merge: true });
       written = 1;
       lastClSyncDateKey = dateKey;
     }

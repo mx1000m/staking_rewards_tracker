@@ -2251,7 +2251,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             </td>
                           </tr>
                           <tr>
-                      <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "left" }}>{tx.date}, {tx.time}</td>
+                      <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "left" }}>
+                        <div>{tx.date}</div>
+                        {tx.rewardType === "CL" && typeof tx.epochStart === "number" && typeof tx.epochEnd === "number" ? (
+                          <div style={{ marginTop: "2px", fontSize: "0.8rem", color: "#777777" }}>
+                            Epochs {tx.epochStart} – {tx.epochEnd}
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: "2px", fontSize: "0.8rem", color: "#777777" }}>{tx.time}</div>
+                        )}
+                      </td>
                       <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "center", whiteSpace: "nowrap" }}>
                         <span style={{ 
                           padding: "4px 8px", 
