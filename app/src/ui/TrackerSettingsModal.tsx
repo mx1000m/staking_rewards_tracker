@@ -52,8 +52,6 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [shakeAddressInput, setShakeAddressInput] = useState(false);
   const [shakeFeeRecipient, setShakeFeeRecipient] = useState(false);
   const [shakeEtherscanKey, setShakeEtherscanKey] = useState(false);
-  const [feeRecipientError, setFeeRecipientError] = useState<string | null>(null);
-  const [etherscanKeyError, setEtherscanKeyError] = useState<string | null>(null);
   const closeTimeoutRef = useRef<number | null>(null);
   const MODAL_ANIMATION_DURATION = 175;
 
@@ -122,30 +120,6 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       return;
     }
 
-    // Validate execution rewards fields when direct mode is selected
-    if (mevMode === "direct") {
-      const feeAddr = feeRecipientAddress.trim();
-      const feeRecipientValid = /^0x[a-fA-F0-9]{40}$/.test(feeAddr);
-      const etherscanValid = etherscanKey.trim().length > 0;
-      let hasError = false;
-      setFeeRecipientError(null);
-      setEtherscanKeyError(null);
-
-      if (!feeRecipientValid) {
-        setFeeRecipientError("Please enter a valid ethereum address.");
-        setShakeFeeRecipient(true);
-        setTimeout(() => setShakeFeeRecipient(false), 500);
-        hasError = true;
-      }
-      if (!etherscanValid) {
-        setEtherscanKeyError("Please enter a valid Etherscan API key.");
-        setShakeEtherscanKey(true);
-        setTimeout(() => setShakeEtherscanKey(false), 500);
-        hasError = true;
-      }
-      if (hasError) return;
-    }
-
     const walletChanged = walletAddress.toLowerCase() !== tracker.walletAddress.toLowerCase();
     const feeRecipientChanged = (feeRecipientAddress.trim() || undefined) !== (tracker.feeRecipientAddress || undefined);
     
@@ -164,8 +138,9 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
     }
 
     // Normalize fee recipient address
-    const normalizedFeeRecipient = mevMode === "direct" ? (feeRecipientAddress.trim() || undefined) : undefined;
-    
+    const normalizedFeeRecipient =
+      mevMode === "direct" ? (feeRecipientAddress.trim() || undefined) : undefined;
+
     updateTracker(tracker.id, {
       name: name.trim(),
       walletAddress,
@@ -176,7 +151,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
       mevMode,
       country,
       taxRate,
-      etherscanKey: mevMode === "direct" ? etherscanKey : tracker.etherscanKey,
+      // Etherscan is no longer required for direct mode; keep existing key only for future pool support.
+      etherscanKey: tracker.etherscanKey,
     });
     
     // Sync to Firestore if authenticated
@@ -480,115 +456,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
                 <span>Priority fees and/or MEV rewards</span>
               </label>
 
-              <div
-                style={{
-                  marginLeft: "28px",
-                  marginTop: mevMode === "direct" ? "4px" : "0px",
-                  overflow: "hidden",
-                  maxHeight: mevMode === "direct" ? "500px" : "0px",
-                  opacity: mevMode === "direct" ? 1 : 0,
-                  transition: "max-height 0.25s ease, opacity 0.25s ease",
-                }}
-              >
-                <div
-                  style={{
-                    background: "#2b2b2b",
-                    borderRadius: "12px",
-                    padding: "16px",
-                    border: "1px solid #3a3a3a",
-                  }}
-                >
-                  <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                    Execution rewards address
-                  </label>
-                  <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-                    Receives MEV and priority fee payouts.
-                  </p>
-                  <input
-                    className="input"
-                    placeholder="0x..."
-                    value={feeRecipientAddress}
-                    onChange={(e) => setFeeRecipientAddress(e.target.value.trim())}
-                    style={{
-                      borderColor: shakeFeeRecipient || feeRecipientError ? "#ef4444" : undefined,
-                      borderWidth: shakeFeeRecipient || feeRecipientError ? "2px" : undefined,
-                      animation: shakeFeeRecipient ? "shake 0.5s" : undefined,
-                    }}
-                  />
-                  {feeRecipientError && (
-                    <p style={{ margin: "6px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-                      {feeRecipientError}
-                    </p>
-                  )}
-
-                  <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-                    Etherscan API key
-                  </label>
-                  <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-                    Create an account on{" "}
-                    <a
-                      href="https://etherscan.io/apidashboard"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ color: "#aaaaaa", textDecoration: "underline" }}
-                    >
-                      Etherscan
-                    </a>{" "}
-                    for free to get an API key.
-                  </p>
-                  <div style={{ position: "relative" }}>
-                    <input
-                      className="input"
-                      placeholder="Etherscan API key"
-                      type={showApiKey ? "text" : "password"}
-                      value={etherscanKey}
-                      onChange={(e) => setEtherscanKey(e.target.value)}
-                      style={{
-                        paddingRight: "40px",
-                        borderColor: shakeEtherscanKey || etherscanKeyError ? "#ef4444" : undefined,
-                        borderWidth: shakeEtherscanKey || etherscanKeyError ? "2px" : undefined,
-                        animation: shakeEtherscanKey ? "shake 0.5s" : undefined,
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      style={{
-                        position: "absolute",
-                        right: "12px",
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        background: "transparent",
-                        border: "none",
-                        cursor: "pointer",
-                        padding: "4px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#9aa0b4",
-                        transition: "color 0.2s",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = "#e8e8f0";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = "#9aa0b4";
-                      }}
-                    >
-                      <img
-                        src={showApiKey ? "/staking_rewards_tracker/icons/eye_off_icon.svg" : "/staking_rewards_tracker/icons/eye_icon.svg"}
-                        alt={showApiKey ? "Hide" : "Show"}
-                        style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
-                      />
-                    </button>
-                  </div>
-                  {etherscanKeyError && (
-                    <p style={{ margin: "6px 0 0 0", fontSize: "0.8rem", color: "#ef4444" }}>
-                      {etherscanKeyError}
-                    </p>
-                  )}
-                </div>
-              </div>
+              {/* No extra fields are required for Priority fees and/or MEV rewards.
+                  Execution income is fetched directly from Beaconcha.in aggregates. */}
 
               <label
                 style={{
