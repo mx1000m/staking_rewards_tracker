@@ -614,7 +614,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       let etherscanTxs: EtherscanTransaction[] = [];
       let mevPoolTxs: EtherscanTransaction[] = [];
 
-      if (tracker.mevMode !== "none" && tracker.etherscanKey) {
+      // For execution rewards mode "direct" (Priority fees and/or MEV rewards), we now rely
+      // entirely on Beaconcha aggregates written by beacon-sync into Firestore. Skip Etherscan
+      // in that case to avoid duplicate data and unnecessary API usage.
+      const shouldUseEtherscan =
+        tracker.mevMode !== "none" &&
+        tracker.mevMode !== "direct" &&
+        !!tracker.etherscanKey;
+
+      if (shouldUseEtherscan) {
         console.log("Fetching EVM transactions for:", {
           withdrawalAddress: tracker.walletAddress,
           feeRecipientAddress: feeRecipientAddress,
@@ -650,7 +658,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         }
       } else {
         console.log(
-          "Skipping EVM transaction fetch because execution rewards mode is 'none' or no Etherscan key is provided."
+          "Skipping EVM transaction fetch because execution rewards mode is 'none' or 'direct', or no Etherscan key is provided."
         );
       }
 
@@ -665,10 +673,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
             "for tracker",
             tracker.id
           );
+          const includeEvmFromFirestore = tracker.mevMode === "direct";
           clFromFirestore = allFirestore.filter((ftx) => {
             const inYear = ftx.timestamp >= startTimestamp && ftx.timestamp <= endTimestamp;
             const isCl = ftx.rewardType === "CL";
-            if (!isCl || !inYear) {
+            const isElFromBeacon = includeEvmFromFirestore && ftx.rewardType === "EVM";
+            if (!inYear || (!isCl && !isElFromBeacon)) {
               return false;
             }
             return true;

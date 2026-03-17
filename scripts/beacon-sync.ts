@@ -29,6 +29,8 @@ interface TrackerDoc {
   validatorStatus?: string;
   validatorBalanceEth?: number;
   validatorTotalRewardsEth?: number;
+  // Execution rewards mode from frontend ("none", "direct", "pool", etc.)
+  mevMode?: string;
 }
 
 interface RewardsAggregateResponse {
@@ -36,6 +38,12 @@ interface RewardsAggregateResponse {
     total?: string;
     total_reward?: string;
     total_penalty?: string;
+    // Nested proposal breakdown including execution-layer component
+    proposal?: {
+      execution_layer_reward?: string;
+      total?: string;
+      [k: string]: unknown;
+    };
     [k: string]: unknown;
   };
   range?: {
@@ -276,7 +284,7 @@ async function processTracker(
   tracker: TrackerDoc,
   prices: Record<string, { eur?: number; usd?: number }>
 ): Promise<number> {
-  const { id: trackerId, validatorPublicKey, beaconApiKey, taxRate = 24 } = tracker;
+  const { id: trackerId, validatorPublicKey, beaconApiKey, taxRate = 24, mevMode } = tracker;
   if (!validatorPublicKey || !beaconApiKey) {
     console.log(
       `  [${trackerId}] Skipping tracker (missing validatorPublicKey or beaconApiKey). validatorPublicKey present? ${
@@ -299,8 +307,30 @@ async function processTracker(
     const agg = await fetchDailyAggregate(beaconApiKey, validatorPublicKey);
     await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
 
-    const totalWei = agg.data?.total_reward ?? agg.data?.total ?? "0";
-    const ethAmount = Number(totalWei) / 1e18;
+    const totalWeiStr = agg.data?.total_reward ?? agg.data?.total ?? "0";
+    const execWeiStr = agg.data?.proposal?.execution_layer_reward ?? "0";
+
+    // Use BigInt to avoid precision issues when subtracting
+    let totalWei = BigInt(0);
+    let execWei = BigInt(0);
+    try {
+      totalWei = BigInt(totalWeiStr);
+      execWei = BigInt(execWeiStr);
+    } catch (e) {
+      console.warn(`[${trackerId}] Failed to parse wei strings from rewards-aggregate`, e);
+    }
+
+    if (execWei < BigInt(0)) {
+      execWei = BigInt(0);
+    }
+    if (execWei > totalWei) {
+      execWei = totalWei;
+    }
+
+    const clWei = totalWei - execWei;
+
+    const ethAmountCl = Number(clWei) / 1e18;
+    const ethAmountEl = Number(execWei) / 1e18;
     const endTs = agg.range?.timestamp?.end ?? Math.floor(Date.now() / 1000);
     const dateKey = getDateKey(endTs - 1);
     const epochStart = agg.range?.epoch?.start;
@@ -309,39 +339,67 @@ async function processTracker(
     // Forward-only: if we've already recorded this dateKey, skip.
     if (lastClSyncDateKey === dateKey) {
       console.log(`  [${trackerId}] CL already synced for ${dateKey}, skipping.`);
-    } else if (ethAmount > 0) {
+    } else if (ethAmountCl > 0 || ethAmountEl > 0) {
       const priceEntry = prices[dateKey];
       const ethPriceEUR = priceEntry?.eur ?? 0;
       const ethPriceUSD = priceEntry?.usd ?? 0;
-      const taxesInEth = ethAmount * (taxRate / 100);
+      const taxesInEthCl = ethAmountCl * (taxRate / 100);
+      const taxesInEthEl = ethAmountEl * (taxRate / 100);
       const date = new Date(endTs * 1000);
-      const txHash = `cl_${trackerId}_${dateKey}`;
+      const baseDate = date.toISOString().slice(0, 10);
+      const baseTime = date.toISOString().slice(11, 19);
 
-      const docData: Record<string, unknown> = {
-        date: date.toISOString().slice(0, 10),
-        time: date.toISOString().slice(11, 19),
-        ethAmount,
-        ethPriceEUR,
-        ethPriceUSD,
-        ethPrice: ethPriceEUR || ethPriceUSD,
-        taxRate,
-        taxesInEth,
-        transactionHash: txHash,
-        status: "Unpaid",
-        timestamp: endTs,
-        rewardType: "CL",
-        updatedAt: FieldValue.serverTimestamp(),
-      };
+      // --- Consensus-layer (CL) daily reward ---
+      if (ethAmountCl > 0) {
+        const clHash = `cl_${trackerId}_${dateKey}`;
+        const clDoc: Record<string, unknown> = {
+          date: baseDate,
+          time: baseTime,
+          ethAmount: ethAmountCl,
+          ethPriceEUR,
+          ethPriceUSD,
+          ethPrice: ethPriceEUR || ethPriceUSD,
+          taxRate,
+          taxesInEth: taxesInEthCl,
+          transactionHash: clHash,
+          status: "Unpaid",
+          timestamp: endTs,
+          rewardType: "CL",
+          updatedAt: FieldValue.serverTimestamp(),
+          epochStart,
+          epochEnd,
+        };
 
-      if (typeof epochStart === "number") {
-        docData.epochStart = epochStart;
+        await txsRef.doc(clHash).set(clDoc, { merge: true });
+        written += 1;
       }
-      if (typeof epochEnd === "number") {
-        docData.epochEnd = epochEnd;
+
+      // --- Execution-layer (EL) daily reward from Beaconcha ---
+      // Only create EL entries when user has opted into tracking execution income
+      if (ethAmountEl > 0 && mevMode === "direct") {
+        const elHash = `el_${trackerId}_${dateKey}`;
+        const elDoc: Record<string, unknown> = {
+          date: baseDate,
+          time: baseTime,
+          ethAmount: ethAmountEl,
+          ethPriceEUR,
+          ethPriceUSD,
+          ethPrice: ethPriceEUR || ethPriceUSD,
+          taxRate,
+          taxesInEth: taxesInEthEl,
+          transactionHash: elHash,
+          status: "Unpaid",
+          timestamp: endTs,
+          rewardType: "EVM",
+          updatedAt: FieldValue.serverTimestamp(),
+          epochStart,
+          epochEnd,
+        };
+
+        await txsRef.doc(elHash).set(elDoc, { merge: true });
+        written += 1;
       }
 
-      await txsRef.doc(txHash).set(docData, { merge: true });
-      written = 1;
       lastClSyncDateKey = dateKey;
     }
 
@@ -415,6 +473,7 @@ async function main() {
         beaconApiKey: data.beaconApiKey,
         taxRate: data.taxRate ?? 24,
         lastClSyncDateKey: data.lastClSyncDateKey ?? null,
+        mevMode: data.mevMode,
       };
       console.log(`Processing ${uid} / ${doc.id}`);
       const n = await processTracker(uid, tracker, prices);
