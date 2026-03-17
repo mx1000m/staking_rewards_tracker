@@ -396,7 +396,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 color: mevMode === "direct" ? "#ffffff" : "#747474",
                 fontSize: "0.9rem",
                 fontWeight: mevMode === "direct" ? 600 : 400,
-                marginTop: "3px",
               }}
             >
               <input
@@ -422,7 +421,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 color: "#555555",
                 fontSize: "0.9rem",
                 opacity: 0.6,
-                marginTop: mevMode === "direct" ? "0px" : "-8px",
               }}
             >
               <input
