@@ -1305,7 +1305,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const currencyCode = globalCurrency === "EUR" ? "EUR" : "USD";
     const headers = [
       "Date",
-      "Time",
+      "Epochs",
       "Reward type",
       "Reward (ETH)",
       `ETH price (${currencySymbol})`,
@@ -1319,9 +1319,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       const taxesInCurrency = getTaxesInCurrency(tx, globalCurrency);
       const priceMissing = ethPrice === 0;
       const datePrefix = priceMissing ? `⚠ - ${tx.date || ""} - ETH PRICE MISSING` : (tx.date || "");
+      const epochsLabel =
+        tx.rewardType === "CL" && typeof tx.epochStart === "number" && typeof tx.epochEnd === "number"
+          ? `${tx.epochStart} - ${tx.epochEnd}`
+          : "";
       return [
         datePrefix,
-        tx.time || "",
+        epochsLabel,
         tx.rewardType || "EVM",
         formatNumber(tx.ethAmount || 0, 6, globalCurrency),
         formatNumber(ethPrice, 2, globalCurrency),
