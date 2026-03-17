@@ -450,7 +450,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 onChange={() => setMevMode("direct")}
                 style={{ accentColor: "#f0f0f0" }}
               />
-              <span>Direct to fee recipient</span>
+              <span>Priority fees and/or MEV rewards</span>
             </label>
 
             <div
@@ -593,7 +593,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
                 onChange={() => {}}
                 style={{ accentColor: "#555555" }}
               />
-              <span>Via MEV pool / smoothing (coming soon)</span>
+              <span>MEV with smoothing pool (coming soon)</span>
             </label>
           </div>
 
