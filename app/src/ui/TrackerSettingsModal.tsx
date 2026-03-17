@@ -334,12 +334,26 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
               <input
                 className="input"
                 readOnly
-                value={
+                onFocus={(e) => {
+                  // Show full key when focused for easier selection
+                  e.currentTarget.value = validatorPublicKey;
+                  // Select all text so user can copy quickly
+                  e.currentTarget.select();
+                }}
+                onBlur={(e) => {
+                  // Restore truncated display on blur
+                  const truncated =
+                    validatorPublicKey && validatorPublicKey.length > 30
+                      ? `${validatorPublicKey.slice(0, 15)}...${validatorPublicKey.slice(-15)}`
+                      : validatorPublicKey;
+                  e.currentTarget.value = truncated;
+                }}
+                defaultValue={
                   validatorPublicKey && validatorPublicKey.length > 30
                     ? `${validatorPublicKey.slice(0, 15)}...${validatorPublicKey.slice(-15)}`
                     : validatorPublicKey
                 }
-                style={{ paddingRight: "40px", cursor: "default", userSelect: "all" }}
+                style={{ paddingRight: "40px", cursor: "text" }}
               />
               <button
                 type="button"
