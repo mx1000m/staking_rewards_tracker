@@ -52,6 +52,7 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
   const [shakeAddressInput, setShakeAddressInput] = useState(false);
   const [shakeFeeRecipient, setShakeFeeRecipient] = useState(false);
   const [shakeEtherscanKey, setShakeEtherscanKey] = useState(false);
+  const [publicKeyCopied, setPublicKeyCopied] = useState(false);
   const closeTimeoutRef = useRef<number | null>(null);
   const MODAL_ANIMATION_DURATION = 175;
 
@@ -321,24 +322,71 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({ trac
             )}
           </div>
 
-          {/* Beacon chain validator public key */}
+          {/* Beacon chain validator public key (read-only, copyable) */}
           <div>
             <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
               Beacon chain validator public key
             </label>
             <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-              Used to identify your validator on the beacon chain (consensus layer).
+              Used to identify your validator on the beacon chain (consensus layer). Create a new tracker if you want to track a different validator.
             </p>
-            <input
-              className="input"
-              placeholder="0x... (98 characters long)"
-              value={validatorPublicKey}
-              onChange={(e) => setValidatorPublicKey(e.target.value.trim())}
-            />
-            {validatorPublicKey !== (tracker.validatorPublicKey || "") && (
-              <p style={{ margin: "6px 0 0 0", fontSize: "0.8rem", color: "#d9b569" }}>
-                ⚠ Changing the beacon chain validator public key will replace the current validator and permanently delete all collected data.
-              </p>
+            <div style={{ position: "relative" }}>
+              <input
+                className="input"
+                readOnly
+                value={
+                  validatorPublicKey && validatorPublicKey.length > 30
+                    ? `${validatorPublicKey.slice(0, 15)}...${validatorPublicKey.slice(-15)}`
+                    : validatorPublicKey
+                }
+                style={{ paddingRight: "40px", cursor: "default", userSelect: "all" }}
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(validatorPublicKey);
+                    setPublicKeyCopied(true);
+                    setTimeout(() => setPublicKeyCopied(false), 1200);
+                  } catch (e) {
+                    console.error("Failed to copy validator public key:", e);
+                  }
+                }}
+                style={{
+                  position: "absolute",
+                  right: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "4px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#9aa0b4",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = "#e8e8f0";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = "#9aa0b4";
+                }}
+              >
+                <img
+                  src="/staking_rewards_tracker/icons/copy_icon.svg"
+                  alt={publicKeyCopied ? "Copied" : "Copy"}
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    filter: "brightness(0) saturate(1) invert(60%)",
+                  }}
+                />
+              </button>
+            </div>
+            {publicKeyCopied && (
+              <p style={{ margin: "6px 0 0 0", fontSize: "0.8rem", color: "#d9b569" }}>Copied to clipboard.</p>
             )}
           </div>
 
