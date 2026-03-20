@@ -338,6 +338,8 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
         lastSyncedEpoch: data.lastSyncedEpoch ?? undefined,
         validatorStatus: data.validatorStatus || undefined,
         validatorBalanceEth: data.validatorBalanceEth ?? undefined,
+        validatorApr: data.validatorApr ?? undefined,
+        validatorLuck: data.validatorLuck ?? undefined,
       });
     });
     

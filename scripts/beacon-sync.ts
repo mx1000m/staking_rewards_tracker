@@ -235,6 +235,553 @@ async function fetchValidatorOverview(
   return null;
 }
 
+async function fetchValidatorApr(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/apy-roi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          validator: { validator_identifiers: [validatorPublicKey] },
+          chain: "mainnet",
+          range: { evaluation_window: "30d" },
+        }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as {
+          data?: { combined?: { apy?: { total?: number } } };
+        };
+        const apr = json.data?.combined?.apy?.total;
+        if (typeof apr === "number" && Number.isFinite(apr)) {
+          console.log(`[fetchValidatorApr] yearly APY for ${shortKey}: ${apr}%`);
+          return apr;
+        }
+      }
+
+      const text = await res.text();
+      if (res.status === 429 && attempt < maxAttempts - 1) {
+        const delayMs = 2000 * Math.pow(2, attempt);
+        console.warn(
+          `[fetchValidatorApr] 429 for ${shortKey}, retrying after ${delayMs}ms`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      console.warn(`[fetchValidatorApr] failed for ${shortKey}: ${res.status} ${text.slice(0, 150)}`);
+      return null;
+    } catch (e) {
+      console.warn(`[fetchValidatorApr] threw for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+async function fetchValidatorLuck(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const url = new URL("https://beaconcha.in/api/v1/validators/proposalLuck");
+      url.searchParams.set("validators", validatorPublicKey);
+      url.searchParams.set("apikey", apiKey);
+
+      const res = await fetch(url.toString());
+
+      if (res.ok) {
+        const json = (await res.json()) as {
+          data?: { proposal_luck?: number };
+        };
+        const luck = json.data?.proposal_luck;
+        if (typeof luck === "number" && Number.isFinite(luck)) {
+          const luckPct = luck * 100;
+          console.log(`[fetchValidatorLuck] proposal luck for ${shortKey}: ${luckPct.toFixed(1)}%`);
+          return luckPct;
+        }
+      }
+
+      const text = await res.text();
+      if (res.status === 429 && attempt < maxAttempts - 1) {
+        const delayMs = 2000 * Math.pow(2, attempt);
+        console.warn(
+          `[fetchValidatorLuck] 429 for ${shortKey}, retrying after ${delayMs}ms`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      console.warn(`[fetchValidatorLuck] failed for ${shortKey}: ${res.status} ${text.slice(0, 150)}`);
+      return null;
+    } catch (e) {
+      console.warn(`[fetchValidatorLuck] threw for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch yearly APR (APY) from Beaconcha APY-ROI V2 endpoint. Returns null on failure. */
+async function fetchValidatorApr_DUPLICATE_TO_REMOVE(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/apy-roi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          validator: { validator_identifiers: [validatorPublicKey] },
+          chain: "mainnet",
+          range: { evaluation_window: "30d" },
+        }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as {
+          data?: { combined?: { apy?: { total?: number } } };
+        };
+        const apr = json.data?.combined?.apy?.total;
+        if (typeof apr === "number" && Number.isFinite(apr)) {
+          return apr;
+        }
+      }
+      if (res.status === 429 && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt)));
+        continue;
+      }
+    } catch (e) {
+      console.warn(`[fetchValidatorApr] attempt ${attempt + 1}/3 for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch proposal luck from Beaconcha V1 proposalLuck endpoint. Returns 0–100 or null on failure. */
+async function fetchValidatorLuck(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const url = `https://beaconcha.in/api/v1/validators/proposalLuck?validators=${encodeURIComponent(
+        validatorPublicKey
+      )}&apikey=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, { method: "GET" });
+
+      if (res.ok) {
+        const json = (await res.json()) as { data?: { proposal_luck?: number } };
+        const luck = json.data?.proposal_luck;
+        if (typeof luck === "number" && Number.isFinite(luck)) {
+          return luck * 100;
+        }
+      }
+      if (res.status === 429 && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt)));
+        continue;
+      }
+    } catch (e) {
+      console.warn(`[fetchValidatorLuck] attempt ${attempt + 1}/3 for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch yearly APY for a validator from Beaconcha APY-ROI endpoint (30d rolling, annualized). */
+async function fetchValidatorApr(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/apy-roi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          validator: { validator_identifiers: [validatorPublicKey] },
+          chain: "mainnet",
+          range: { evaluation_window: "30d" },
+        }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as {
+          data?: { combined?: { apy?: { total?: number } } };
+        };
+        const apr = json.data?.combined?.apy?.total;
+        if (typeof apr === "number" && Number.isFinite(apr)) {
+          console.log(`[fetchValidatorApr] apr for ${shortKey}: ${apr}%`);
+          return apr;
+        }
+        return null;
+      }
+
+      const text = await res.text();
+      if (res.status === 429 && attempt < maxAttempts - 1) {
+        const delayMs = 2000 * Math.pow(2, attempt);
+        console.warn(
+          `[fetchValidatorApr] 429 for ${shortKey}, retry ${attempt + 1}/${maxAttempts} in ${delayMs}ms`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      console.warn(`[fetchValidatorApr] ${res.status} for ${shortKey}: ${text.slice(0, 150)}`);
+      return null;
+    } catch (e) {
+      console.warn(`[fetchValidatorApr] threw for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch proposal luck (V1 API, returns decimal 0–1, e.g. 0.85 = 85%). */
+async function fetchValidatorLuck(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const url = `https://beaconcha.in/api/v1/validators/proposalLuck?validators=${encodeURIComponent(
+        validatorPublicKey
+      )}&apikey=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url);
+
+      if (res.ok) {
+        const json = (await res.json()) as { data?: { proposal_luck?: number } };
+        const raw = json.data?.proposal_luck;
+        if (typeof raw === "number" && Number.isFinite(raw)) {
+          const luckPct = raw * 100; // 0.85 -> 85
+          console.log(`[fetchValidatorLuck] luck for ${shortKey}: ${luckPct.toFixed(1)}%`);
+          return luckPct;
+        }
+        return null;
+      }
+
+      const text = await res.text();
+      if (res.status === 429 && attempt < maxAttempts - 1) {
+        const delayMs = 2000 * Math.pow(2, attempt);
+        console.warn(
+          `[fetchValidatorLuck] 429 for ${shortKey}, retry ${attempt + 1}/${maxAttempts} in ${delayMs}ms`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      console.warn(`[fetchValidatorLuck] ${res.status} for ${shortKey}: ${text.slice(0, 150)}`);
+      return null;
+    } catch (e) {
+      console.warn(`[fetchValidatorLuck] threw for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch yearly APY from beaconcha APY-ROI endpoint (e.g. 2.76 = 2.76%). */
+async function fetchValidatorApr(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/apy-roi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          validator: { validator_identifiers: [validatorPublicKey] },
+          chain: "mainnet",
+          range: { evaluation_window: "365d" },
+        }),
+      });
+      if (res.ok) {
+        const json = (await res.json()) as { data?: { combined?: { apy?: { total?: number } } } };
+        const apy = json.data?.combined?.apy?.total;
+        if (typeof apy === "number" && Number.isFinite(apy)) {
+          return apy;
+        }
+        return null;
+      }
+      const text = await res.text();
+      if (res.status === 429 && attempt < maxAttempts - 1) {
+        const delayMs = 2000 * Math.pow(2, attempt);
+        console.warn(
+          `[fetchValidatorApr] 429 for ${shortKey}, retry in ${delayMs}ms`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      console.warn(`[fetchValidatorApr] ${res.status} for ${shortKey}: ${text.slice(0, 100)}`);
+      return null;
+    } catch (e) {
+      console.warn(`[fetchValidatorApr] threw for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch proposal luck from beaconcha V1 endpoint (returns 0–1, e.g. 0.85 = 85%). */
+async function fetchValidatorLuck(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const url = `https://beaconcha.in/api/v1/validators/proposalLuck?validators=${encodeURIComponent(validatorPublicKey)}&apikey=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const json = (await res.json()) as { data?: { proposal_luck?: number } };
+        const luck = json.data?.proposal_luck;
+        if (typeof luck === "number" && Number.isFinite(luck)) {
+          return luck * 100;
+        }
+        return null;
+      }
+      const text = await res.text();
+      if (res.status === 429 && attempt < maxAttempts - 1) {
+        const delayMs = 2000 * Math.pow(2, attempt);
+        console.warn(
+          `[fetchValidatorLuck] 429 for ${shortKey}, retry in ${delayMs}ms`
+        );
+        await new Promise((r) => setTimeout(r, delayMs));
+        continue;
+      }
+      console.warn(`[fetchValidatorLuck] ${res.status} for ${shortKey}: ${text.slice(0, 100)}`);
+      return null;
+    } catch (e) {
+      console.warn(`[fetchValidatorLuck] threw for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch yearly APY for validator via beaconcha APY-ROI endpoint (30d rolling → annualized). */
+async function fetchValidatorApr(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/apy-roi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          validator: { validator_identifiers: [validatorPublicKey] },
+          chain: "mainnet",
+          range: { evaluation_window: "30d" },
+        }),
+      });
+
+      if (res.ok) {
+        const json = (await res.json()) as {
+          data?: { combined?: { apy?: { total?: number } } };
+        };
+        const apy = json.data?.combined?.apy?.total;
+        if (typeof apy === "number" && Number.isFinite(apy)) {
+          return apy;
+        }
+        return null;
+      }
+
+      const text = await res.text();
+      if (res.status === 429 && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt)));
+        continue;
+      }
+      console.warn(`[fetchValidatorApr] ${res.status} for ${shortKey}:`, text.slice(0, 150));
+      return null;
+    } catch (e) {
+      console.warn(`[fetchValidatorApr] threw for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch proposal luck (V1 endpoint) – returns 0–1 decimal, e.g. 0.85 = 85%. */
+async function fetchValidatorLuck(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  const url = new URL("https://beaconcha.in/api/v1/validators/proposalLuck");
+  url.searchParams.set("validators", validatorPublicKey);
+  url.searchParams.set("apikey", apiKey);
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(url.toString());
+      if (res.ok) {
+        const json = (await res.json()) as {
+          data?: { proposal_luck?: number };
+          status?: string;
+        };
+        const luck = json.data?.proposal_luck;
+        if (typeof luck === "number" && Number.isFinite(luck)) {
+          return luck * 100; // Convert 0.85 → 85
+        }
+        return null;
+      }
+      const text = await res.text();
+      if (res.status === 429 && attempt < 2) {
+        await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, attempt)));
+        continue;
+      }
+      console.warn(`[fetchValidatorLuck] ${res.status} for ${shortKey}:`, text.slice(0, 150));
+      return null;
+    } catch (e) {
+      console.warn(`[fetchValidatorLuck] threw for ${shortKey}:`, e);
+    }
+  }
+  return null;
+}
+
+/** Fetch yearly APR from Beaconcha APY-ROI endpoint (30d rolling window, annualized). */
+async function fetchValidatorApr(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  try {
+    const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/apy-roi", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        validator: { validator_identifiers: [validatorPublicKey] },
+        chain: "mainnet",
+        range: { evaluation_window: "30d" },
+      }),
+    });
+
+    if (!res.ok) {
+      console.warn(`[fetchValidatorApr] ${res.status} for ${shortKey}`);
+      return null;
+    }
+
+    const json = (await res.json()) as {
+      data?: { combined?: { apy?: { total?: number } } };
+    };
+    const apy = json.data?.combined?.apy?.total;
+    if (typeof apy === "number" && Number.isFinite(apy)) {
+      return apy;
+    }
+    return null;
+  } catch (e) {
+    console.warn(`[fetchValidatorApr] threw for ${shortKey}:`, e);
+    return null;
+  }
+}
+
+/** Fetch proposal luck from Beaconcha V1 proposalLuck endpoint (percentage 0-100). */
+async function fetchValidatorLuck(
+  apiKey: string,
+  validatorPublicKey: string
+): Promise<number | null> {
+  const shortKey =
+    validatorPublicKey.length > 18
+      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
+      : validatorPublicKey;
+
+  try {
+    const url = new URL("https://beaconcha.in/api/v1/validators/proposalLuck");
+    url.searchParams.set("validators", validatorPublicKey);
+    url.searchParams.set("apikey", apiKey);
+
+    const res = await fetch(url.toString());
+
+    if (!res.ok) {
+      console.warn(`[fetchValidatorLuck] ${res.status} for ${shortKey}`);
+      return null;
+    }
+
+    const json = (await res.json()) as {
+      data?: { proposal_luck?: number };
+    };
+    const luck = json.data?.proposal_luck;
+    // V1 returns decimal (0.43 = 43%); convert to 0-100
+    if (typeof luck === "number" && Number.isFinite(luck)) {
+      return luck * 100;
+    }
+    return null;
+  } catch (e) {
+    console.warn(`[fetchValidatorLuck] threw for ${shortKey}:`, e);
+    return null;
+  }
+}
+
 async function loadEthPrices(): Promise<Record<string, { eur?: number; usd?: number }>> {
   const res = await fetch(ETH_PRICES_URL);
   if (!res.ok) return {};
@@ -414,30 +961,40 @@ async function processTracker(
   try {
     console.log(`  [${trackerId}] Calling Beaconcha validators overview for validator ${validatorPublicKey}...`);
     const overview = await fetchValidatorOverview(beaconApiKey, validatorPublicKey);
-    // Respect rate limit before any further Beaconcha calls
     await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+
+    const apr = await fetchValidatorApr(beaconApiKey, validatorPublicKey);
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+
+    const luck = await fetchValidatorLuck(beaconApiKey, validatorPublicKey);
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
+
+    const updateData: Record<string, unknown> = {
+      beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
+    };
     if (overview?.status != null) {
-      const updateData: Record<string, unknown> = {
-        validatorStatus: overview.status,
-        beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
-      };
-      if (overview.balanceWei) {
-        updateData.validatorBalanceEth = Number(overview.balanceWei) / 1e18;
-      }
-      if (overview.withdrawalAddress) {
-        updateData.walletAddress = overview.withdrawalAddress;
-      }
-      await trackerRef.update(updateData);
-      console.log(
-        `  [${trackerId}] Updated validatorStatus to ${overview.status}, balanceEth=${
-          updateData.validatorBalanceEth ?? "n/a"
-        }`
-      );
-    } else {
-      console.warn(`  [${trackerId}] Validator overview returned no status for ${validatorPublicKey}.`);
+      updateData.validatorStatus = overview.status;
     }
+    if (overview?.balanceWei) {
+      updateData.validatorBalanceEth = Number(overview.balanceWei) / 1e18;
+    }
+    if (overview?.withdrawalAddress) {
+      updateData.walletAddress = overview.withdrawalAddress;
+    }
+    if (typeof apr === "number") {
+      updateData.validatorApr = apr;
+    }
+    if (typeof luck === "number") {
+      updateData.validatorLuck = luck;
+    }
+    await trackerRef.update(updateData);
+    console.log(
+      `  [${trackerId}] Updated validatorStatus=${overview?.status ?? "n/a"}, balanceEth=${
+        updateData.validatorBalanceEth ?? "n/a"
+      }, apr=${updateData.validatorApr ?? "n/a"}, luck=${updateData.validatorLuck ?? "n/a"}`
+    );
   } catch (e) {
-    console.warn(`  [${trackerId}] validator overview failed:`, e);
+    console.warn(`  [${trackerId}] validator overview/apr/luck failed:`, e);
   }
 
   return written;

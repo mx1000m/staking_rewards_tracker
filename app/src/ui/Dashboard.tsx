@@ -1873,7 +1873,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 </span>
               </div>
 
-              {/* Validator metadata */}
+              {/* Balance, APR, Luck row */}
+              <div style={{ marginTop: "4px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+                <span>Balance: {activeTracker.validatorBalanceEth != null ? formatNumber(activeTracker.validatorBalanceEth, 6, globalCurrency) : "—"} ETH</span>
+                <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
+                <span>APR: {activeTracker.validatorApr != null ? `${formatNumber(activeTracker.validatorApr, 2, globalCurrency)}%` : "—"}</span>
+                <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
+                <span>Luck: {activeTracker.validatorLuck != null ? `${formatNumber(activeTracker.validatorLuck, 1, globalCurrency)}%` : "—"}</span>
+              </div>
+
+              {/* Income tax rate */}
               <p
                 style={{
                   margin: "2px 0 0 0",
@@ -1881,7 +1890,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                   color: "#aaaaaa",
                 }}
               >
-                Validator location: {activeTracker.country || "—"} - Income tax rate:{" "}
+                Income tax rate:{" "}
                 {typeof activeTracker.taxRate === "number"
                   ? `${formatNumber(activeTracker.taxRate, 0, globalCurrency)}%`
                   : "—"}
