@@ -1388,7 +1388,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     
     const disclaimerRow = ["Not tax advice · Use at your own risk · Verify everything with a professional", ...Array(numColumns - 1).fill("")];
     
-    const csv = [...headerRows, headers, ...rows, totalRow, disclaimerRow]
+    const csv = [...headerRows, headers, ...rows, totalRow, Array(numColumns).fill(""), disclaimerRow]
       .map((r) => r.map((c) => `"${c}"`).join(","))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
