@@ -259,6 +259,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     }
   };
 
+  // Format epoch number with thin space for readability (e.g. 435031 -> "435 031")
+  const formatEpoch = (n: number): string =>
+    String(n).replace(/\B(?=(\d{3})+(?!\d))/g, "\u2009");
+
   // Format currency value with symbol in correct position
   // EUR: symbol after number (e.g., "88 324,70 €")
   // USD: symbol before number (e.g., "$ 1,000.45")
@@ -1849,7 +1853,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </div>
 
               {/* Status row: validator status + execution rewards status */}
-              <div style={{ marginTop: "4px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+              <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#aaaaaa" }}>
                 <span>
                   Status:{" "}
                   <span style={{ color: validatorStatusColor, fontWeight: 600 }}>
@@ -1874,7 +1878,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               </div>
 
               {/* Balance, APR, Luck row */}
-              <div style={{ marginTop: "4px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+              <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#aaaaaa" }}>
                 <span>
                   Balance:{" "}
                   <span style={{ fontWeight: 600 }}>
@@ -1901,7 +1905,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
               {/* Income tax rate */}
               <p
                 style={{
-                  margin: "2px 0 0 0",
+                  margin: "6px 0 0 0",
                   fontSize: "0.85rem",
                   color: "#aaaaaa",
                 }}
@@ -2295,8 +2299,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "left" }}>
                         <div>{tx.date}</div>
                         {tx.rewardType === "CL" && typeof tx.epochStart === "number" && typeof tx.epochEnd === "number" ? (
-                          <div style={{ marginTop: "2px", fontSize: "0.8rem", color: "#777777" }}>
-                            Epochs {tx.epochStart} – {tx.epochEnd}
+                          <div style={{ marginTop: "2px", fontSize: "0.8rem", color: "#777777", whiteSpace: "nowrap" }}>
+                            Epochs {formatEpoch(tx.epochStart)} – {formatEpoch(tx.epochEnd)}
                           </div>
                         ) : (
                           <div style={{ marginTop: "2px", fontSize: "0.8rem", color: "#777777" }}>{tx.time}</div>
