@@ -1325,7 +1325,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       `ETH price (${currencySymbol})`,
       `Value in ${currencyCode} (${currencySymbol})`,
       `Income tax (${currencyCode})`,
-      "Transaction hash",
     ];
     const rows = yearTransactions.map((tx) => {
       const ethPrice = getEthPriceForDisplay(tx, globalCurrency);
@@ -1345,7 +1344,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
         formatNumber(ethPrice, 2, globalCurrency),
         formatNumber(rewardsInCurrency, 2, globalCurrency),
         formatNumber(taxesInCurrency, 2, globalCurrency),
-        tx.rewardType === "CL" ? "" : (tx.transactionHash || ""),
       ];
     });
     
@@ -1368,7 +1366,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
       "",
       formatNumber(totalRewardsInCurrency, 2, globalCurrency),
       formatNumber(totalTaxesInCurrency, 2, globalCurrency),
-      "",
     ];
     
     // Create header rows with tracker information
@@ -1376,11 +1373,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const trackerLocation = activeTracker.country || "Unknown";
     const trackerTaxRate = activeTracker.taxRate ?? 0;
     const beaconPubKey = activeTracker.validatorPublicKey || "";
-    const consensusAddress = activeTracker.walletAddress || "";
-    const executionAddress =
-      activeTracker.mevMode === "none" || !activeTracker.mevMode
-        ? "No execution rewards"
-        : activeTracker.feeRecipientAddress || activeTracker.walletAddress || "";
+    const validatorWithdrawalAddress = activeTracker.walletAddress || "";
     
     // Number of columns in the table
     const numColumns = headers.length;
@@ -1389,12 +1382,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
     const headerRows = [
       [`Name: ${trackerName} - Location: ${trackerLocation} - Income tax rate: ${trackerTaxRate}%`, ...Array(numColumns - 1).fill("")],
       [`Beacon chain public key: ${beaconPubKey}`, ...Array(numColumns - 1).fill("")],
-      [`Consensus layer withdrawal address: ${consensusAddress}`, ...Array(numColumns - 1).fill("")],
-      [`Execution withdrawal address: ${executionAddress}`, ...Array(numColumns - 1).fill("")],
+      [`Validator withdrawal address: ${validatorWithdrawalAddress}`, ...Array(numColumns - 1).fill("")],
       Array(numColumns).fill(""), // Empty row for spacing
     ];
     
-    const csv = [...headerRows, headers, ...rows, totalRow]
+    const disclaimerRow = ["Not tax advice · Use at your own risk · Verify everything with a professional", ...Array(numColumns - 1).fill("")];
+    
+    const csv = [...headerRows, headers, ...rows, totalRow, disclaimerRow]
       .map((r) => r.map((c) => `"${c}"`).join(","))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
