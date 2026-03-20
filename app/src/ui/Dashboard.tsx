@@ -2290,7 +2290,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             {tx.rewardType === "CL" ? "CL" : "EL"}
                           </span>
                           <span className="reward-type-tooltip">
-                            {tx.rewardType === "CL" ? "Consensus layer income" : "Execution layer income"}
+                            {tx.rewardType === "CL" ? "Consensus layer" : "Execution layer"}
                           </span>
                         </span>
                       </td>
