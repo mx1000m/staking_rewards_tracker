@@ -2266,7 +2266,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>{incomeTaxLabel}</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>CGT status</th>
                     <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600, whiteSpace: "nowrap" }}>Hodling status</th>
-                    <th style={{ padding: "12px", textAlign: "center", color: "#aaaaaa", fontSize: "0.85rem", fontWeight: 600 }}>Reward Tx</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2275,7 +2274,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {/* Month separator row */}
                       <tr style={{ borderBottom: "1px solid transparent", borderImage: "linear-gradient(45deg, #0c86ab, #2d55ac) 1" }}>
                       <td 
-                          colSpan={9} 
+                          colSpan={8} 
                           style={{ 
                             padding: "12px 12px 8px 12px", 
                             color: "#aaaaaa", 
@@ -2291,7 +2290,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                       {monthGroup.transactions.map((tx, idx) => (
                         <React.Fragment key={`${monthGroup.monthKey}-${idx}`}>
                       <tr>
-                            <td colSpan={9} style={{ padding: 0, height: "1px" }}>
+                            <td colSpan={8} style={{ padding: 0, height: "1px" }}>
                               <div style={{ height: "1px", background: "#383838" }}></div>
                             </td>
                           </tr>
@@ -2302,9 +2301,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                           <div style={{ marginTop: "2px", fontSize: "0.8rem", color: "#777777", whiteSpace: "nowrap" }}>
                             Epochs {formatEpoch(tx.epochStart)} – {formatEpoch(tx.epochEnd)}
                           </div>
-                        ) : (
-                          <div style={{ marginTop: "2px", fontSize: "0.8rem", color: "#777777" }}>{tx.time}</div>
-                        )}
+                        ) : null}
                       </td>
                       <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "center", whiteSpace: "nowrap" }}>
                         <span className="reward-type-badge-wrap">
@@ -2488,67 +2485,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                             </button>
                           );
                         })()}
-                      </td>
-                      {/* Reward Tx column */}
-                      <td style={{ padding: "12px", textAlign: "center" }}>
-                        {tx.rewardType === "CL" ? (
-                          // Consensus Layer withdrawals don't have a real EVM tx hash
-                          <span style={{ color: "#555555", fontSize: "0.85rem" }}>—</span>
-                        ) : (
-                          <div 
-                            style={{ display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center" }}
-                            onMouseEnter={(e) => {
-                              const links = e.currentTarget.querySelectorAll("a");
-                              links.forEach(link => {
-                                (link as HTMLAnchorElement).style.color = "#aaaaaa";
-                                (link as HTMLAnchorElement).style.textDecoration = "underline";
-                              });
-                              const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
-                              if (img) {
-                                // Light grey close to #aaaaaa so it visually matches the hash color
-                                img.style.filter = "brightness(0) saturate(100%) invert(67%)";
-                              }
-                            }}
-                            onMouseLeave={(e) => {
-                              const links = e.currentTarget.querySelectorAll("a");
-                              links.forEach(link => {
-                                (link as HTMLAnchorElement).style.color = "#555555";
-                                (link as HTMLAnchorElement).style.textDecoration = "none";
-                              });
-                              const img = e.currentTarget.querySelector("img") as HTMLImageElement | null;
-                              if (img) img.style.filter = "brightness(0.9) saturate(100%) invert(33%)";
-                            }}
-                          >
-                            <a
-                              href={`https://etherscan.io/tx/${tx.transactionHash}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ color: "#555555", textDecoration: "none", transition: "all 0.2s", fontSize: "0.85rem" }}
-                            >
-                              {tx.transactionHash.slice(0, 6)}...{tx.transactionHash.slice(-4)}
-                            </a>
-                            <a
-                              href={`https://etherscan.io/tx/${tx.transactionHash}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ 
-                                color: "#555555", 
-                                textDecoration: "none",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                fontSize: "0.85rem",
-                                transition: "all 0.2s",
-                              }}
-                              title="View on Etherscan"
-                            >
-                              <img 
-                                src="/staking_rewards_tracker/icons/link_icon.svg" 
-                                alt="View on Etherscan" 
-                                style={{ width: "16px", height: "16px", filter: "brightness(0.9) saturate(100%) invert(33%)", transition: "filter 0.2s" }}
-                              />
-                            </a>
-                          </div>
-                        )}
                       </td>
                     </tr>
                         </React.Fragment>
