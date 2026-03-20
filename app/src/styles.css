@@ -220,6 +220,36 @@ button[style*="background: #2a2a44"]:hover:not([disabled]) { background: #3a3a54
   z-index: 1;
 }
 
+/* Reward type badge tooltip (CL / EL) */
+.reward-type-badge-wrap {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+}
+.reward-type-badge-wrap .reward-type-tooltip {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 8px;
+  padding: 6px 10px;
+  background: #181818;
+  border: 1px solid #2b2b2b;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s, visibility 0.15s;
+  z-index: 1000;
+  pointer-events: none;
+}
+.reward-type-badge-wrap:hover .reward-type-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
 .pressable-button {
   transition: transform 0.07s ease-out;
 }
