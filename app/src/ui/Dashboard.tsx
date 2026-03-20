@@ -1875,11 +1875,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
               {/* Balance, APR, Luck row */}
               <div style={{ marginTop: "4px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                <span>Balance: {activeTracker.validatorBalanceEth != null ? formatNumber(activeTracker.validatorBalanceEth, 6, globalCurrency) : "—"} ETH</span>
+                <span>
+                  Balance:{" "}
+                  <span style={{ fontWeight: 600 }}>
+                    {activeTracker.validatorBalanceEth != null ? formatNumber(activeTracker.validatorBalanceEth, 6, globalCurrency) : "—"}
+                  </span>
+                  <span style={{ fontWeight: 600, fontSize: "0.595rem" }}> ETH</span>
+                </span>
                 <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
-                <span>APR: {activeTracker.validatorApr != null ? `${formatNumber(activeTracker.validatorApr, 2, globalCurrency)}%` : "—"}</span>
+                <span>
+                  APR:{" "}
+                  <span style={{ fontWeight: 600 }}>
+                    {activeTracker.validatorApr != null ? `${formatNumber(activeTracker.validatorApr, 2, globalCurrency)}%` : "—"}
+                  </span>
+                </span>
                 <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
-                <span>Luck: {activeTracker.validatorLuck != null ? `${formatNumber(activeTracker.validatorLuck, 1, globalCurrency)}%` : "—"}</span>
+                <span>
+                  Luck:{" "}
+                  <span style={{ fontWeight: 600 }}>
+                    {activeTracker.validatorLuck != null ? `${formatNumber(activeTracker.validatorLuck, 1, globalCurrency)}%` : "—"}
+                  </span>
+                </span>
               </div>
 
               {/* Income tax rate */}
@@ -1891,9 +1907,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 }}
               >
                 Income tax rate:{" "}
-                {typeof activeTracker.taxRate === "number"
-                  ? `${formatNumber(activeTracker.taxRate, 0, globalCurrency)}%`
-                  : "—"}
+                <span style={{ fontWeight: 600 }}>
+                  {typeof activeTracker.taxRate === "number"
+                    ? `${formatNumber(activeTracker.taxRate, 0, globalCurrency)}%`
+                    : "—"}
+                </span>
               </p>
 
               {/* Filters row: year dropdown + months bar */}
