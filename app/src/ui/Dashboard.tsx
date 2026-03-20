@@ -2276,15 +2276,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                         )}
                       </td>
                       <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "center", whiteSpace: "nowrap" }}>
-                        <span style={{ 
-                          padding: "4px 8px", 
-                          borderRadius: "4px", 
-                          background: tx.rewardType === "CL" ? "#2d55ac" : "#0c86ab",
-                          color: "#f0f0f0",
-                          fontSize: "0.8rem",
-                          fontWeight: 600
-                        }}>
-                          {tx.rewardType === "CL" ? "CL" : "EVM"}
+                        <span
+                          title={tx.rewardType === "CL" ? "Consensus layer income" : "Execution layer income"}
+                          style={{ 
+                            padding: "4px 8px", 
+                            borderRadius: "4px", 
+                            background: tx.rewardType === "CL" ? "#2d55ac" : "#0c86ab",
+                            color: "#f0f0f0",
+                            fontSize: "0.8rem",
+                            fontWeight: 600
+                          }}
+                        >
+                          {tx.rewardType === "CL" ? "CL" : "EL"}
                         </span>
                       </td>
                       <td style={{ padding: "12px", color: "#32c0ea", textAlign: "center" }}>{formatNumber(tx.ethAmount || 0, 6, globalCurrency)}</td>
