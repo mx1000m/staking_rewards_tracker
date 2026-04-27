@@ -235,107 +235,6 @@ async function fetchValidatorOverview(
   return null;
 }
 
-async function fetchValidatorApr(
-  apiKey: string,
-  validatorPublicKey: string
-): Promise<number | null> {
-  const shortKey =
-    validatorPublicKey.length > 18
-      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
-      : validatorPublicKey;
-
-  const maxAttempts = 3;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      const res = await fetch("https://beaconcha.in/api/v2/ethereum/validators/apy-roi", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          validator: { validator_identifiers: [validatorPublicKey] },
-          chain: "mainnet",
-          range: { evaluation_window: "30d" },
-        }),
-      });
-
-      if (res.ok) {
-        const json = (await res.json()) as {
-          data?: { combined?: { apy?: { total?: number } } };
-        };
-        const apr = json.data?.combined?.apy?.total;
-        if (typeof apr === "number" && Number.isFinite(apr)) {
-          console.log(`[fetchValidatorApr] yearly APY for ${shortKey}: ${apr}%`);
-          return apr;
-        }
-      }
-
-      const text = await res.text();
-      if (res.status === 429 && attempt < maxAttempts - 1) {
-        const delayMs = 2000 * Math.pow(2, attempt);
-        console.warn(
-          `[fetchValidatorApr] 429 for ${shortKey}, retrying after ${delayMs}ms`
-        );
-        await new Promise((r) => setTimeout(r, delayMs));
-        continue;
-      }
-      console.warn(`[fetchValidatorApr] failed for ${shortKey}: ${res.status} ${text.slice(0, 150)}`);
-      return null;
-    } catch (e) {
-      console.warn(`[fetchValidatorApr] threw for ${shortKey}:`, e);
-    }
-  }
-  return null;
-}
-
-async function fetchValidatorLuck(
-  apiKey: string,
-  validatorPublicKey: string
-): Promise<number | null> {
-  const shortKey =
-    validatorPublicKey.length > 18
-      ? `${validatorPublicKey.slice(0, 10)}...${validatorPublicKey.slice(-8)}`
-      : validatorPublicKey;
-
-  const maxAttempts = 3;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    try {
-      const url = new URL("https://beaconcha.in/api/v1/validators/proposalLuck");
-      url.searchParams.set("validators", validatorPublicKey);
-      url.searchParams.set("apikey", apiKey);
-
-      const res = await fetch(url.toString());
-
-      if (res.ok) {
-        const json = (await res.json()) as {
-          data?: { proposal_luck?: number };
-        };
-        const luck = json.data?.proposal_luck;
-        if (typeof luck === "number" && Number.isFinite(luck)) {
-          const luckPct = luck * 100;
-          console.log(`[fetchValidatorLuck] proposal luck for ${shortKey}: ${luckPct.toFixed(1)}%`);
-          return luckPct;
-        }
-      }
-
-      const text = await res.text();
-      if (res.status === 429 && attempt < maxAttempts - 1) {
-        const delayMs = 2000 * Math.pow(2, attempt);
-        console.warn(
-          `[fetchValidatorLuck] 429 for ${shortKey}, retrying after ${delayMs}ms`
-        );
-        await new Promise((r) => setTimeout(r, delayMs));
-        continue;
-      }
-      console.warn(`[fetchValidatorLuck] failed for ${shortKey}: ${res.status} ${text.slice(0, 150)}`);
-      return null;
-    } catch (e) {
-      console.warn(`[fetchValidatorLuck] threw for ${shortKey}:`, e);
-    }
-  }
-  return null;
-}
 async function loadEthPrices(): Promise<Record<string, { eur?: number; usd?: number }>> {
   const res = await fetch(ETH_PRICES_URL);
   if (!res.ok) return {};
@@ -517,12 +416,6 @@ async function processTracker(
     const overview = await fetchValidatorOverview(beaconApiKey, validatorPublicKey);
     await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
 
-    const apr = await fetchValidatorApr(beaconApiKey, validatorPublicKey);
-    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
-
-    const luck = await fetchValidatorLuck(beaconApiKey, validatorPublicKey);
-    await new Promise((r) => setTimeout(r, RATE_LIMIT_MS));
-
     const updateData: Record<string, unknown> = {
       beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
     };
@@ -535,20 +428,14 @@ async function processTracker(
     if (overview?.withdrawalAddress) {
       updateData.walletAddress = overview.withdrawalAddress;
     }
-    if (typeof apr === "number") {
-      updateData.validatorApr = apr;
-    }
-    if (typeof luck === "number") {
-      updateData.validatorLuck = luck;
-    }
     await trackerRef.update(updateData);
     console.log(
       `  [${trackerId}] Updated validatorStatus=${overview?.status ?? "n/a"}, balanceEth=${
         updateData.validatorBalanceEth ?? "n/a"
-      }, apr=${updateData.validatorApr ?? "n/a"}, luck=${updateData.validatorLuck ?? "n/a"}`
+      }`
     );
   } catch (e) {
-    console.warn(`  [${trackerId}] validator overview/apr/luck failed:`, e);
+    console.warn(`  [${trackerId}] validator overview update failed:`, e);
   }
 
   return written;

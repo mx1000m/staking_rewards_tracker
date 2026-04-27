@@ -1871,7 +1871,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                 </span>
               </div>
 
-              {/* Balance, APR, Luck row */}
+              {/* Balance row */}
               <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#aaaaaa" }}>
                 <span>
                   Balance:{" "}
@@ -1879,20 +1879,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
                     {activeTracker.validatorBalanceEth != null ? formatNumber(activeTracker.validatorBalanceEth, 6, globalCurrency) : "—"}
                   </span>
                   <span style={{ fontWeight: 600, fontSize: "0.595rem", color: "#d4d4d4" }}> ETH</span>
-                </span>
-                <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
-                <span>
-                  APR:{" "}
-                  <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
-                    {activeTracker.validatorApr != null ? `${formatNumber(activeTracker.validatorApr, 2, globalCurrency)}%` : "—"}
-                  </span>
-                </span>
-                <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
-                <span>
-                  Luck:{" "}
-                  <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
-                    {activeTracker.validatorLuck != null ? `${formatNumber(activeTracker.validatorLuck, 1, globalCurrency)}%` : "—"}
-                  </span>
                 </span>
               </div>
 

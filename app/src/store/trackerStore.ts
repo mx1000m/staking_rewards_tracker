@@ -24,8 +24,6 @@ export interface Tracker {
   lastSyncedEpoch?: number | null;
   validatorStatus?: string; // e.g. active_ongoing
   validatorBalanceEth?: number;
-  validatorApr?: number; // Yearly APR % from beacon-sync
-  validatorLuck?: number; // Proposal luck % (0-100) from beacon-sync
 }
 
 interface TrackerStore {
