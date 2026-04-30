@@ -3,6 +3,9 @@ name: Populate Historical ETH Prices
 on:
   workflow_dispatch: # Manual trigger only (one-time migration)
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   contents: write # Need write to commit price JSON file
 
