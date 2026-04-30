@@ -14,9 +14,21 @@ const DUNE_API_KEY = process.env.DUNE_API_KEY || "";
 const DUNE_QUERY_ID_CL = process.env.DUNE_QUERY_ID_CL || "";
 const DUNE_QUERY_ID_EL = process.env.DUNE_QUERY_ID_EL || "";
 const DUNE_QUERY_ID_EL_FALLBACK = process.env.DUNE_QUERY_ID_EL_FALLBACK || "";
+const BOOTSTRAP_UID = process.env.BOOTSTRAP_UID || "";
+const BOOTSTRAP_TRACKER_ID = process.env.BOOTSTRAP_TRACKER_ID || "tracker-primary";
+const BOOTSTRAP_TRACKER_NAME = process.env.BOOTSTRAP_TRACKER_NAME || "Validator";
+const BOOTSTRAP_WALLET_ADDRESS = process.env.BOOTSTRAP_WALLET_ADDRESS || "";
+const BOOTSTRAP_TAX_RATE = Number(process.env.BOOTSTRAP_TAX_RATE || "24");
+const BOOTSTRAP_COUNTRY = process.env.BOOTSTRAP_COUNTRY || "Croatia";
+const BOOTSTRAP_CURRENCY = (process.env.BOOTSTRAP_CURRENCY || "EUR").toUpperCase() === "USD" ? "USD" : "EUR";
+const BOOTSTRAP_MEV_MODE = process.env.BOOTSTRAP_MEV_MODE || "direct";
 
 interface TrackerDoc {
   id: string;
+  name?: string;
+  walletAddress?: string;
+  currency?: "EUR" | "USD";
+  country?: string;
   taxRate?: number;
   lastClSyncDateKey?: string | null;
   mevMode?: string;
@@ -139,6 +151,10 @@ async function processTracker(
 
   const dateKeys = Array.from(new Set([...Object.keys(clByDate), ...Object.keys(elByDate)])).sort();
   for (const dateKey of dateKeys) {
+    if (lastDate && dateKey <= lastDate) {
+      continue;
+    }
+
     const endTs = Math.floor(new Date(`${dateKey}T12:00:00Z`).getTime() / 1000);
     const priceEntry = prices[dateKey];
     const ethPriceEUR = priceEntry?.eur ?? 0;
@@ -164,7 +180,6 @@ async function processTracker(
       };
       await txsRef.doc(clHash).set(clDoc, { merge: true });
       written += 1;
-      lastDate = dateKey;
     }
 
     const elAmount = elByDate[dateKey] ?? 0;
@@ -188,6 +203,10 @@ async function processTracker(
       await txsRef.doc(elHash).set(elDoc, { merge: true });
       written += 1;
     }
+
+    if (clAmount > 0 || (elAmount > 0 && mevMode === "direct")) {
+      lastDate = dateKey;
+    }
   }
 
   await trackerRef.update({
@@ -198,6 +217,44 @@ async function processTracker(
   return written;
 }
 
+async function ensureBootstrapTracker(): Promise<void> {
+  if (!BOOTSTRAP_UID || !BOOTSTRAP_WALLET_ADDRESS) {
+    return;
+  }
+
+  const userRef = db.collection("users").doc(BOOTSTRAP_UID);
+  const trackerRef = userRef.collection("trackers").doc(BOOTSTRAP_TRACKER_ID);
+
+  const userSnap = await userRef.get();
+  if (!userSnap.exists) {
+    await userRef.set({ createdAt: FieldValue.serverTimestamp() }, { merge: true });
+  }
+
+  const trackerSnap = await trackerRef.get();
+  if (!trackerSnap.exists) {
+    const createdAt = Date.now();
+    await trackerRef.set(
+      {
+        name: BOOTSTRAP_TRACKER_NAME,
+        walletAddress: BOOTSTRAP_WALLET_ADDRESS,
+        feeRecipientAddress: BOOTSTRAP_WALLET_ADDRESS,
+        currency: BOOTSTRAP_CURRENCY,
+        country: BOOTSTRAP_COUNTRY,
+        taxRate: Number.isFinite(BOOTSTRAP_TAX_RATE) ? BOOTSTRAP_TAX_RATE : 24,
+        etherscanKey: "",
+        createdAt,
+        mevMode: BOOTSTRAP_MEV_MODE,
+        lastClSyncDateKey: null,
+        beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+    console.log(
+      `Bootstrapped tracker ${BOOTSTRAP_TRACKER_ID} for user ${BOOTSTRAP_UID}.`
+    );
+  }
+}
+
 async function main() {
   if (!DUNE_API_KEY || !DUNE_QUERY_ID_CL || (!DUNE_QUERY_ID_EL && !DUNE_QUERY_ID_EL_FALLBACK)) {
     throw new Error(
@@ -206,6 +263,7 @@ async function main() {
   }
 
   console.log("Dune sync starting...");
+  await ensureBootstrapTracker();
   const prices = await loadEthPrices();
   console.log(`Loaded ${Object.keys(prices).length} date keys from ETH prices.`);
 

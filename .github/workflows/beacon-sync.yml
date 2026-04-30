@@ -33,4 +33,12 @@ jobs:
           DUNE_QUERY_ID_CL: ${{ secrets.DUNE_QUERY_ID_CL }}
           DUNE_QUERY_ID_EL: ${{ secrets.DUNE_QUERY_ID_EL }}
           DUNE_QUERY_ID_EL_FALLBACK: ${{ secrets.DUNE_QUERY_ID_EL_FALLBACK }}
+          BOOTSTRAP_UID: ${{ secrets.BOOTSTRAP_UID }}
+          BOOTSTRAP_TRACKER_ID: ${{ secrets.BOOTSTRAP_TRACKER_ID }}
+          BOOTSTRAP_TRACKER_NAME: ${{ secrets.BOOTSTRAP_TRACKER_NAME }}
+          BOOTSTRAP_WALLET_ADDRESS: ${{ secrets.BOOTSTRAP_WALLET_ADDRESS }}
+          BOOTSTRAP_TAX_RATE: ${{ secrets.BOOTSTRAP_TAX_RATE }}
+          BOOTSTRAP_COUNTRY: ${{ secrets.BOOTSTRAP_COUNTRY }}
+          BOOTSTRAP_CURRENCY: ${{ secrets.BOOTSTRAP_CURRENCY }}
+          BOOTSTRAP_MEV_MODE: ${{ secrets.BOOTSTRAP_MEV_MODE }}
         run: npx tsx scripts/beacon-sync.ts
