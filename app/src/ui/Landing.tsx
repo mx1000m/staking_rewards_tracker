@@ -2,10 +2,14 @@ import React, { useMemo } from "react";
 import TubesCursorComponent from "../framer/TubesCursorComponent";
 
 interface LandingProps {
-  onSignInClick: () => void;
+  onSignIn: (email: string, password: string) => void;
+  signingIn: boolean;
+  error: string | null;
 }
 
-export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
+export const Landing: React.FC<LandingProps> = ({ onSignIn, signingIn, error }) => {
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
   const tubeColors = useMemo(
     () => ["#f967fb", "#60aed5", "#8b5cf6"],
     []
@@ -88,7 +92,8 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
           Your staking rewards, perfectly logged.
         </p>
         <button
-          onClick={onSignInClick}
+          onClick={() => onSignIn(email.trim(), password)}
+          disabled={signingIn || !email.trim() || !password}
           style={{
             background: "#ffffff",
             border: "none",
@@ -101,6 +106,7 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
             transition: "all 0.3s ease",
             boxShadow: "0 4px 20px rgba(255, 255, 255, 0.2)",
             marginTop: "8px",
+            opacity: signingIn || !email.trim() || !password ? 0.6 : 1,
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = "scale(1.05)";
@@ -111,8 +117,41 @@ export const Landing: React.FC<LandingProps> = ({ onSignInClick }) => {
             e.currentTarget.style.boxShadow = "0 4px 20px rgba(255, 255, 255, 0.2)";
           }}
         >
-          Sign in
+          {signingIn ? "Signing in..." : "Sign in"}
         </button>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "min(420px, 90vw)" }}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            style={{
+              padding: "12px 14px",
+              borderRadius: "10px",
+              border: "1px solid rgba(255,255,255,0.35)",
+              background: "rgba(255,255,255,0.08)",
+              color: "#ffffff",
+              outline: "none",
+            }}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={{
+              padding: "12px 14px",
+              borderRadius: "10px",
+              border: "1px solid rgba(255,255,255,0.35)",
+              background: "rgba(255,255,255,0.08)",
+              color: "#ffffff",
+              outline: "none",
+            }}
+          />
+        </div>
+        {error && (
+          <p style={{ margin: 0, color: "#ffd4d4", fontSize: "0.9rem", maxWidth: "500px" }}>{error}</p>
+        )}
       </div>
     </div>
   );

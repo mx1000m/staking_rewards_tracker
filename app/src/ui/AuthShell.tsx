@@ -3,7 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { Landing } from "./Landing";
 
 export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-	const { user, loading, signInWithGoogle, signInWithGitHub, logout } = useAuth();
+	const { user, loading, signInWithEmail, logout } = useAuth();
 	const [error, setError] = useState<string | null>(null);
 	const [signingIn, setSigningIn] = useState(false);
 	const [userMenuVisible, setUserMenuVisible] = useState(false);
@@ -19,61 +19,23 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	const accentBlue = "#24a7fd";
 	const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
 
-	const handleGoogleSignIn = async () => {
+	const allowedEmail = (import.meta.env.VITE_ALLOWED_EMAIL || "").toLowerCase().trim();
+
+	const handleEmailSignIn = async (email: string, password: string) => {
 		setSigningIn(true);
 		setError(null);
-		
-		// Safety timeout: reset state after 5 seconds max (in case Firebase is slow to detect popup closure)
-		const timeout = setTimeout(() => {
-			setSigningIn(false);
-		}, 5000);
-		
+
 		try {
-			await signInWithGoogle();
-			clearTimeout(timeout);
+			await signInWithEmail(email, password);
+			if (allowedEmail && email.toLowerCase().trim() !== allowedEmail) {
+				await logout();
+				throw new Error("This account is not authorized for this app.");
+			}
 			setSigningIn(false);
 		} catch (err: any) {
-			clearTimeout(timeout);
-			// Don't show error if user closed the popup
-			if (err.code === "auth/popup-closed-by-user") {
-				// User closed popup, reset state immediately
-				setSigningIn(false);
-				return;
-			}
-			setError(err.message || "Failed to sign in with Google");
+			setError(err.message || "Failed to sign in");
 			setSigningIn(false);
 		}
-	};
-
-	const handleGitHubSignIn = async () => {
-		setSigningIn(true);
-		setError(null);
-		
-		// Safety timeout: reset state after 5 seconds max (in case Firebase is slow to detect popup closure)
-		const timeout = setTimeout(() => {
-			setSigningIn(false);
-		}, 5000);
-		
-		try {
-			await signInWithGitHub();
-			clearTimeout(timeout);
-			setSigningIn(false);
-		} catch (err: any) {
-			clearTimeout(timeout);
-			// Don't show error if user closed the popup
-			if (err.code === "auth/popup-closed-by-user") {
-				// User closed popup, reset state immediately
-				setSigningIn(false);
-				return;
-			}
-			setError(err.message || "Failed to sign in with GitHub");
-			setSigningIn(false);
-		}
-	};
-
-	const handleWalletConnect = () => {
-		// TODO: Implement wallet connect
-		alert("Wallet connect (to be wired)");
 	};
 
 	const openUserMenu = () => {
@@ -419,10 +381,9 @@ export const AuthShell: React.FC<{ children: React.ReactNode }> = ({ children })
 	// User is not signed in: show Solobeam landing with Tubes cursor
 	return (
 		<Landing
-			onSignInClick={() => {
-				// For now open Google as primary; we can expand to a modal later
-				handleGoogleSignIn();
-			}}
+			onSignIn={handleEmailSignIn}
+			signingIn={signingIn}
+			error={error}
 		/>
 	);
 };

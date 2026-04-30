@@ -26,4 +26,8 @@ jobs:
       - name: Run beacon sync
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          DUNE_API_KEY: ${{ secrets.DUNE_API_KEY }}
+          DUNE_QUERY_ID_CL: ${{ secrets.DUNE_QUERY_ID_CL }}
+          DUNE_QUERY_ID_EL: ${{ secrets.DUNE_QUERY_ID_EL }}
+          DUNE_QUERY_ID_EL_FALLBACK: ${{ secrets.DUNE_QUERY_ID_EL_FALLBACK }}
         run: npx tsx scripts/beacon-sync.ts

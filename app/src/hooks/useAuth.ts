@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
-import { User, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import { auth, googleProvider, githubProvider } from "../config/firebase";
+import {
+  User,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+} from "firebase/auth";
+import { auth } from "../config/firebase";
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -15,20 +20,11 @@ export const useAuth = () => {
     return unsubscribe;
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithEmail = async (email: string, password: string) => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-      console.error("Google sign-in error:", error);
-      throw error;
-    }
-  };
-
-  const signInWithGitHub = async () => {
-    try {
-      await signInWithPopup(auth, githubProvider);
-    } catch (error) {
-      console.error("GitHub sign-in error:", error);
+      console.error("Email sign-in error:", error);
       throw error;
     }
   };
@@ -45,8 +41,7 @@ export const useAuth = () => {
   return {
     user,
     loading,
-    signInWithGoogle,
-    signInWithGitHub,
+    signInWithEmail,
     logout,
     isAuthenticated: !!user,
   };

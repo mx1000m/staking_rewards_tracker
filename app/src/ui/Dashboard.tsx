@@ -43,11 +43,7 @@ interface Transaction extends Omit<CachedTransaction, 'rewardsInCurrency' | 'tax
   taxesInCurrency?: number;
 }
 
-interface DashboardProps {
-  onAddTracker?: () => void;
-}
-
-export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
+export const Dashboard: React.FC = () => {
   const { trackers, activeTrackerId, setActiveTracker, currency: globalCurrency } = useTrackerStore();
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -84,6 +80,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
   const [ethPricesLoaded, setEthPricesLoaded] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
+
+  useEffect(() => {
+    if (!activeTrackerId && trackers.length > 0) {
+      setActiveTracker(trackers[0].id);
+    }
+  }, [activeTrackerId, trackers, setActiveTracker]);
 
   // Normalized validator status label for display
   const validatorStatusLabel = (() => {
@@ -1422,106 +1424,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
 
   return (
     <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
-      {/* Your validators */}
-      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validators</h3>
+      {/* Your validator */}
+      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validator</h3>
       <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
         <div style={{ borderRadius: "13px", padding: "24px" }}>
           {trackers.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 20px" }}>
-              <h2 style={{ margin: 0, marginBottom: "8px", color: "#f0f0f0", fontSize: "1.5rem", fontWeight: 600 }}>
-                No trackers yet
-              </h2>
-              <p style={{ margin: 0, marginBottom: "24px", color: "#aaaaaa", fontSize: "0.9rem" }}>
-                Create your first validator tracker to get started.
-              </p>
-              <button
-                onClick={() => onAddTracker?.()}
-                style={{
-                  background: "#555555",
-                  border: "none",
-                  borderRadius: "10px",
-                  padding: "10px 20px",
-                  color: "#f0f0f0",
-                  textTransform: "none",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "background 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#666666";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#555555";
-                }}
-              >
-                Add a validator tracker
-              </button>
+            <div style={{ textAlign: "center", padding: "20px", color: "#aaaaaa" }}>
+              No validator configured for this account yet.
             </div>
           ) : (
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
-              {trackers.map((tracker) => (
-                <button
-                  key={tracker.id}
-                  onClick={() => setActiveTracker(tracker.id)}
-                  style={{
-                    background: activeTrackerId === tracker.id ? "#555555" : "#2b2b2b",
-                    padding: "12px 20px",
-                    border: "none",
-                    borderRadius: "10px",
-                    color: activeTrackerId === tracker.id ? "white" : "#aaaaaa",
-                    cursor: "pointer",
-                    fontWeight: activeTrackerId === tracker.id ? 600 : 400,
-                    transition: "background 0.2s, color 0.2s, transform 0.2s",
-                    transitionProperty: "background, color, transform",
-                    position: "relative",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (activeTrackerId !== tracker.id) {
-                      e.currentTarget.style.background = "#383838";
-                      e.currentTarget.style.transform = "scale(1.05)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTrackerId !== tracker.id) {
-                      e.currentTarget.style.background = "#2b2b2b";
-                      e.currentTarget.style.transform = "scale(1)";
-                    }
-                  }}
-                >
-                  <span
-                    style={{
-                      fontWeight: 600,
-                      visibility: "hidden",
-                      position: "absolute",
-                      whiteSpace: "nowrap",
-                      pointerEvents: "none",
-                    }}
-                  >
-                    {tracker.name || `Validator ${tracker.walletAddress.slice(0, 6)}...`}
-                  </span>
-                  <span style={{ fontWeight: 600 }}>
-                    {tracker.name || `Validator ${tracker.walletAddress.slice(0, 6)}...`}
-                  </span>
-                </button>
-              ))}
-              {onAddTracker && (
-                <button
-                  onClick={onAddTracker}
-                  style={{
-                    background: "transparent",
-                    padding: "12px 20px",
-                    border: "1px solid #555555",
-                    borderRadius: "10px",
-                    color: "#aaaaaa",
-                    cursor: "pointer",
-                    fontWeight: 400,
-                    transition: "all 0.2s",
-                    textTransform: "none",
-                  }}
-                >
-                  + Add validator tracker
-                </button>
-              )}
+            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+              <button
+                onClick={() => setActiveTracker(trackers[0].id)}
+                style={{
+                  background: "#555555",
+                  padding: "12px 20px",
+                  border: "none",
+                  borderRadius: "10px",
+                  color: "white",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                {trackers[0].name || `Validator ${trackers[0].walletAddress.slice(0, 6)}...`}
+              </button>
             </div>
           )}
         </div>
@@ -2583,23 +2509,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onAddTracker }) => {
           tracker={activeTracker}
           onClose={() => setShowSettings(false)}
           onSaved={async () => {
-            // Get the updated tracker from the store
             const { trackers } = useTrackerStore.getState();
             const updatedTracker = trackers.find((t) => t.id === activeTracker.id);
             if (updatedTracker) {
-              // Check if wallet address or fee recipient changed (requires refetch)
-              const walletChanged = updatedTracker.walletAddress.toLowerCase() !== activeTracker.walletAddress.toLowerCase();
-              const feeRecipientChanged = (updatedTracker.feeRecipientAddress || "") !== (activeTracker.feeRecipientAddress || "");
-              
-              if (walletChanged || feeRecipientChanged) {
-                // Wallet or fee recipient changed - need to refetch transactions
-                setTransactions([]);
-                await fetchTransactions(updatedTracker, true);
-              } else {
-                // Only currency or other settings changed - just reload from cache
-                // Prices are already stored in transactions (ethPriceEUR, ethPriceUSD)
-                await loadTransactions(updatedTracker);
-              }
+              await loadTransactions(updatedTracker);
             }
           }}
         />
