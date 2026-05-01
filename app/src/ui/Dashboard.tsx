@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
-import { getTransactions, getMevPoolPayoutTransactions, EtherscanTransaction } from "../api/etherscan";
+import { EtherscanTransaction } from "../api/etherscan";
 import { getDateKey } from "../utils/priceCache";
 
 // Country to timezone mapping
@@ -27,7 +27,6 @@ import {
   getFirestoreTransactions,
   saveFirestoreTransactionsBatch,
   updateFirestoreTransactionStatus,
-  hasFirestoreTransactionsForYear,
 } from "../utils/firestoreAdapter";
 
 // ETH prices are now stored in GitHub, not Firestore
@@ -612,65 +611,15 @@ export const Dashboard: React.FC = () => {
       // Use fee recipient address if provided, otherwise default to withdrawal address
       const feeRecipientAddress = tracker.feeRecipientAddress || tracker.walletAddress;
       
-      // ===== Execution-layer (EVM) rewards via Etherscan =====
-      // Respect execution rewards mode:
-      // - "none": do not track any EVM income at all.
-      // - "direct": track EVM rewards via fee recipient / withdrawal address (current behavior).
-      // - "pool" / "mixed": MEV pool support will be added later; keep API surface but skip for now if no payout address.
+      // In Dune mode we rely entirely on Firestore transactions populated by beacon-sync.
+      // Keep these arrays for compatibility with the existing processing pipeline.
       let etherscanTxs: EtherscanTransaction[] = [];
       let mevPoolTxs: EtherscanTransaction[] = [];
-
-      // For execution rewards mode "direct" (Priority fees and/or MEV rewards), we now rely
-      // entirely on Beaconcha aggregates written by beacon-sync into Firestore. Skip Etherscan
-      // in that case to avoid duplicate data and unnecessary API usage.
-      const shouldUseEtherscan =
-        tracker.mevMode !== "none" &&
-        tracker.mevMode !== "direct" &&
-        !!tracker.etherscanKey;
-
-      if (shouldUseEtherscan) {
-        console.log("Fetching EVM transactions for:", {
-          withdrawalAddress: tracker.walletAddress,
-          feeRecipientAddress: feeRecipientAddress,
-          year: targetYear,
-          from: new Date(startTimestamp * 1000).toLocaleDateString()
-        });
-
-        try {
-          etherscanTxs = await getTransactions(
-            tracker.walletAddress,
-            feeRecipientAddress,
-            tracker.etherscanKey,
-            startTimestamp
-          );
-        } catch (e) {
-          console.error("Failed to fetch EVM transactions from Etherscan:", e);
-          // Leave etherscanTxs empty; CL rewards from Firestore will still be shown.
-        }
-
-        if (
-          (tracker.mevMode === "pool" || tracker.mevMode === "mixed") &&
-          tracker.mevPoolPayoutAddress
-        ) {
-          try {
-            mevPoolTxs = await getMevPoolPayoutTransactions(
-              tracker.mevPoolPayoutAddress,
-              tracker.etherscanKey,
-              startTimestamp
-            );
-          } catch (e) {
-            console.warn("Failed to fetch MEV pool payouts from Etherscan:", e);
-          }
-        }
-      } else {
-        console.log(
-          "Skipping EVM transaction fetch because execution rewards mode is 'none' or 'direct', or no Etherscan key is provided."
-        );
-      }
+      console.log("Skipping EVM transaction fetch; using Firestore-synced Dune data only.");
 
       // CL (beacon-chain) rewards are synced by the beacon-sync GitHub Action; load from Firestore only.
       let clFromFirestore: CachedTransaction[] = [];
-      if (user && tracker.validatorPublicKey) {
+      if (user) {
         try {
           const allFirestore = await getFirestoreTransactions(user.uid, tracker.id);
           console.log(
@@ -707,7 +656,7 @@ export const Dashboard: React.FC = () => {
         return txTimestamp >= startTimestamp && txTimestamp <= endTimestamp;
       });
       
-      console.log(`Found ${yearTxs.length} transactions for year ${targetYear} (out of ${etherscanTxs.length} total)`);
+      console.log(`Found ${yearTxs.length} transactions for year ${targetYear} (out of ${allRawTxs.length} total)`);
       
       // Set initial progress (will be updated during price fetching and transaction processing)
       // Total represents transactions, but progress includes price fetches too
@@ -1015,44 +964,12 @@ export const Dashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethPricesLoaded, filteredTransactions, activeTrackerId, transactions.length]);
 
-  // Fetch transactions when year changes (if we don't have data for that year)
+  // Reload transactions when year changes, using Firestore/cache only.
   React.useEffect(() => {
     if (activeTracker && user) {
-      // Check if we have transactions for the selected year in our current transactions
-      const hasTransactionsForYear = transactions.some((tx) => {
-        const txYear = new Date(tx.timestamp * 1000).getFullYear();
-        return txYear === selectedYear;
+      loadTransactions(activeTracker).catch((error) => {
+        console.error("Failed to reload transactions on year change:", error);
       });
-      
-      // If we don't have transactions for this year, check Firestore first, then fetch from Etherscan if needed
-      if (!hasTransactionsForYear) {
-        console.log(`No transactions found for ${selectedYear} in current state, checking Firestore...`);
-        
-        // Check Firestore first
-        hasFirestoreTransactionsForYear(user.uid, activeTracker.id, selectedYear)
-          .then((hasInFirestore) => {
-            if (hasInFirestore) {
-              // Firestore has transactions for this year, reload from Firestore
-              console.log(`Found transactions for ${selectedYear} in Firestore, loading...`);
-              loadTransactions(activeTracker).catch((error) => {
-                console.error("Failed to load transactions from Firestore:", error);
-              });
-            } else {
-              // Firestore doesn't have transactions for this year, fetch from Etherscan
-              console.log(`No transactions for ${selectedYear} in Firestore, fetching from Etherscan...`);
-              fetchTransactions(activeTracker, false, selectedYear).catch((error) => {
-                console.error("Failed to fetch transactions for year:", error);
-              });
-            }
-          })
-          .catch((error) => {
-            console.error("Error checking Firestore for year:", error);
-            // On error, try fetching from Etherscan anyway
-            fetchTransactions(activeTracker, false, selectedYear).catch((fetchError) => {
-              console.error("Failed to fetch transactions for year:", fetchError);
-            });
-          });
-      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, activeTrackerId]);
