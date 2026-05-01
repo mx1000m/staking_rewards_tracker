@@ -92,6 +92,7 @@ const transactionToFirestore = (tx: CachedTransaction): any => ({
   epochEnd: typeof tx.epochEnd === "number" ? tx.epochEnd : null,
   validatorBalanceEth:
     typeof tx.validatorBalanceEth === "number" ? tx.validatorBalanceEth : null,
+  topUpEth: typeof tx.topUpEth === "number" ? tx.topUpEth : null,
   updatedAt: serverTimestamp(),
   // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly
 });
@@ -120,6 +121,7 @@ const firestoreToTransaction = (data: any, txHash: string): CachedTransaction =>
     epochEnd: typeof data.epochEnd === "number" ? data.epochEnd : undefined,
     validatorBalanceEth:
       typeof data.validatorBalanceEth === "number" ? data.validatorBalanceEth : undefined,
+    topUpEth: typeof data.topUpEth === "number" ? data.topUpEth : undefined,
     // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly
   };
 };
@@ -373,6 +375,8 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
         lastSyncedEpoch: data.lastSyncedEpoch ?? undefined,
         validatorStatus: data.validatorStatus || undefined,
         validatorBalanceEth: data.validatorBalanceEth ?? undefined,
+        topUpsCount: typeof data.topUpsCount === "number" ? data.topUpsCount : undefined,
+        topUpsEthTotal: typeof data.topUpsEthTotal === "number" ? data.topUpsEthTotal : undefined,
       });
     });
     

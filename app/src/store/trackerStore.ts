@@ -24,6 +24,8 @@ export interface Tracker {
   lastSyncedEpoch?: number | null;
   validatorStatus?: string; // e.g. active_ongoing
   validatorBalanceEth?: number;
+  topUpsCount?: number;
+  topUpsEthTotal?: number;
 }
 
 interface TrackerStore {

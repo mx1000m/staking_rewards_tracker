@@ -48,6 +48,7 @@ interface DuneResultResponse {
 interface DailyClData {
   rewardEth: number;
   endBalanceEth?: number;
+  topUpEth: number;
 }
 
 function toDateKey(value: unknown): string | null {
@@ -99,9 +100,12 @@ function buildClByDate(rows: DuneResultRow[]): Record<string, DailyClData> {
     if (!dateKey) continue;
     const rewardEth = asNumber(row.cl_reward_eth);
     const endBalanceEth = asNumber(row.end_balance_eth);
+    const capitalChangeEth = asNumber(row.capital_change_eth);
+    const topUpEth = capitalChangeEth > 0 ? capitalChangeEth : 0;
     out[dateKey] = {
       rewardEth,
       endBalanceEth: Number.isFinite(endBalanceEth) ? endBalanceEth : undefined,
+      topUpEth,
     };
   }
   return out;
@@ -156,8 +160,11 @@ async function processTracker(
   const trackerRef = db.collection("users").doc(uid).collection("trackers").doc(trackerId);
   const txsRef = trackerRef.collection("transactions");
   let written = 0;
+  let backfilled = 0;
   let lastDate = tracker.lastClSyncDateKey ?? null;
   let latestValidatorBalanceEth: number | null = null;
+  let topUpsCount = 0;
+  let topUpsEthTotal = 0;
 
   const latestClDate = Object.keys(clByDate).sort().at(-1);
   if (latestClDate) {
@@ -170,12 +177,17 @@ async function processTracker(
       latestValidatorBalanceEth = latestClData.endBalanceEth;
     }
   }
+  for (const dateKey of Object.keys(clByDate)) {
+    const topUpEth = clByDate[dateKey]?.topUpEth ?? 0;
+    if (topUpEth > 0) {
+      topUpsCount += 1;
+      topUpsEthTotal += topUpEth;
+    }
+  }
 
   const dateKeys = Array.from(new Set([...Object.keys(clByDate), ...Object.keys(elByDate)])).sort();
   for (const dateKey of dateKeys) {
-    if (lastDate && dateKey <= lastDate) {
-      continue;
-    }
+    const isAlreadySyncedDate = Boolean(lastDate && dateKey <= lastDate);
 
     const endTs = Math.floor(new Date(`${dateKey}T12:00:00Z`).getTime() / 1000);
     const priceEntry = prices[dateKey];
@@ -184,33 +196,42 @@ async function processTracker(
 
     const clData = clByDate[dateKey];
     const clAmount = clData?.rewardEth ?? 0;
+    const topUpEth = clData?.topUpEth ?? 0;
     if (clData && typeof clData.endBalanceEth === "number" && Number.isFinite(clData.endBalanceEth)) {
       latestValidatorBalanceEth = clData.endBalanceEth;
     }
     if (clAmount > 0) {
       const clHash = `cl_${trackerId}_${dateKey}`;
-      const clDoc: Record<string, unknown> = {
-        date: dateKey,
-        time: "12:00:00",
-        ethAmount: clAmount,
-        ethPriceEUR,
-        ethPriceUSD,
-        ethPrice: ethPriceEUR || ethPriceUSD,
-        taxRate,
-        taxesInEth: clAmount * (taxRate / 100),
-        transactionHash: clHash,
-        status: "Unpaid",
-        timestamp: endTs,
-        rewardType: "CL",
-        validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
-        updatedAt: FieldValue.serverTimestamp(),
-      };
+      const clDoc: Record<string, unknown> = isAlreadySyncedDate
+        ? {
+            validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
+            topUpEth,
+            updatedAt: FieldValue.serverTimestamp(),
+          }
+        : {
+            date: dateKey,
+            time: "12:00:00",
+            ethAmount: clAmount,
+            ethPriceEUR,
+            ethPriceUSD,
+            ethPrice: ethPriceEUR || ethPriceUSD,
+            taxRate,
+            taxesInEth: clAmount * (taxRate / 100),
+            transactionHash: clHash,
+            status: "Unpaid",
+            timestamp: endTs,
+            rewardType: "CL",
+            validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
+            topUpEth,
+            updatedAt: FieldValue.serverTimestamp(),
+          };
       await txsRef.doc(clHash).set(clDoc, { merge: true });
-      written += 1;
+      if (isAlreadySyncedDate) backfilled += 1;
+      else written += 1;
     }
 
     const elAmount = elByDate[dateKey] ?? 0;
-    if (elAmount > 0 && mevMode === "direct") {
+    if (!isAlreadySyncedDate && elAmount > 0 && mevMode === "direct") {
       const elHash = `el_${trackerId}_${dateKey}`;
       const elDoc: Record<string, unknown> = {
         date: dateKey,
@@ -239,9 +260,14 @@ async function processTracker(
   await trackerRef.update({
     lastClSyncDateKey: lastDate,
     ...(latestValidatorBalanceEth != null ? { validatorBalanceEth: latestValidatorBalanceEth } : {}),
+    topUpsCount,
+    topUpsEthTotal,
     beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
   });
 
+  if (backfilled > 0) {
+    console.log(`Backfilled ${backfilled} historical CL rows for tracker ${trackerId}.`);
+  }
   return written;
 }
 

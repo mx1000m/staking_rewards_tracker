@@ -1112,6 +1112,13 @@ export const Dashboard: React.FC = () => {
   // ETH totals include all transactions (pending or not)
   const totalEthRewards = filteredTransactions.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
   const totalEthTaxes = filteredTransactions.reduce((sum, tx) => sum + (tx.taxesInEth || 0), 0);
+  const totalTopUpsCount = filteredTransactions.reduce((sum, tx) => {
+    const topUpEth = tx.rewardType === "CL" ? (tx.topUpEth || 0) : 0;
+    return topUpEth > 0 ? sum + 1 : sum;
+  }, 0);
+  const totalTopUpsEth = filteredTransactions.reduce((sum, tx) => {
+    return sum + (tx.rewardType === "CL" ? (tx.topUpEth || 0) : 0);
+  }, 0);
   
   // Capital gains tax‑free amounts for the active tracker (Croatia: rewards held ≥ 2 years)
   const nowForCgt = new Date();
@@ -1203,6 +1210,7 @@ export const Dashboard: React.FC = () => {
       "Epochs",
       "Reward type",
       "Reward (ETH)",
+      "Top up (ETH)",
       "Validator balance (ETH)",
       `ETH price (${currencySymbol})`,
       `Value in ${currencyCode} (${currencySymbol})`,
@@ -1223,6 +1231,9 @@ export const Dashboard: React.FC = () => {
         epochsLabel,
         tx.rewardType || "EVM",
         formatNumber(tx.ethAmount || 0, 6, globalCurrency),
+        tx.rewardType === "CL" && typeof tx.topUpEth === "number" && tx.topUpEth > 0
+          ? formatNumber(tx.topUpEth, 6, globalCurrency)
+          : "",
         tx.rewardType === "CL" && typeof tx.validatorBalanceEth === "number"
           ? formatNumber(tx.validatorBalanceEth, 6, globalCurrency)
           : "",
@@ -1234,6 +1245,9 @@ export const Dashboard: React.FC = () => {
     
     // Calculate totals for the summary row
     const totalEthRewards = yearTransactions.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
+    const totalTopUpsEth = yearTransactions.reduce((sum, tx) => {
+      return sum + (tx.rewardType === "CL" ? (tx.topUpEth || 0) : 0);
+    }, 0);
     const totalRewardsInCurrency = yearTransactions.reduce((sum, tx) => {
       return sum + getRewardsInCurrency(tx, globalCurrency);
     }, 0);
@@ -1248,6 +1262,7 @@ export const Dashboard: React.FC = () => {
       "",
       "",
       formatNumber(totalEthRewards, 6, globalCurrency),
+      formatNumber(totalTopUpsEth, 6, globalCurrency),
       "",
       "",
       formatNumber(totalRewardsInCurrency, 2, globalCurrency),
@@ -1260,6 +1275,8 @@ export const Dashboard: React.FC = () => {
     const trackerTaxRate = activeTracker.taxRate ?? 0;
     const beaconPubKey = activeTracker.validatorPublicKey || "";
     const validatorWithdrawalAddress = activeTracker.walletAddress || "";
+    const trackerTopUpsCount = activeTracker.topUpsCount ?? 0;
+    const trackerTopUpsEthTotal = activeTracker.topUpsEthTotal ?? 0;
     
     // Number of columns in the table
     const numColumns = headers.length;
@@ -1269,6 +1286,7 @@ export const Dashboard: React.FC = () => {
       [`Name: ${trackerName} - Location: ${trackerLocation} - Income tax rate: ${trackerTaxRate}%`, ...Array(numColumns - 1).fill("")],
       [`Beacon chain public key: ${beaconPubKey}`, ...Array(numColumns - 1).fill("")],
       [`Validator withdrawal address: ${validatorWithdrawalAddress}`, ...Array(numColumns - 1).fill("")],
+      [`Top ups: ${trackerTopUpsCount} | ${formatNumber(trackerTopUpsEthTotal, 6, globalCurrency)} ETH`, ...Array(numColumns - 1).fill("")],
       Array(numColumns).fill(""), // Empty row for spacing
     ];
     
@@ -1662,6 +1680,15 @@ export const Dashboard: React.FC = () => {
                   Balance:{" "}
                   <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
                     {activeTracker.validatorBalanceEth != null ? formatNumber(activeTracker.validatorBalanceEth, 6, globalCurrency) : "—"}
+                  </span>
+                  <span style={{ fontWeight: 600, fontSize: "0.595rem", color: "#d4d4d4" }}> ETH</span>
+                </span>
+                <span style={{ marginLeft: "14px" }}>
+                  Top ups:{" "}
+                  <span style={{ fontWeight: 600, color: "#d4d4d4" }}>{activeTracker.topUpsCount ?? totalTopUpsCount}</span>
+                  <span style={{ color: "#8e8e8e" }}> | </span>
+                  <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
+                    {formatNumber(activeTracker.topUpsEthTotal ?? totalTopUpsEth, 6, globalCurrency)}
                   </span>
                   <span style={{ fontWeight: 600, fontSize: "0.595rem", color: "#d4d4d4" }}> ETH</span>
                 </span>

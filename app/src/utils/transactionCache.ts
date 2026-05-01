@@ -24,6 +24,8 @@ export interface CachedTransaction {
   epochEnd?: number;
   // Optional validator balance snapshot for that reward day (ETH)
   validatorBalanceEth?: number;
+  // Optional consensus-layer top-up amount for that day (ETH)
+  topUpEth?: number;
   // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly using prices from centralized storage
 }
 
