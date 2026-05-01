@@ -22,6 +22,8 @@ export interface CachedTransaction {
   // Optional consensus-layer epoch range for daily aggregate rewards
   epochStart?: number;
   epochEnd?: number;
+  // Optional validator balance snapshot for that reward day (ETH)
+  validatorBalanceEth?: number;
   // Note: rewardsInCurrency and taxesInCurrency are calculated on-the-fly using prices from centralized storage
 }
 

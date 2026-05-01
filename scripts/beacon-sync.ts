@@ -45,6 +45,11 @@ interface DuneResultResponse {
   rows?: DuneResultRow[];
 }
 
+interface DailyClData {
+  rewardEth: number;
+  endBalanceEth?: number;
+}
+
 function toDateKey(value: unknown): string | null {
   if (!value) return null;
   if (typeof value === "string") {
@@ -87,13 +92,17 @@ async function loadEthPrices(): Promise<Record<string, { eur?: number; usd?: num
   return (await res.json()) as Record<string, { eur?: number; usd?: number }>;
 }
 
-function buildClByDate(rows: DuneResultRow[]): Record<string, number> {
-  const out: Record<string, number> = {};
+function buildClByDate(rows: DuneResultRow[]): Record<string, DailyClData> {
+  const out: Record<string, DailyClData> = {};
   for (const row of rows) {
     const dateKey = toDateKey(row.block_date);
     if (!dateKey) continue;
-    const amount = asNumber(row.cl_reward_eth);
-    out[dateKey] = amount;
+    const rewardEth = asNumber(row.cl_reward_eth);
+    const endBalanceEth = asNumber(row.end_balance_eth);
+    out[dateKey] = {
+      rewardEth,
+      endBalanceEth: Number.isFinite(endBalanceEth) ? endBalanceEth : undefined,
+    };
   }
   return out;
 }
@@ -140,7 +149,7 @@ async function processTracker(
   uid: string,
   tracker: TrackerDoc,
   prices: Record<string, { eur?: number; usd?: number }>,
-  clByDate: Record<string, number>,
+  clByDate: Record<string, DailyClData>,
   elByDate: Record<string, number>
 ): Promise<number> {
   const { id: trackerId, taxRate = 24, mevMode } = tracker;
@@ -148,6 +157,19 @@ async function processTracker(
   const txsRef = trackerRef.collection("transactions");
   let written = 0;
   let lastDate = tracker.lastClSyncDateKey ?? null;
+  let latestValidatorBalanceEth: number | null = null;
+
+  const latestClDate = Object.keys(clByDate).sort().at(-1);
+  if (latestClDate) {
+    const latestClData = clByDate[latestClDate];
+    if (
+      latestClData &&
+      typeof latestClData.endBalanceEth === "number" &&
+      Number.isFinite(latestClData.endBalanceEth)
+    ) {
+      latestValidatorBalanceEth = latestClData.endBalanceEth;
+    }
+  }
 
   const dateKeys = Array.from(new Set([...Object.keys(clByDate), ...Object.keys(elByDate)])).sort();
   for (const dateKey of dateKeys) {
@@ -160,7 +182,11 @@ async function processTracker(
     const ethPriceEUR = priceEntry?.eur ?? 0;
     const ethPriceUSD = priceEntry?.usd ?? 0;
 
-    const clAmount = clByDate[dateKey] ?? 0;
+    const clData = clByDate[dateKey];
+    const clAmount = clData?.rewardEth ?? 0;
+    if (clData && typeof clData.endBalanceEth === "number" && Number.isFinite(clData.endBalanceEth)) {
+      latestValidatorBalanceEth = clData.endBalanceEth;
+    }
     if (clAmount > 0) {
       const clHash = `cl_${trackerId}_${dateKey}`;
       const clDoc: Record<string, unknown> = {
@@ -176,6 +202,7 @@ async function processTracker(
         status: "Unpaid",
         timestamp: endTs,
         rewardType: "CL",
+        validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
         updatedAt: FieldValue.serverTimestamp(),
       };
       await txsRef.doc(clHash).set(clDoc, { merge: true });
@@ -211,6 +238,7 @@ async function processTracker(
 
   await trackerRef.update({
     lastClSyncDateKey: lastDate,
+    ...(latestValidatorBalanceEth != null ? { validatorBalanceEth: latestValidatorBalanceEth } : {}),
     beaconSyncUpdatedAt: FieldValue.serverTimestamp(),
   });
 

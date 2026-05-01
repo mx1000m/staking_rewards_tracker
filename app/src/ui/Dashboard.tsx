@@ -1160,6 +1160,15 @@ export const Dashboard: React.FC = () => {
     return `Data shown for ${monthName} ${selectedYear}`;
   })();
 
+  const selectedPeriodLabel = (() => {
+    if (selectedMonth === null) return `${selectedYear}`;
+    const monthName = new Date(selectedYear, selectedMonth, 1).toLocaleDateString("en-US", {
+      month: "long",
+    });
+    const yearShort = String(selectedYear).slice(-2);
+    return `${monthName} ${yearShort}`;
+  })();
+
   // Copy to clipboard function
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -1194,6 +1203,7 @@ export const Dashboard: React.FC = () => {
       "Epochs",
       "Reward type",
       "Reward (ETH)",
+      "Validator balance (ETH)",
       `ETH price (${currencySymbol})`,
       `Value in ${currencyCode} (${currencySymbol})`,
       `Income tax (${currencyCode})`,
@@ -1213,6 +1223,9 @@ export const Dashboard: React.FC = () => {
         epochsLabel,
         tx.rewardType || "EVM",
         formatNumber(tx.ethAmount || 0, 6, globalCurrency),
+        tx.rewardType === "CL" && typeof tx.validatorBalanceEth === "number"
+          ? formatNumber(tx.validatorBalanceEth, 6, globalCurrency)
+          : "",
         formatNumber(ethPrice, 2, globalCurrency),
         formatNumber(rewardsInCurrency, 2, globalCurrency),
         formatNumber(taxesInCurrency, 2, globalCurrency),
@@ -1235,6 +1248,7 @@ export const Dashboard: React.FC = () => {
       "",
       "",
       formatNumber(totalEthRewards, 6, globalCurrency),
+      "",
       "",
       formatNumber(totalRewardsInCurrency, 2, globalCurrency),
       formatNumber(totalTaxesInCurrency, 2, globalCurrency),
@@ -1877,7 +1891,9 @@ export const Dashboard: React.FC = () => {
                 {/* Card 1: Reward received */}
                 <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
                   <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Reward received</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>
+                      Rewards received in {selectedPeriodLabel}
+                    </p>
                     <p style={{ margin: "0 0 4px 0", fontSize: "1.2rem", fontWeight: 600, color: "#32c0ea", whiteSpace: "nowrap" }}>
                       {formatNumber(totalEthRewards, 6, globalCurrency)}<span style={{ fontSize: "0.9rem", color: "#32c0ea" }}> ETH</span>
                     </p>
@@ -1912,7 +1928,9 @@ export const Dashboard: React.FC = () => {
                 {/* Card 3: Income tax due */}
                 <div style={{ background: "linear-gradient(45deg, #4a4949, #353536)", padding: "2px", borderRadius: "10px", display: "flex" }}>
                   <div style={{ background: "linear-gradient(to top, #383839, #242325)", padding: "16px", borderRadius: "8px", width: "100%", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }}>
-                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>Income tax due</p>
+                    <p style={{ margin: "0 0 4px 0", fontSize: "0.85rem", color: "#aaaaaa", fontWeight: 700 }}>
+                      Income tax due for {selectedPeriodLabel}
+                    </p>
                     <p style={{ margin: 0, fontSize: "1.2rem", fontWeight: 600, color: "#dbaa46", whiteSpace: "nowrap" }}>
                       {globalCurrency === "EUR" ? (
                         <>
