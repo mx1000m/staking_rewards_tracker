@@ -52,6 +52,26 @@ const timestampToNumber = (ts: any): number => {
   return 0;
 };
 
+// Normalize tracker createdAt into epoch milliseconds.
+// Handles Firestore Timestamp, seconds, and milliseconds safely.
+const normalizeCreatedAtMs = (ts: any): number => {
+  if (!ts) return Date.now();
+  if (ts instanceof Timestamp) {
+    return ts.toMillis();
+  }
+  if (typeof ts === "number") {
+    // Heuristic: values >= 1e12 are already milliseconds.
+    return ts >= 1e12 ? ts : ts * 1000;
+  }
+  if (typeof ts === "string") {
+    const parsed = Number(ts);
+    if (Number.isFinite(parsed)) {
+      return parsed >= 1e12 ? parsed : parsed * 1000;
+    }
+  }
+  return Date.now();
+};
+
 // Convert transaction to Firestore format
 const transactionToFirestore = (tx: CachedTransaction): any => ({
   date: tx.date,
@@ -281,6 +301,17 @@ export async function saveFirestoreTracker(
     );
 
     const trackerRef = doc(db, getUserTrackersPath(uid), tracker.id);
+    const rawCreatedAt = Number(tracker.createdAt);
+    const normalizedCreatedAtMs = Number.isFinite(rawCreatedAt)
+      ? rawCreatedAt >= 1e12
+        ? rawCreatedAt
+        : rawCreatedAt * 1000
+      : Date.now();
+    // Firestore max timestamp is year 9999; guard against corrupted values.
+    const safeCreatedAtMs =
+      normalizedCreatedAtMs > 0 && normalizedCreatedAtMs <= 253402300799999
+        ? normalizedCreatedAtMs
+        : Date.now();
     await setDoc(trackerRef, {
       name: tracker.name,
       walletAddress: tracker.walletAddress,
@@ -295,7 +326,7 @@ export async function saveFirestoreTracker(
       beaconApiKey: tracker.beaconApiKey || null,
       mevMode: tracker.mevMode || null,
       mevPoolPayoutAddress: tracker.mevPoolPayoutAddress || null,
-      createdAt: Timestamp.fromMillis(tracker.createdAt),
+      createdAt: Timestamp.fromMillis(safeCreatedAtMs),
       updatedAt: serverTimestamp(),
     }, { merge: true });
   } catch (error) {
@@ -329,7 +360,7 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
         country: data.country || "Croatia",
         taxRate: data.taxRate || 24,
         etherscanKey: data.etherscanKey || "",
-        createdAt: timestampToNumber(data.createdAt) * 1000,
+        createdAt: normalizeCreatedAtMs(data.createdAt),
         validatorPublicKey: data.validatorPublicKey || undefined,
         beaconApiProvider: data.beaconApiProvider || undefined,
         beaconApiKey: data.beaconApiKey || undefined,
