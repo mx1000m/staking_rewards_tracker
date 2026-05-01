@@ -86,53 +86,6 @@ export const Dashboard: React.FC = () => {
     }
   }, [activeTrackerId, trackers, setActiveTracker]);
 
-  // Normalized validator status label for display
-  const validatorStatusLabel = (() => {
-    if (!activeTracker) return "UNKNOWN";
-    const raw = activeTracker.validatorStatus;
-    const upper = raw ? raw.toUpperCase() : null;
-
-    if (upper === "ACTIVE_ONGOING" || upper === "ACTIVE") {
-      return "ACTIVE";
-    }
-    if (upper === "PENDING_SYNC" || upper === "PENDING") {
-      return "PENDING";
-    }
-    if (upper) {
-      return upper.replace(/_/g, " ");
-    }
-    // No explicit status but we have a validator public key → treat as pending
-    if (activeTracker.validatorPublicKey) {
-      return "PENDING";
-    }
-    return "UNKNOWN";
-  })();
-
-  // Status color mapping (green for active, yellow for pending/deposited, red for problem)
-  const validatorStatusColor = (() => {
-    if (!activeTracker) return "#f97373";
-    const raw = activeTracker.validatorStatus;
-    const upper = raw ? raw.toUpperCase() : null;
-
-    if (upper === "ACTIVE_ONGOING" || upper === "ACTIVE") {
-      return "#4ade80";
-    }
-    if (
-      upper === "PENDING_SYNC" ||
-      upper === "PENDING" ||
-      (!upper && activeTracker.validatorPublicKey)
-    ) {
-      return "#facc15";
-    }
-    if (upper === "DEPOSITED") {
-      return "#facc15";
-    }
-    if (!upper && !activeTracker.validatorPublicKey) {
-      return "#f97373";
-    }
-    // Default to green for any other known non-error status
-    return "#4ade80";
-  })();
   const glowShadow = "0 0 8px rgba(1, 225, 253, 0.8), 0 0 20px rgba(1, 225, 253, 0.45)";
   
   // Current ETH price state (from Coinbase API)
@@ -1689,31 +1642,6 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Status row: validator status + execution rewards status */}
-              <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                <span>
-                  Status:{" "}
-                  <span style={{ color: validatorStatusColor, fontWeight: 600 }}>
-                    {validatorStatusLabel}
-                  </span>
-                </span>
-                <span style={{ margin: "0 8px", color: "#555555" }}>|</span>
-                <span>
-                  Execution rewards:{" "}
-                  <span
-                    style={{
-                      color:
-                        activeTracker.mevMode && activeTracker.mevMode !== "none"
-                          ? "#4ade80"
-                          : "#f97373",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {activeTracker.mevMode && activeTracker.mevMode !== "none" ? "ACTIVE" : "INACTIVE"}
-                  </span>
-                </span>
-              </div>
-
               {/* Balance row */}
               <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#aaaaaa" }}>
                 <span>
@@ -2422,17 +2350,56 @@ export const Dashboard: React.FC = () => {
 
       {/* Settings Modal */}
       {showSettings && activeTracker && (
-        <TrackerSettingsModal
-          tracker={activeTracker}
-          onClose={() => setShowSettings(false)}
-          onSaved={async () => {
-            const { trackers } = useTrackerStore.getState();
-            const updatedTracker = trackers.find((t) => t.id === activeTracker.id);
-            if (updatedTracker) {
-              await loadTransactions(updatedTracker);
-            }
+        <div
+          className="modal-overlay modal-overlay-enter"
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0, 0, 0, 0.7)",
+            backdropFilter: "blur(3px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1200,
+            padding: "20px",
           }}
-        />
+          onClick={() => setShowSettings(false)}
+        >
+          <div
+            className="modal-card modal-card-enter"
+            style={{ width: "100%", maxWidth: "560px", position: "relative" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                background: "#181818",
+                borderRadius: "18px",
+                padding: "1px",
+                border: "1px solid #2b2b2b",
+              }}
+            >
+              <div
+                style={{
+                  background: "#181818",
+                  borderRadius: "17px",
+                  padding: "24px",
+                }}
+              >
+                <TrackerSettingsModal
+                  tracker={activeTracker}
+                  onClose={() => setShowSettings(false)}
+                  onSaved={async () => {
+                    const { trackers } = useTrackerStore.getState();
+                    const updatedTracker = trackers.find((t) => t.id === activeTracker.id);
+                    if (updatedTracker) {
+                      await loadTransactions(updatedTracker);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Mark as Covered Modal */}
