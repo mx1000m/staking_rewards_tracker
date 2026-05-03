@@ -38,9 +38,10 @@ const MIN_REQUEST_INTERVAL = 2100; // 2.1 seconds between requests
  */
 async function getEthPriceAtTimestamp(timestamp, currency = 'EUR', apiKey) {
   const date = new Date(timestamp * 1000);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
+  // Always derive CoinGecko `date=dd-mm-yyyy` from the UTC calendar day (matches getDateKey / CI runners).
+  const day = date.getUTCDate().toString().padStart(2, '0');
+  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const year = date.getUTCFullYear();
   const dateString = `${day}-${month}-${year}`;
 
   const baseUrl = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
@@ -79,9 +80,9 @@ async function getEthPriceAtTimestamp(timestamp, currency = 'EUR', apiKey) {
     const data = await res.json();
 
     if (!data.market_data?.current_price?.[currency.toLowerCase()]) {
-      // Try previous day if exact date is missing
+      // Try previous UTC calendar day if exact date is missing
       const previousDay = new Date(timestamp * 1000);
-      previousDay.setDate(previousDay.getDate() - 1);
+      previousDay.setUTCDate(previousDay.getUTCDate() - 1);
       return getEthPriceAtTimestamp(Math.floor(previousDay.getTime() / 1000), currency, apiKey);
     }
 
@@ -203,6 +204,28 @@ function getDateKey(timestamp) {
 }
 
 /**
+ * UTC calendar date for "yesterday" relative to now (YYYY-MM-DD).
+ * Use when the job runs after UTC midnight (e.g. 00:45 UTC) so the prior UTC day is complete
+ * and aligns with CoinGecko guidance (~00:35 UTC after midnight for the last completed UTC day).
+ */
+function getYesterdayUtcDateKey() {
+  const now = new Date();
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+/** Unix seconds for 00:00:00 UTC on a YYYY-MM-DD date key. */
+function utcMidnightTimestampSeconds(dateKey) {
+  const parts = dateKey.split('-').map(Number);
+  const [year, month, day] = parts;
+  if (!year || !month || !day) return Math.floor(Date.now() / 1000);
+  return Math.floor(Date.UTC(year, month - 1, day, 0, 0, 0) / 1000);
+}
+
+/**
  * Country to timezone mapping
  */
 const COUNTRY_TIMEZONE = {
@@ -302,7 +325,7 @@ function saveEthPrices(prices) {
 /**
  * Commit and push the JSON file to GitHub
  */
-function commitAndPushPrices() {
+function commitAndPushPrices(dateLabel) {
   try {
     // Check if there are changes to commit
     try {
@@ -334,8 +357,7 @@ function commitAndPushPrices() {
       stdio: 'inherit'
     });
     
-    const today = new Date().toISOString().split('T')[0];
-    execSync(`git commit -m "Update ETH prices for ${today}"`, { 
+    execSync(`git commit -m "Update ETH prices for ${dateLabel}"`, { 
       cwd: path.join(__dirname, '..'),
       stdio: 'inherit'
     });
@@ -464,43 +486,35 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
 }
 
 /**
- * Update today's ETH price in JSON file
- * This runs once per day before processing transactions
+ * Fetch and store ETH/EUR and ETH/USD for the previous UTC calendar day ("yesterday").
+ * Schedule ~00:45 UTC so the prior UTC day is finished and CoinGecko daily history is available (~after 00:35 UTC).
  */
-async function updateTodaysPrice(coingeckoApiKey) {
-  console.log('Updating today\'s ETH price in JSON storage...');
-  
+async function updateYesterdayUtcPrice(coingeckoApiKey) {
+  console.log('Updating yesterday (UTC) ETH price in JSON storage...');
+
   try {
-    const today = new Date();
-    const todayKey = getDateKey(Math.floor(today.getTime() / 1000));
-    
-    // Load existing prices
+    const dateKey = getYesterdayUtcDateKey();
     const prices = loadEthPrices();
-    
-    // Check if today's price already exists
-    if (prices[todayKey] && prices[todayKey].eur && prices[todayKey].usd) {
-      console.log(`  Today's price (${todayKey}) already exists: EUR ${prices[todayKey].eur}, USD ${prices[todayKey].usd}`);
+
+    if (prices[dateKey] && prices[dateKey].eur && prices[dateKey].usd) {
+      console.log(
+        `  Price for ${dateKey} already exists: EUR ${prices[dateKey].eur}, USD ${prices[dateKey].usd}`
+      );
       return;
     }
-    
-    // Fetch today's prices from CoinGecko
-    const timestamp = Math.floor(today.getTime() / 1000);
+
+    const timestamp = utcMidnightTimestampSeconds(dateKey);
     const priceEUR = await getEthPriceAtTimestamp(timestamp, 'EUR', coingeckoApiKey);
     await new Promise((resolve) => setTimeout(resolve, 2100));
     const priceUSD = await getEthPriceAtTimestamp(timestamp, 'USD', coingeckoApiKey);
-    
-    // Update prices object
-    prices[todayKey] = { eur: priceEUR, usd: priceUSD };
-    
-    // Save to JSON file
+
+    prices[dateKey] = { eur: priceEUR, usd: priceUSD };
     saveEthPrices(prices);
-    
-    // Commit and push to GitHub (if in git repo with permissions)
-    commitAndPushPrices();
-    
-    console.log(`  Updated today's price (${todayKey}): EUR ${priceEUR}, USD ${priceUSD}`);
+    commitAndPushPrices(dateKey);
+
+    console.log(`  Updated ETH price for ${dateKey} (UTC): EUR ${priceEUR}, USD ${priceUSD}`);
   } catch (error) {
-    console.error('  Error updating today\'s price:', error.message);
+    console.error('  Error updating yesterday UTC ETH price:', error.message);
     // Don't fail the entire sync if price update fails
   }
 }
@@ -517,9 +531,9 @@ async function main() {
   }
   
   try {
-    // First, update today's price in centralized storage
+    // First, update yesterday's UTC date price in centralized storage (see getYesterdayUtcDateKey)
     if (coingeckoApiKey) {
-      await updateTodaysPrice(coingeckoApiKey);
+      await updateYesterdayUtcPrice(coingeckoApiKey);
     }
     
     // Then process all trackers

@@ -2,8 +2,8 @@ name: Daily Transaction Sync
 
 on:
   schedule:
-    # Run daily at 00:05 UTC (after UTC midnight so “today” price key matches the finished UTC day)
-    - cron: '5 0 * * *'
+    # Run daily at 00:45 UTC: fetch/store ETH price for *yesterday* UTC (after CoinGecko ~00:35 cutoff for last completed UTC day)
+    - cron: '45 0 * * *'
   workflow_dispatch: # Allow manual triggering
 
 env:
