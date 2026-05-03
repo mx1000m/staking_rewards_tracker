@@ -693,11 +693,12 @@ export const Dashboard: React.FC = () => {
         // CL transactions from Firestore are already CachedTransaction; use as-is.
         if (!("timeStamp" in tx)) {
           const c = tx as CachedTransaction;
+          const rest: CachedTransaction = { ...c };
+          delete rest.time;
           setLoadingProgress({ current: i + 1, total: yearTxs.length, progressPercent: ((i + 1) / yearTxs.length) * 100 });
           processedTxs.push({
-            ...c,
+            ...rest,
             date: formatDate(new Date(c.timestamp * 1000), timezone, globalCurrency),
-            time: new Date(c.timestamp * 1000).toLocaleTimeString("en-GB", { timeZone: timezone, hour12: false }),
           });
           continue;
         }
@@ -724,7 +725,6 @@ export const Dashboard: React.FC = () => {
         
         processedTxs.push({
           date: formatDate(date, timezone, globalCurrency),
-          time: date.toLocaleTimeString("en-GB", { timeZone: timezone, hour12: false }),
           ethAmount,
           ethPriceEUR: 0,
           ethPriceUSD: 0,

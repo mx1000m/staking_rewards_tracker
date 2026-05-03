@@ -42,7 +42,6 @@ export async function fetchConsensusRewardsAsTransactions(options: {
 
     return {
       date: new Date(timestampSeconds * 1000).toISOString().slice(0, 10),
-      time: new Date(timestampSeconds * 1000).toISOString().slice(11, 19),
       ethAmount,
       ethPriceEUR: 0,
       ethPriceUSD: 0,

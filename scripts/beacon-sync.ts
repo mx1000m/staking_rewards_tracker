@@ -385,12 +385,13 @@ async function processTracker(
             topUpEth,
             ethPrice: FieldValue.delete(),
             status: FieldValue.delete(),
+            time: FieldValue.delete(),
             ...epochFields,
             updatedAt: FieldValue.serverTimestamp(),
           }
         : {
             date: dateKey,
-            time: "12:00:00",
+            time: FieldValue.delete(),
             ethAmount: clAmount,
             ethPriceEUR,
             ethPriceUSD,
@@ -416,7 +417,7 @@ async function processTracker(
       const elHash = `el_${trackerId}_${dateKey}`;
       const elDoc: Record<string, unknown> = {
         date: dateKey,
-        time: "12:00:00",
+        time: FieldValue.delete(),
         ethAmount: elAmount,
         ethPriceEUR,
         ethPriceUSD,

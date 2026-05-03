@@ -442,11 +442,10 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
       const ethAmount = tx.rewardType === 'CL' ? rawValue / 1e9 : rawValue / 1e18;
       const taxesInEth = ethAmount * (tracker.taxRate / 100);
       
-      // Use tracker's country timezone for date/time display
+      // Use tracker's country timezone for date display
       const timezone = getTimezoneForCountry(tracker.country);
       processedTxs.push({
         date: date.toLocaleDateString('en-GB', { timeZone: timezone }),
-        time: date.toLocaleTimeString('en-GB', { timeZone: timezone, hour12: false }),
         ethAmount,
         taxRate: tracker.taxRate,
         taxesInEth,
@@ -462,7 +461,7 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
       const txRef = db.collection(`users/${uid}/trackers/${tracker.id}/transactions`).doc(tx.transactionHash);
       batch.set(txRef, {
         date: tx.date,
-        time: tx.time,
+        time: admin.firestore.FieldValue.delete(),
         ethAmount: tx.ethAmount,
         taxRate: tx.taxRate,
         taxesInEth: tx.taxesInEth,

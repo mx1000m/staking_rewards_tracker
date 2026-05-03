@@ -39,7 +39,6 @@ interface Tracker {
 
 interface Transaction {
   date: string;
-  time: string;
   ethAmount: number;
   ethPriceEUR: number;
   ethPriceUSD: number;
@@ -176,7 +175,6 @@ async function processTracker(uid: string, tracker: Tracker, coingeckoApiKey?: s
       
       processedTxs.push({
         date: date.toLocaleDateString("en-GB", { timeZone: "Europe/Zagreb" }),
-        time: date.toLocaleTimeString("en-GB", { timeZone: "Europe/Zagreb", hour12: false }),
         ethAmount,
         ethPriceEUR,
         ethPriceUSD,
@@ -194,7 +192,7 @@ async function processTracker(uid: string, tracker: Tracker, coingeckoApiKey?: s
       const txRef = db.collection(`users/${uid}/trackers/${tracker.id}/transactions`).doc(tx.transactionHash);
       batch.set(txRef, {
         date: tx.date,
-        time: tx.time,
+        time: FieldValue.delete(),
         ethAmount: tx.ethAmount,
         ethPriceEUR: tx.ethPriceEUR,
         ethPriceUSD: tx.ethPriceUSD,

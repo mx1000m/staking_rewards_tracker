@@ -76,7 +76,7 @@ const normalizeCreatedAtMs = (ts: any): number => {
 // Convert transaction to Firestore format
 const transactionToFirestore = (tx: CachedTransaction): any => ({
   date: tx.date,
-  time: tx.time,
+  ...(typeof tx.time === "string" && tx.time.trim().length > 0 ? { time: tx.time } : { time: deleteField() }),
   ethAmount: tx.ethAmount,
   ethPriceEUR: tx.ethPriceEUR,
   ethPriceUSD: tx.ethPriceUSD,
@@ -105,7 +105,7 @@ const firestoreToTransaction = (data: any, txHash: string): CachedTransaction =>
 
   return {
     date: data.date || "",
-    time: data.time || "",
+    ...(typeof data.time === "string" && data.time ? { time: data.time } : {}),
     ethAmount: data.ethAmount || 0,
     ethPriceEUR,
     ethPriceUSD,

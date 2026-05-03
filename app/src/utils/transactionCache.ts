@@ -5,7 +5,8 @@ import { Tracker } from "../store/trackerStore";
 
 export interface CachedTransaction {
   date: string;
-  time: string;
+  /** Optional; omitted for daily CL/EL beacon rows (date-only). */
+  time?: string;
   ethAmount: number;
   ethPriceEUR: number;
   ethPriceUSD: number;
@@ -186,7 +187,6 @@ export async function updateTransactionSwap(
           trackerId,
           transactionHash,
           date: "",
-          time: "",
           ethAmount: 0,
           ethPriceEUR: 0,
           ethPriceUSD: 0,
