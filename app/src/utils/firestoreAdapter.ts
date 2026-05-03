@@ -84,7 +84,7 @@ const transactionToFirestore = (tx: CachedTransaction): any => ({
   taxRate: tx.taxRate,
   taxesInEth: tx.taxesInEth,
   transactionHash: tx.transactionHash,
-  status: tx.status,
+  status: deleteField(),
   timestamp: Timestamp.fromMillis(tx.timestamp * 1000),
   swapHash: (tx as any).swapHash || null,
   rewardType: tx.rewardType || null,
@@ -112,7 +112,6 @@ const firestoreToTransaction = (data: any, txHash: string): CachedTransaction =>
     taxRate: data.taxRate || 0,
     taxesInEth: data.taxesInEth || 0,
     transactionHash: txHash,
-    status: data.status || "Unpaid",
     timestamp: timestampToNumber(data.timestamp),
     swapHash: data.swapHash || undefined,
     rewardType: data.rewardType || undefined,
@@ -261,13 +260,12 @@ export async function saveFirestoreTransactionsBatch(
 }
 
 /**
- * Update transaction status (mark as paid)
+ * Update optional swap hash (tax “covered” link). Does not write legacy `status`.
  */
-export async function updateFirestoreTransactionStatus(
+export async function updateFirestoreTransactionSwap(
   uid: string,
   trackerId: string,
   transactionHash: string,
-  status: string,
   swapHash?: string
 ): Promise<void> {
   try {
@@ -275,14 +273,14 @@ export async function updateFirestoreTransactionStatus(
     await setDoc(
       txRef,
       {
-        status,
+        status: deleteField(),
         swapHash: swapHash || null,
         updatedAt: serverTimestamp(),
       },
       { merge: true }
     );
   } catch (error) {
-    console.error("Error updating Firestore transaction status:", error);
+    console.error("Error updating Firestore transaction swap:", error);
     throw error;
   }
 }

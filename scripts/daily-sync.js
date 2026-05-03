@@ -451,7 +451,6 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
         taxRate: tracker.taxRate,
         taxesInEth,
         transactionHash: tx.hash,
-        status: 'Unpaid',
         timestamp: parseInt(tx.timeStamp),
         rewardType: tx.rewardType || 'EVM',
       });
@@ -468,7 +467,7 @@ async function processTracker(uid, tracker, coingeckoApiKey) {
         taxRate: tx.taxRate,
         taxesInEth: tx.taxesInEth,
         transactionHash: tx.transactionHash,
-        status: tx.status,
+        status: admin.firestore.FieldValue.delete(),
         timestamp: admin.firestore.Timestamp.fromMillis(tx.timestamp * 1000),
         rewardType: tx.rewardType || null,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),

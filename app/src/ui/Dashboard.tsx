@@ -26,7 +26,7 @@ import { useAuth } from "../hooks/useAuth";
 import {
   getFirestoreTransactions,
   saveFirestoreTransactionsBatch,
-  updateFirestoreTransactionStatus,
+  updateFirestoreTransactionSwap,
 } from "../utils/firestoreAdapter";
 
 // ETH prices are now stored in GitHub, not Firestore
@@ -491,7 +491,7 @@ export const Dashboard: React.FC = () => {
             } else {
               console.log(`Synced ${firestoreTxs.length} transactions from Firestore`);
             }
-            // Merge Firestore data with cached data (Firestore takes precedence for status)
+            // Merge Firestore data with cached data (Firestore takes precedence for swapHash etc.)
             const cachedMap = new Map(cached.map((t) => [t.transactionHash, t]));
             firestoreTxs.forEach((ftx) => {
               cachedMap.set(ftx.transactionHash, ftx);
@@ -731,7 +731,6 @@ export const Dashboard: React.FC = () => {
           taxRate: tracker.taxRate,
           taxesInEth,
           transactionHash: (tx as EtherscanTransaction).hash,
-          status: "Unpaid",
           timestamp: rawTs,
           rewardType: (tx as EtherscanTransaction).rewardType || "EVM",
           rewardSubType: (tx as EtherscanTransaction).rewardSubType,
@@ -2568,16 +2567,15 @@ export const Dashboard: React.FC = () => {
                       }
                       
                       // Update local cache
-                      const { updateTransactionStatus } = await import("../utils/transactionCache");
-                      await updateTransactionStatus(activeTracker.id, markPaidHash, "✓ Paid", swapHash || undefined);
+                      const { updateTransactionSwap } = await import("../utils/transactionCache");
+                      await updateTransactionSwap(activeTracker.id, markPaidHash, swapHash || undefined);
                       
                       // Update Firestore
                       try {
-                        await updateFirestoreTransactionStatus(
+                        await updateFirestoreTransactionSwap(
                           user.uid,
                           activeTracker.id,
                           markPaidHash,
-                          "✓ Paid",
                           swapHash || undefined
                         );
                       } catch (firestoreError) {
@@ -2587,7 +2585,7 @@ export const Dashboard: React.FC = () => {
                       // Update local state
                       setTransactions((prev) => prev.map((t) => 
                         t.transactionHash === markPaidHash 
-                          ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
+                          ? { ...t, swapHash: swapHash || undefined } as Transaction
                           : t
                       ));
                       requestMarkPaidModalClose();
@@ -2718,17 +2716,16 @@ export const Dashboard: React.FC = () => {
                     onClick={async () => {
                       if (!activeTracker || !editPaidHash || !user) return;
                       
-                      // Mark as uncovered
-                      const { updateTransactionStatus } = await import("../utils/transactionCache");
-                      await updateTransactionStatus(activeTracker.id, editPaidHash, "Unpaid", undefined);
+                      // Mark as uncovered (clear swap link)
+                      const { updateTransactionSwap } = await import("../utils/transactionCache");
+                      await updateTransactionSwap(activeTracker.id, editPaidHash, undefined);
                       
                       // Update Firestore
                       try {
-                        await updateFirestoreTransactionStatus(
+                        await updateFirestoreTransactionSwap(
                           user.uid,
                           activeTracker.id,
                           editPaidHash,
-                          "Unpaid",
                           undefined
                         );
                       } catch (firestoreError) {
@@ -2738,7 +2735,7 @@ export const Dashboard: React.FC = () => {
                       // Update local state
                       setTransactions((prev) => prev.map((t) => 
                         t.transactionHash === editPaidHash 
-                          ? { ...t, status: "Unpaid", swapHash: undefined } as Transaction
+                          ? { ...t, swapHash: undefined } as Transaction
                           : t
                       ));
                       requestEditPaidModalClose();
@@ -2788,16 +2785,15 @@ export const Dashboard: React.FC = () => {
                       }
                       
                       // Update local cache
-                      const { updateTransactionStatus } = await import("../utils/transactionCache");
-                      await updateTransactionStatus(activeTracker.id, editPaidHash, "✓ Paid", swapHash || undefined);
+                      const { updateTransactionSwap } = await import("../utils/transactionCache");
+                      await updateTransactionSwap(activeTracker.id, editPaidHash, swapHash || undefined);
                       
                       // Update Firestore
                       try {
-                        await updateFirestoreTransactionStatus(
+                        await updateFirestoreTransactionSwap(
                           user.uid,
                           activeTracker.id,
                           editPaidHash,
-                          "✓ Paid",
                           swapHash || undefined
                         );
                       } catch (firestoreError) {
@@ -2807,7 +2803,7 @@ export const Dashboard: React.FC = () => {
                       // Update local state
                       setTransactions((prev) => prev.map((t) => 
                         t.transactionHash === editPaidHash 
-                          ? { ...t, status: "✓ Paid", swapHash: swapHash || undefined } as Transaction
+                          ? { ...t, swapHash: swapHash || undefined } as Transaction
                           : t
                       ));
                         requestEditPaidModalClose();

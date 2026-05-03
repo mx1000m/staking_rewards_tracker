@@ -12,7 +12,6 @@ export interface CachedTransaction {
   taxRate: number;
   taxesInEth: number;
   transactionHash: string;
-  status: string;
   timestamp: number; // Unix timestamp for sorting (used to match with centralized price storage)
   swapHash?: string; // Optional: transaction hash of the swap
   rewardType?: "CL" | "EVM"; // Consensus Layer (beacon withdrawals) or Execution Layer (fee recipient)
@@ -167,10 +166,10 @@ export async function clearCache(trackerId: string): Promise<void> {
   });
 }
 
-export async function updateTransactionStatus(
+/** Persist swap tx hash for “covered” rewards (IndexedDB). Omit or pass undefined to clear. */
+export async function updateTransactionSwap(
   trackerId: string,
   transactionHash: string,
-  status: string,
   swapHash?: string
 ): Promise<void> {
   const db = await openDB();
@@ -182,7 +181,6 @@ export async function updateTransactionStatus(
     getReq.onsuccess = () => {
       const record = getReq.result as (CachedTransaction & { trackerId: string; swapHash?: string }) | undefined;
       if (!record) {
-        // If not found, create minimal record so UI persists it
         const now = Math.floor(Date.now() / 1000);
         const newRecord: any = {
           trackerId,
@@ -194,14 +192,13 @@ export async function updateTransactionStatus(
           ethPriceUSD: 0,
           taxRate: 0,
           taxesInEth: 0,
-          status,
           timestamp: now,
           swapHash,
         };
         store.put(newRecord).onsuccess = () => resolve();
         return;
       }
-      const updated = { ...record, status, swapHash };
+      const updated = { ...record, swapHash };
       store.put(updated).onsuccess = () => resolve();
     };
     getReq.onerror = () => reject(getReq.error);

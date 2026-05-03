@@ -359,6 +359,7 @@ async function processTracker(
             validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
             topUpEth,
             ethPrice: FieldValue.delete(),
+            status: FieldValue.delete(),
             updatedAt: FieldValue.serverTimestamp(),
           }
         : {
@@ -371,7 +372,7 @@ async function processTracker(
             taxRate,
             taxesInEth: clAmount * (taxRate / 100),
             transactionHash: clHash,
-            status: "Unpaid",
+            status: FieldValue.delete(),
             timestamp: endTs,
             rewardType: "CL",
             validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
@@ -396,7 +397,7 @@ async function processTracker(
         taxRate,
         taxesInEth: elAmount * (taxRate / 100),
         transactionHash: elHash,
-        status: "Unpaid",
+        status: FieldValue.delete(),
         timestamp: endTs,
         rewardType: "EVM",
         updatedAt: FieldValue.serverTimestamp(),

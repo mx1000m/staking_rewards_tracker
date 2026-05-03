@@ -5,7 +5,7 @@
  */
 
 import { initializeApp, getApps, cert } from "firebase-admin/app";
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getTransactions } from "../app/src/api/etherscan";
 import { getEthPriceAtTimestamp } from "../app/src/api/coingecko";
 
@@ -46,7 +46,6 @@ interface Transaction {
   taxRate: number;
   taxesInEth: number;
   transactionHash: string;
-  status: string;
   timestamp: number;
   rewardType?: "CL" | "EVM";
 }
@@ -184,7 +183,6 @@ async function processTracker(uid: string, tracker: Tracker, coingeckoApiKey?: s
         taxRate: tracker.taxRate,
         taxesInEth,
         transactionHash: tx.hash,
-        status: "Unpaid",
         timestamp: parseInt(tx.timeStamp),
         rewardType: tx.rewardType || "EVM",
       });
@@ -203,7 +201,7 @@ async function processTracker(uid: string, tracker: Tracker, coingeckoApiKey?: s
         taxRate: tx.taxRate,
         taxesInEth: tx.taxesInEth,
         transactionHash: tx.transactionHash,
-        status: tx.status,
+        status: FieldValue.delete(),
         timestamp: db.Timestamp.fromMillis(tx.timestamp * 1000),
         rewardType: tx.rewardType || null,
         updatedAt: db.FieldValue.serverTimestamp(),

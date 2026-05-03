@@ -49,7 +49,6 @@ export async function fetchConsensusRewardsAsTransactions(options: {
       taxRate: 0,
       taxesInEth: 0,
       transactionHash: `beaconcha_${trackerId}_${idx}`,
-      status: "Unpaid",
       timestamp: timestampSeconds,
       rewardType: "CL",
     };
