@@ -41,7 +41,11 @@ interface DuneResultRow {
 interface DuneResultResponse {
   result?: {
     rows?: DuneResultRow[];
+    next_uri?: string;
+    next_offset?: number;
   };
+  /** Some API versions expose pagination at the top level */
+  next_uri?: string;
   rows?: DuneResultRow[];
 }
 
@@ -71,20 +75,38 @@ function asNumber(value: unknown): number {
   return 0;
 }
 
+function resolveDuneUrl(pathOrUrl: string): string {
+  if (pathOrUrl.startsWith("http")) return pathOrUrl;
+  const base = DUNE_API_BASE.replace(/\/$/, "");
+  const path = pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`;
+  return `${base}${path}`;
+}
+
+/** Fetch all rows for a saved query, following Dune pagination (`next_uri`). */
 async function duneLatestRows(queryId: string): Promise<DuneResultRow[]> {
   if (!queryId) return [];
-  const res = await fetch(`${DUNE_API_BASE}/query/${queryId}/results`, {
-    headers: {
-      "X-Dune-Api-Key": DUNE_API_KEY,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Dune query ${queryId} failed (${res.status}): ${body.slice(0, 300)}`);
+  const rows: DuneResultRow[] = [];
+  let url: string | null = `${DUNE_API_BASE}/query/${queryId}/results?limit=10000`;
+
+  while (url) {
+    const res = await fetch(url, {
+      headers: {
+        "X-Dune-Api-Key": DUNE_API_KEY,
+        "Content-Type": "application/json",
+      },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Dune query ${queryId} failed (${res.status}): ${body.slice(0, 300)}`);
+    }
+    const json = (await res.json()) as DuneResultResponse;
+    const chunk = json.result?.rows ?? json.rows ?? [];
+    rows.push(...chunk);
+    const next = json.next_uri ?? json.result?.next_uri;
+    url = typeof next === "string" && next.length > 0 ? resolveDuneUrl(next) : null;
   }
-  const json = (await res.json()) as DuneResultResponse;
-  return json.result?.rows ?? json.rows ?? [];
+
+  return rows;
 }
 
 async function loadEthPrices(): Promise<Record<string, { eur?: number; usd?: number }>> {
@@ -149,6 +171,11 @@ const db = getFirestore(app);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 console.log("Using Firebase project:", (app.options as any)?.projectId || "(unknown)");
 
+function maxIsoDateKey(a: string | null, b: string): string {
+  if (!a) return b;
+  return a >= b ? a : b;
+}
+
 async function processTracker(
   uid: string,
   tracker: TrackerDoc,
@@ -161,7 +188,10 @@ async function processTracker(
   const txsRef = trackerRef.collection("transactions");
   let written = 0;
   let backfilled = 0;
-  let lastDate = tracker.lastClSyncDateKey ?? null;
+  /** Immutable high-water mark from Firestore — must not be overwritten while iterating dates. */
+  const savedLastClSyncDateKey = tracker.lastClSyncDateKey ?? null;
+  /** Latest calendar day we wrote CL or EL reward data for (advances the tracker watermark). */
+  let rewardWatermark = savedLastClSyncDateKey;
   let latestValidatorBalanceEth: number | null = null;
   let topUpsCount = 0;
   let topUpsEthTotal = 0;
@@ -187,7 +217,7 @@ async function processTracker(
 
   const dateKeys = Array.from(new Set([...Object.keys(clByDate), ...Object.keys(elByDate)])).sort();
   for (const dateKey of dateKeys) {
-    const isAlreadySyncedDate = Boolean(lastDate && dateKey <= lastDate);
+    const isAlreadySyncedDate = Boolean(savedLastClSyncDateKey && dateKey <= savedLastClSyncDateKey);
 
     const endTs = Math.floor(new Date(`${dateKey}T12:00:00Z`).getTime() / 1000);
     const priceEntry = prices[dateKey];
@@ -253,12 +283,12 @@ async function processTracker(
     }
 
     if (clAmount > 0 || (elAmount > 0 && mevMode === "direct")) {
-      lastDate = dateKey;
+      rewardWatermark = maxIsoDateKey(rewardWatermark, dateKey);
     }
   }
 
   await trackerRef.update({
-    lastClSyncDateKey: lastDate,
+    lastClSyncDateKey: rewardWatermark,
     ...(latestValidatorBalanceEth != null ? { validatorBalanceEth: latestValidatorBalanceEth } : {}),
     topUpsCount,
     topUpsEthTotal,
@@ -330,8 +360,11 @@ async function main() {
 
   const clByDate = buildClByDate(clRows);
   const elByDate = buildElByDate(elRows.length > 0 ? elRows : fallbackElRows);
+  const clDateKeys = Object.keys(clByDate).sort();
+  const clMin = clDateKeys[0] ?? "(none)";
+  const clMax = clDateKeys.at(-1) ?? "(none)";
   console.log(
-    `Dune rows loaded: CL=${clRows.length}, EL=${elRows.length}, EL fallback=${fallbackElRows.length}`
+    `Dune rows loaded: CL=${clRows.length} (dates ${clMin}..${clMax}), EL=${elRows.length}, EL fallback=${fallbackElRows.length}`
   );
 
   const usersSnap = await db.collection("users").get();

@@ -127,8 +127,10 @@ const firestoreToTransaction = (data: any, txHash: string): CachedTransaction =>
 };
 
 /**
- * Get all transactions for a tracker from Firestore
- * Only fetches transactions newer than lastFetchedTimestamp (delta fetch)
+ * Get transactions for a tracker from Firestore.
+ * When `lastFetchedTimestamp` is set, only returns rows with `timestamp` strictly greater than it
+ * (legacy delta fetch). Prefer passing `undefined` for beacon-sync / Dune flows so all reward days
+ * are visible even if they were written after the last browser session.
  */
 export async function getFirestoreTransactions(
   uid: string,

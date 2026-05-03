@@ -472,20 +472,17 @@ export const Dashboard: React.FC = () => {
       // Sync with Firestore if user is authenticated
       if (user) {
         try {
-          // If cache is empty but metadata exists (cache was cleared), fetch ALL transactions from Firestore
-          // Otherwise, do delta sync (only new transactions since lastFetchedTimestamp)
-          const shouldFetchAll = cached.length === 0 && metadata !== null;
-          const firestoreTxs = await getFirestoreTransactions(
-            user.uid,
-            tracker.id,
-            shouldFetchAll ? undefined : metadata?.lastFetchedTimestamp
-          );
-          
+          // Always load the full transaction set from Firestore. A delta filtered by
+          // `lastFetchedTimestamp` (last browser fetch time) incorrectly drops older reward
+          // days that were added later by beacon-sync (e.g. May 1–2 while metadata is “today”).
+          const firestoreTxs = await getFirestoreTransactions(user.uid, tracker.id, undefined);
+
           if (firestoreTxs.length > 0) {
-            if (shouldFetchAll) {
-              console.log(`Restored ${firestoreTxs.length} transactions from Firestore (cache was cleared)`);
+            const cacheWasEmpty = cached.length === 0;
+            if (cacheWasEmpty && metadata !== null) {
+              console.log(`Restored ${firestoreTxs.length} transactions from Firestore (cache was empty)`);
             } else {
-              console.log(`Synced ${firestoreTxs.length} new transactions from Firestore`);
+              console.log(`Synced ${firestoreTxs.length} transactions from Firestore`);
             }
             // Merge Firestore data with cached data (Firestore takes precedence for status)
             const cachedMap = new Map(cached.map((t) => [t.transactionHash, t]));
