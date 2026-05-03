@@ -1348,10 +1348,10 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* Validator overview - for the selected validator's rewards (all years) */}
+      {/* Overall overview - totals across all validators / all years */}
       {trackers.length > 0 && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Validator overview</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Overall overview</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", padding: "24px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
         {/* First Card - TOTAL ETH EARNED */}
@@ -1532,10 +1532,10 @@ export const Dashboard: React.FC = () => {
         </>
       )}
 
-      {/* Validator Selected + Incoming Rewards combined */}
+      {/* Your validator + incoming rewards */}
       {activeTracker && (
         <>
-          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Validator selected</h3>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validator</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
             <div style={{ borderRadius: "13px", padding: "24px" }}>
               {/* Header row: validator name, validator pubkey + copy, action buttons */}
