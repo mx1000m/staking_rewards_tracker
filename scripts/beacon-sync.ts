@@ -63,6 +63,9 @@ interface DailyClData {
   rewardEth: number;
   endBalanceEth?: number;
   topUpEth: number;
+  /** From Dune `epoch_min` / `epoch_max` (chain-day span); optional. */
+  epochStart?: number;
+  epochEnd?: number;
 }
 
 function toDateKey(value: unknown): string | null {
@@ -83,6 +86,17 @@ function asNumber(value: unknown): number {
     return Number.isFinite(n) ? n : 0;
   }
   return 0;
+}
+
+/** Dune `epoch_min` / `epoch_max` (optional); ignore missing or non-finite. */
+function asOptionalEpoch(value: unknown): number | undefined {
+  if (value == null || value === "") return undefined;
+  if (typeof value === "number" && Number.isFinite(value)) return Math.round(value);
+  if (typeof value === "string") {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.round(n) : undefined;
+  }
+  return undefined;
 }
 
 function resolveDuneUrl(pathOrUrl: string): string {
@@ -246,10 +260,13 @@ function buildClByDate(rows: DuneResultRow[]): Record<string, DailyClData> {
     const endBalanceEth = asNumber(row.end_balance_eth);
     const capitalChangeEth = asNumber(row.capital_change_eth);
     const topUpEth = capitalChangeEth > 0 ? capitalChangeEth : 0;
+    const epochStart = asOptionalEpoch(row.epoch_min);
+    const epochEnd = asOptionalEpoch(row.epoch_max);
     out[dateKey] = {
       rewardEth,
       endBalanceEth: Number.isFinite(endBalanceEth) ? endBalanceEth : undefined,
       topUpEth,
+      ...(epochStart != null && epochEnd != null ? { epochStart, epochEnd } : {}),
     };
   }
   return out;
@@ -354,12 +371,21 @@ async function processTracker(
     }
     if (clAmount > 0) {
       const clHash = `cl_${trackerId}_${dateKey}`;
+      const epochFields =
+        clData &&
+        typeof clData.epochStart === "number" &&
+        typeof clData.epochEnd === "number" &&
+        Number.isFinite(clData.epochStart) &&
+        Number.isFinite(clData.epochEnd)
+          ? { epochStart: clData.epochStart, epochEnd: clData.epochEnd }
+          : {};
       const clDoc: Record<string, unknown> = isAlreadySyncedDate
         ? {
             validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
             topUpEth,
             ethPrice: FieldValue.delete(),
             status: FieldValue.delete(),
+            ...epochFields,
             updatedAt: FieldValue.serverTimestamp(),
           }
         : {
@@ -377,6 +403,7 @@ async function processTracker(
             rewardType: "CL",
             validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
             topUpEth,
+            ...epochFields,
             updatedAt: FieldValue.serverTimestamp(),
           };
       await txsRef.doc(clHash).set(clDoc, { merge: true });
