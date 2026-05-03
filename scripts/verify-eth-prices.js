@@ -1,25 +1,25 @@
 #!/usr/bin/env node
 /**
- * Compare data/eth-prices.json to live CoinGecko /coins/ethereum/history for the same UTC date
- * and for the previous UTC date — detects a systematic "off by one calendar day" mis-keying.
+ * Compare data/eth-prices.json to CoinGecko /coins/ethereum/history for the **website Close**
+ * for each UTC calendar key D: the API must be called with `date` = D+1 (UTC). See coinGeckoHistoryQueryDate.
  *
  * Usage (from repo root):
  *   export COINGECKO_API_KEY="..."   # or VITE_COINGECKO_API_KEY
  *   node scripts/verify-eth-prices.js
  *
  * Optional env:
- *   VERIFY_START_DATE=2026-04-16   (default 2026-04-16)
+ *   VERIFY_START_DATE=2026-04-16
  *   VERIFY_END_DATE=2026-05-03     (default: today UTC)
- *   VERIFY_SLEEP_MS=2100           (delay between CoinGecko calls; default 2100)
- *
- * CoinGecko free/demo tier is rate-limited; expect ~2s per request.
+ *   VERIFY_SLEEP_MS=2100
  */
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ETH_PRICES_FILE = path.join(__dirname, "..", "data", "eth-prices.json");
-const TOLERANCE_REL = 0.008; // 0.8% — small API / rounding drift vs stored snapshot
+const TOLERANCE_REL = 0.008;
 const TOLERANCE_ABS = 1.0;
 
 const START = process.env.VERIFY_START_DATE || "2026-04-16";
@@ -60,8 +60,10 @@ function matchPair(stored, api) {
   return close(stored.eur, api.eur) && close(stored.usd, api.usd);
 }
 
-async function fetchCoinGeckoHistory(dateKey, apiKey) {
-  const dateString = dateKeyToDdMmYyyy(dateKey);
+/** Website Close for UTC day `dateKey` → CoinGecko `date` query string (D+1). */
+async function fetchCoinGeckoCloseForUtcDay(dateKey, apiKey) {
+  const apiDayKey = addDaysUtc(dateKey, 1);
+  const dateString = dateKeyToDdMmYyyy(apiDayKey);
   const url = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   const headers = { accept: "application/json" };
   if (apiKey) headers["x-cg-demo-api-key"] = apiKey;
@@ -69,7 +71,7 @@ async function fetchCoinGeckoHistory(dateKey, apiKey) {
   const res = await fetch(url, { headers });
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`HTTP ${res.status} for ${dateKey} (${dateString}): ${body.slice(0, 200)}`);
+    throw new Error(`HTTP ${res.status} for ${dateKey} (API date ${dateString}): ${body.slice(0, 200)}`);
   }
   const data = await res.json();
   const eur = data.market_data?.current_price?.eur;
@@ -94,49 +96,21 @@ async function main() {
   console.log(`File: ${ETH_PRICES_FILE}`);
   console.log(`Range: ${START} .. ${END} (${keys.length} keys)\n`);
 
-  let sameOnly = 0;
-  let prevOnly = 0;
-  let both = 0;
-  let neither = 0;
-  const prevBetter = [];
-  const ambiguous = [];
+  let ok = 0;
   const failed = [];
 
   for (const dateKey of keys) {
     const stored = prices[dateKey];
-    const prevKey = addDaysUtc(dateKey, -1);
-
     try {
-      const apiSame = await fetchCoinGeckoHistory(dateKey, apiKey);
+      const api = await fetchCoinGeckoCloseForUtcDay(dateKey, apiKey);
       await sleep(SLEEP_MS);
-      const apiPrev = await fetchCoinGeckoHistory(prevKey, apiKey);
-      await sleep(SLEEP_MS);
-
-      const mSame = matchPair(stored, apiSame);
-      const mPrev = matchPair(stored, apiPrev);
-
-      if (mSame && mPrev) both++;
-      else if (mSame && !mPrev) sameOnly++;
-      else if (!mSame && mPrev) {
-        prevOnly++;
-        prevBetter.push({
-          dateKey,
-          stored,
-          coinGeckoSameDay: apiSame,
-          coinGeckoPreviousDay: apiPrev,
-        });
+      if (matchPair(stored, api)) {
+        ok++;
+        console.log(`${dateKey}  OK (CoinGecko API date = next UTC day)`);
       } else {
-        neither++;
-        ambiguous.push({
-          dateKey,
-          stored,
-          coinGeckoSameDay: apiSame,
-          coinGeckoPreviousDay: apiPrev,
-        });
+        failed.push({ dateKey, stored, api });
+        console.log(`${dateKey}  MISMATCH`);
       }
-
-      const tag = mSame && !mPrev ? "OK same-day" : !mSame && mPrev ? "SHIFT? prev-day" : mSame && mPrev ? "both?" : "mismatch";
-      console.log(`${dateKey}  ${tag}`);
     } catch (e) {
       failed.push({ dateKey, error: e.message });
       console.log(`${dateKey}  ERROR: ${e.message}`);
@@ -145,31 +119,15 @@ async function main() {
   }
 
   console.log("\n--- Summary ---");
-  console.log(`Matches CoinGecko for SAME key date only:     ${sameOnly}`);
-  console.log(`Matches CoinGecko for PREVIOUS day only:      ${prevOnly}`);
-  console.log(`Matches BOTH same and previous (ambiguous):   ${both}`);
-  console.log(`Matches neither within tolerance:           ${neither}`);
-  console.log(`Fetch errors:                                 ${failed.length}`);
-
-  if (prevBetter.length) {
-    console.log(
-      "\nInterpretation: rows where stored values align with CoinGecko's *previous* calendar day " +
-        "more than the key date — consistent with a one-day mis-keying for those rows.\n"
-    );
-    console.log(JSON.stringify(prevBetter, null, 2));
-  }
-
-  if (ambiguous.length && !prevBetter.length) {
-    console.log("\nRows that did not match either day within tolerance (review manually):");
-    console.log(JSON.stringify(ambiguous, null, 2));
-  }
+  console.log(`OK:     ${ok}`);
+  console.log(`Failed: ${failed.length}`);
 
   if (failed.length) {
-    console.log("\nErrors:");
+    console.log("\nDetails:");
     console.log(JSON.stringify(failed, null, 2));
   }
 
-  process.exit(prevBetter.length || neither || failed.length ? 2 : 0);
+  process.exit(failed.length ? 2 : 0);
 }
 
 main().catch((e) => {

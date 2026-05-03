@@ -1,3 +1,5 @@
+import { coinGeckoHistoryDdMmYyyyFromUtcRewardDay } from "../utils/coinGeckoHistoryQueryDate";
+
 // Rate limiting: track last request time to respect 30 calls/min limit
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 2100; // 2.1 seconds between requests (slightly more than 2s to be safe)
@@ -8,11 +10,7 @@ export async function getEthPriceAtTimestamp(
   apiKey?: string,
   retryCount = 0
 ): Promise<number> {
-  const date = new Date(timestamp * 1000);
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
-  const dateString = `${day}-${month}-${year}`;
+  const dateString = coinGeckoHistoryDdMmYyyyFromUtcRewardDay(timestamp);
 
   const baseUrl = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   
@@ -77,14 +75,7 @@ export async function getEthPriceAtTimestamp(
   const data = await res.json();
 
   if (!data.market_data?.current_price?.[currency.toLowerCase()]) {
-    // Try to get price from a nearby date if exact date is missing
-    if (retryCount === 0) {
-      console.warn(`Missing price data for ${dateString}, trying previous day...`);
-      const previousDay = new Date(timestamp * 1000);
-      previousDay.setDate(previousDay.getDate() - 1);
-      return getEthPriceAtTimestamp(Math.floor(previousDay.getTime() / 1000), currency, apiKey, 1);
-    }
-    throw new Error(`Missing ${currency} price data for ${dateString}`);
+    throw new Error(`Missing ${currency} price data for ${dateString} (UTC reward day query uses +1 calendar day; see coinGeckoHistoryQueryDate)`);
   }
 
   return data.market_data.current_price[currency.toLowerCase()];

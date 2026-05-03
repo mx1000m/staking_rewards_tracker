@@ -33,16 +33,18 @@ const ETH_PRICES_FILE = path.join(__dirname, '..', 'data', 'eth-prices.json');
 let lastRequestTime = 0;
 const MIN_REQUEST_INTERVAL = 2100; // 2.1 seconds between requests
 
+/** CoinGecko /history?date= returns prior-day website Close; use UTC reward day + 1 for the query. */
+function coinGeckoHistoryDdMmYyyyFromUtcRewardDay(timestampSeconds) {
+  const d = new Date(timestampSeconds * 1000);
+  const api = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
+  return `${String(api.getUTCDate()).padStart(2, '0')}-${String(api.getUTCMonth() + 1).padStart(2, '0')}-${api.getUTCFullYear()}`;
+}
+
 /**
  * Fetch ETH price from CoinGecko for a specific timestamp
  */
 async function getEthPriceAtTimestamp(timestamp, currency = 'EUR', apiKey) {
-  const date = new Date(timestamp * 1000);
-  // Always derive CoinGecko `date=dd-mm-yyyy` from the UTC calendar day (matches getDateKey / CI runners).
-  const day = date.getUTCDate().toString().padStart(2, '0');
-  const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-  const year = date.getUTCFullYear();
-  const dateString = `${day}-${month}-${year}`;
+  const dateString = coinGeckoHistoryDdMmYyyyFromUtcRewardDay(timestamp);
 
   const baseUrl = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   
@@ -80,10 +82,7 @@ async function getEthPriceAtTimestamp(timestamp, currency = 'EUR', apiKey) {
     const data = await res.json();
 
     if (!data.market_data?.current_price?.[currency.toLowerCase()]) {
-      // Try previous UTC calendar day if exact date is missing
-      const previousDay = new Date(timestamp * 1000);
-      previousDay.setUTCDate(previousDay.getUTCDate() - 1);
-      return getEthPriceAtTimestamp(Math.floor(previousDay.getTime() / 1000), currency, apiKey);
+      throw new Error(`Missing ${currency} for CoinGecko date=${dateString}`);
     }
 
     return data.market_data.current_price[currency.toLowerCase()];

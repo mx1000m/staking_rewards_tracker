@@ -2,8 +2,8 @@
 /**
  * One-time: refetch CoinGecko ETH EUR/USD for each UTC calendar day in a range and merge into data/eth-prices.json.
  *
- * Uses the same UTC date → CoinGecko `dd-mm-yyyy` mapping as daily-sync.js, but does NOT fall back to the
- * previous day if a date is missing (avoids re-applying the wrong-day bug).
+ * Uses the same mapping as daily-sync.js: CoinGecko /history?date= matches the **previous** calendar day's
+ * website Close, so for stored UTC day D we request `date` = D+1 (UTC). No missing-price fallback.
  *
  * Usage (from repo root):
  *   export COINGECKO_API_KEY="..."
@@ -13,11 +13,16 @@
  *   REFETCH_START=2026-04-16
  *   REFETCH_END=2026-05-02
  *   REFETCH_DRY_RUN=1   — log only, do not write the file
+ *   ETH_PRICES_MIN_DATE=2026-04-16 — before write, delete stored keys strictly before this date (default 2026-04-16)
  */
 
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { coinGeckoHistoryDdMmYyyyFromUtcRewardDay } from "./lib/coinGeckoHistoryQueryDate.mjs";
+
+/** Drop stored keys before this YYYY-MM-DD (inclusive history starts here). */
+const MIN_STORED_DATE = process.env.ETH_PRICES_MIN_DATE || "2026-04-16";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ETH_PRICES_FILE = path.join(__dirname, "..", "data", "eth-prices.json");
@@ -56,11 +61,7 @@ function sleep(ms) {
 
 async function fetchHistoryStrict(dateKey, currency, apiKey) {
   const ts = utcMidnightTimestampSeconds(dateKey);
-  const date = new Date(ts * 1000);
-  const day = date.getUTCDate().toString().padStart(2, "0");
-  const month = (date.getUTCMonth() + 1).toString().padStart(2, "0");
-  const year = date.getUTCFullYear();
-  const dateString = `${day}-${month}-${year}`;
+  const dateString = coinGeckoHistoryDdMmYyyyFromUtcRewardDay(ts);
 
   const baseUrl = `https://api.coingecko.com/api/v3/coins/ethereum/history?date=${dateString}&localization=false`;
   const headers = { accept: "application/json" };
@@ -120,6 +121,12 @@ async function main() {
   if (DRY) {
     console.log("\nDry run complete. Unset REFETCH_DRY_RUN to write file.");
     return;
+  }
+
+  for (const k of Object.keys(prices)) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(k) && k < MIN_STORED_DATE) {
+      delete prices[k];
+    }
   }
 
   const sortedKeys = Object.keys(prices).sort();
