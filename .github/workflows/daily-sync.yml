@@ -29,8 +29,7 @@ jobs:
           echo '{}' > package.json
           npm install firebase-admin --save
       
-      - name: Run daily sync
+      - name: Run daily sync (ETH prices JSON only)
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           COINGECKO_API_KEY: ${{ secrets.VITE_COINGECKO_API_KEY }}
         run: node scripts/daily-sync.js

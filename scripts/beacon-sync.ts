@@ -477,7 +477,6 @@ async function ensureBootstrapTracker(): Promise<void> {
         currency: BOOTSTRAP_CURRENCY,
         country: BOOTSTRAP_COUNTRY,
         taxRate: Number.isFinite(BOOTSTRAP_TAX_RATE) ? BOOTSTRAP_TAX_RATE : 24,
-        etherscanKey: "",
         createdAt,
         mevMode: BOOTSTRAP_MEV_MODE,
         lastClSyncDateKey: null,

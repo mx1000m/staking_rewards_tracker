@@ -2,14 +2,10 @@
 
 This repo currently serves a static site from `frontend/` via GitHub Pages. A new React app scaffold is provided in `app/` for the v2 experience (auth + onboarding wizard).
 
-## Secrets required (for Node script)
-- `ETHERSCAN_API_KEY` (required): used by `index.js` to fetch transactions.
-- `COINGECKO_API_KEY` (optional): sent as `x-cg-demo-api-key` to increase rate limits.
-
-Add these at: Settings → Secrets and variables → Actions → New repository secret.
-
-## Etherscan "Sign in"
-Etherscan does not provide OAuth. Each user must create their own API key and paste it in the app. The wizard collects the key and stores it client-side (or later to a backend of your choice).
+## Secrets (GitHub Actions)
+- **`COINGECKO_API_KEY`**: used by `scripts/daily-sync.js` for `data/eth-prices.json` (daily UTC close).
+- **`DUNE_API_KEY`**, **`DUNE_QUERY_ID_CL`**, **`DUNE_QUERY_ID_EL`** (or **`DUNE_QUERY_ID_EL_FALLBACK`**): used by `scripts/beacon-sync.ts` for reward rows in Firestore.
+- **`FIREBASE_SERVICE_ACCOUNT`**: required for `beacon-sync` (and any script that still uses Admin SDK).
 
 ## React app (v2)
 - Location: `app/` (Vite + React + TS). Base path is configured for GitHub Pages under `vite.config.ts`.
@@ -95,7 +91,7 @@ The app stores **full transaction history + paid decisions** in Firestore for cr
 ```
 users/{uid}/
   trackers/{trackerId}/
-    - name, walletAddress, currency, country, taxRate, etherscanKey
+    - name, walletAddress, currency, country, taxRate, validatorPublicKey, mevMode, …
     transactions/{transactionHash}/
       - date, time, ethAmount, ethPrice, rewardsInCurrency
       - taxRate, taxesInEth, taxesInCurrency
@@ -114,22 +110,10 @@ users/{uid}/
 - "Mark as Paid" status syncs to Firestore for cross-device access
 - Tracker metadata syncs to Firestore on create/update
 
-## Transaction Fetching Strategy
+## Rewards data flow
 
-**Optimized for rate limits:**
-- **Date range**: Fetches transactions from January 1 of the current year at 00:01 UTC
-- **Price caching**: ETH prices are cached by date to avoid duplicate CoinGecko API calls
-- **Rate limiting**: 1.2 second delay between CoinGecko calls (stays under 5 calls/second limit)
-- **Auto-refresh**: Automatically checks for new transactions daily at midnight UTC
-- **Manual refresh**: Users can click "🔄 Refresh" to manually update transactions
-- **Etherscan limits**: Free tier allows 5 calls/second, 100,000 calls/day
-
-**Why this approach:**
-- Only fetches current year's data (not entire history) - saves API calls
-- Price caching means if 10 transactions happened on the same day, only 1 CoinGecko call is made
-- Auto-refresh at midnight UTC ensures daily updates without user intervention
-- Manual refresh gives users control over when to check for new transactions
-- Client-side caching (IndexedDB) + Firestore sync provides instant loads and cross-device sync
+- **Dune + `beacon-sync`**: daily CL/EL reward rows written to Firestore (`transactions` subcollection).
+- **App**: loads that year’s rows from Firestore; IndexedDB caches locally; EUR/USD comes from `data/eth-prices.json` (updated by `daily-sync.js` via CoinGecko).
 
 ## Deploy v2 (manual)
 A manual Pages workflow can be added to build `app/` and deploy `dist/`. For now, v1 remains live. When ready, switch Pages to the React build workflow.

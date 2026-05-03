@@ -22,7 +22,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   const [validatorPublicKey, setValidatorPublicKey] = useState("");
   const [mevMode, setMevMode] = useState<"none" | "direct" | "pool" | "mixed">("none");
   const [mevPoolPayoutAddress, setMevPoolPayoutAddress] = useState("");
-  const [beaconApiKeyLocal, setBeaconApiKeyLocal] = useState("");
   const [currency, setCurrencyLocal] = useState<Currency>(globalCurrency);
   
   // Update local currency when global currency changes
@@ -37,12 +36,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   };
   const [country, setCountry] = useState("Croatia");
   const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
-  const [etherscanKey, setEtherscanKey] = useState("");
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [showBeaconApiKey, setShowBeaconApiKey] = useState(false);
   const [shakeNameInput, setShakeNameInput] = useState(false);
   const [shakeBeaconValidator, setShakeBeaconValidator] = useState(false);
-  const [shakeBeaconApi, setShakeBeaconApi] = useState(false);
 
   // Get next available validator name
   const getNextAvailableName = useMemo(() => {
@@ -82,11 +77,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     };
   }, []);
 
-  // Execution rewards for "Priority fees and/or MEV rewards" are fetched from Beaconcha.in,
-  // so we no longer require an execution address or Etherscan API key during onboarding.
-
-  const isFirstTracker = trackers.length === 0;
-
   const canNext = useMemo(() => {
     if (step === 0) {
       // Prevent proceeding if name is duplicate
@@ -113,7 +103,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     feeRecipientAddress,
     currency,
     taxRate,
-    etherscanKey,
     validatorPublicKey,
     mevMode,
     mevPoolPayoutAddress,
@@ -133,17 +122,10 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     if (step === 1) {
       const key = validatorPublicKey.trim();
       const validatorKeyValid = /^0x[a-fA-F0-9]{96}$/.test(key);
-      const apiValid = beaconApiKeyLocal.trim().length > 0;
 
-      if (!validatorKeyValid || !apiValid) {
-        if (!validatorKeyValid) {
-          setShakeBeaconValidator(true);
-          setTimeout(() => setShakeBeaconValidator(false), 500);
-        }
-        if (!apiValid) {
-          setShakeBeaconApi(true);
-          setTimeout(() => setShakeBeaconApi(false), 500);
-        }
+      if (!validatorKeyValid) {
+        setShakeBeaconValidator(true);
+        setTimeout(() => setShakeBeaconValidator(false), 500);
         return;
       }
     }
@@ -162,16 +144,13 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           : undefined;
 
       addTracker({
-        walletAddress: "", // will be filled from Beaconcha withdrawal_credentials by beacon-sync
+        walletAddress: "", // filled by beacon-sync from validator index / Dune
         feeRecipientAddress: feeRecipientAddress.trim() || undefined,
         currency, // Keep for backward compatibility, but global currency is used for display
         country,
         taxRate,
-        etherscanKey,
         name: defaultName,
         validatorPublicKey: validatorPublicKey.trim() || undefined,
-        beaconApiProvider: beaconApiKeyLocal ? "beaconcha" : undefined,
-        beaconApiKey: beaconApiKeyLocal.trim() || undefined,
         mevMode,
         mevPoolPayoutAddress: effectiveMevPayout,
       });
@@ -212,7 +191,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 600 }}>
           {step === 0 && "Start by naming your validator"}
-          {step === 1 && "Add your validator public key and API key"}
+          {step === 1 && "Add your validator public key"}
           {step === 2 && "Set up your execution rewards"}
           {step === 3 && "Set your taxation country"}
           {step === 4 && "Chose your currency preference"}
@@ -289,71 +268,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               animation: shakeBeaconValidator ? "shake 0.5s" : undefined,
             }}
           />
-          <label style={{ display: "block", marginTop: "20px", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-            Your beaconcha.in API key
-          </label>
-          <p className="muted" style={{ margin: "4px 0 9px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            Get your API key by signing up for free on{" "}
-            <a
-              href="https://beaconcha.in"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#aaaaaa", textDecoration: "underline" }}
-            >
-              beaconcha.in
-            </a>
-            .
-          </p>
-          <div style={{ position: "relative" }}>
-            <input
-              className="input"
-              placeholder="Beaconcha.in API key"
-              type={showBeaconApiKey ? "text" : "password"}
-              value={beaconApiKeyLocal}
-              onChange={(e) => setBeaconApiKeyLocal(e.target.value.trim())}
-              style={{
-                borderColor: shakeBeaconApi ? "#ef4444" : undefined,
-                borderWidth: shakeBeaconApi ? "2px" : undefined,
-                animation: shakeBeaconApi ? "shake 0.5s" : undefined,
-                paddingRight: "40px",
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setShowBeaconApiKey(!showBeaconApiKey)}
-              style={{
-                position: "absolute",
-                right: "12px",
-                top: "50%",
-                transform: "translateY(-50%)",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                padding: "4px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#9aa0b4",
-                transition: "color 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "#e8e8f0";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "#9aa0b4";
-              }}
-            >
-              <img
-                src={
-                  showBeaconApiKey
-                    ? "/staking_rewards_tracker/icons/eye_off_icon.svg"
-                    : "/staking_rewards_tracker/icons/eye_icon.svg"
-                }
-                alt={showBeaconApiKey ? "Hide" : "Show"}
-                style={{ width: "20px", height: "20px", filter: "brightness(0) saturate(1) invert(60%)" }}
-              />
-            </button>
-          </div>
         </div>
       )}
       {step === 2 && (
@@ -409,8 +323,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
               <span>Priority fees and/or MEV rewards</span>
             </label>
 
-            {/* No extra fields are required for Priority fees and/or MEV rewards.
-                Execution income is fetched directly from Beaconcha.in aggregates. */}
+            {/* Execution rewards come from Dune + beacon-sync (Firestore). */}
 
             <label
               style={{

@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
-import { EtherscanTransaction } from "../api/etherscan";
 import { getDateKey } from "../utils/priceCache";
 
 // Country to timezone mapping
@@ -506,7 +505,7 @@ export const Dashboard: React.FC = () => {
         }
       }
 
-      // Check if we need to fetch new transactions from Etherscan
+      // Check if we need to refresh reward data (cache + Firestore)
       // (metadata was already fetched above)
       const now = Math.floor(Date.now() / 1000);
       const oneDayAgo = now - 24 * 60 * 60;
@@ -565,17 +564,8 @@ export const Dashboard: React.FC = () => {
       // End at Dec 31 of target year (23:59:59 UTC)
       const endTimestamp = Math.floor(Date.UTC(targetYear, 11, 31, 23, 59, 59) / 1000);
       
-      // Use fee recipient address if provided, otherwise default to withdrawal address
-      const feeRecipientAddress = tracker.feeRecipientAddress || tracker.walletAddress;
-      
-      // In Dune mode we rely entirely on Firestore transactions populated by beacon-sync.
-      // Keep these arrays for compatibility with the existing processing pipeline.
-      let etherscanTxs: EtherscanTransaction[] = [];
-      let mevPoolTxs: EtherscanTransaction[] = [];
-      console.log("Skipping EVM transaction fetch; using Firestore-synced Dune data only.");
-
-      // CL (beacon-chain) rewards are synced by the beacon-sync GitHub Action; load from Firestore only.
-      let clFromFirestore: CachedTransaction[] = [];
+      // Rewards: Firestore only (beacon-sync + Dune).
+      let fromFirestore: CachedTransaction[] = [];
       if (user) {
         try {
           const allFirestore = await getFirestoreTransactions(user.uid, tracker.id);
@@ -586,7 +576,7 @@ export const Dashboard: React.FC = () => {
             tracker.id
           );
           const includeEvmFromFirestore = tracker.mevMode === "direct";
-          clFromFirestore = allFirestore.filter((ftx) => {
+          fromFirestore = allFirestore.filter((ftx) => {
             const inYear = ftx.timestamp >= startTimestamp && ftx.timestamp <= endTimestamp;
             const isCl = ftx.rewardType === "CL";
             const isElFromBeacon = includeEvmFromFirestore && ftx.rewardType === "EVM";
@@ -596,24 +586,22 @@ export const Dashboard: React.FC = () => {
             return true;
           });
           console.log(
-            "[fetchTransactions] CL txs after year filter:",
-            clFromFirestore.length,
+            "[fetchTransactions] reward txs after year filter:",
+            fromFirestore.length,
             "start",
             startTimestamp,
             "end",
             endTimestamp
           );
         } catch (e) {
-          console.warn("Failed to load CL transactions from Firestore:", e);
+          console.warn("Failed to load reward transactions from Firestore:", e);
         }
       }
-      const allRawTxs: (EtherscanTransaction | CachedTransaction)[] = [...etherscanTxs, ...mevPoolTxs, ...clFromFirestore];
-      const yearTxs = allRawTxs.filter((tx) => {
-        const txTimestamp = "timeStamp" in tx ? parseInt((tx as EtherscanTransaction).timeStamp) : (tx as CachedTransaction).timestamp;
-        return txTimestamp >= startTimestamp && txTimestamp <= endTimestamp;
-      });
-      
-      console.log(`Found ${yearTxs.length} transactions for year ${targetYear} (out of ${allRawTxs.length} total)`);
+      const yearTxs = fromFirestore.filter(
+        (tx) => tx.timestamp >= startTimestamp && tx.timestamp <= endTimestamp
+      );
+
+      console.log(`Found ${yearTxs.length} transactions for year ${targetYear} (out of ${fromFirestore.length} loaded from Firestore)`);
       
       // Set initial progress (will be updated during price fetching and transaction processing)
       // Total represents transactions, but progress includes price fetches too
@@ -653,88 +641,38 @@ export const Dashboard: React.FC = () => {
         return;
       }
       
-      // Get prices from centralized storage (no API calls needed!)
-      // Step 1: Collect all unique dates from transactions
-      const datePriceMapEUR = new Map<string, number>(); // dateKey -> EUR price
-      const datePriceMapUSD = new Map<string, number>(); // dateKey -> USD price
       const uniqueDates = new Set<string>();
       const missingDates: string[] = [];
-      
       for (const tx of yearTxs) {
-        const txTs = "timeStamp" in tx ? parseInt((tx as EtherscanTransaction).timeStamp) : (tx as CachedTransaction).timestamp;
-        const dateKey = getDateKey(txTs);
+        const dateKey = getDateKey(tx.timestamp);
         uniqueDates.add(dateKey);
-        
-        // Get prices from centralized storage
         const priceEntry = ethPrices[dateKey];
-        if (priceEntry && priceEntry.eur && priceEntry.usd) {
-          datePriceMapEUR.set(dateKey, priceEntry.eur);
-          datePriceMapUSD.set(dateKey, priceEntry.usd);
-        } else {
-          // Price not found in centralized storage
+        if (!priceEntry?.eur || !priceEntry?.usd) {
           missingDates.push(dateKey);
-          datePriceMapEUR.set(dateKey, 0);
-          datePriceMapUSD.set(dateKey, 0);
         }
       }
-      
       if (missingDates.length > 0) {
-        console.warn(`Warning: ${missingDates.length} dates missing from centralized price storage:`, missingDates.slice(0, 5));
+        console.warn(
+          `Warning: ${missingDates.length} dates missing from centralized price storage:`,
+          missingDates.slice(0, 5)
+        );
       }
-      
-      console.log(`Loaded prices from centralized storage for ${uniqueDates.size - missingDates.length}/${uniqueDates.size} unique dates`);
-      
-      // Step 2: Process all transactions using prices from centralized storage
+      console.log(
+        `Price coverage: ${uniqueDates.size - new Set(missingDates).size}/${uniqueDates.size} unique reward dates have EUR/USD in eth-prices`
+      );
+
       const processedTxs: CachedTransaction[] = [];
       
       const timezone = getTimezoneForCountry(tracker.country);
       for (let i = 0; i < yearTxs.length; i++) {
-        const tx = yearTxs[i];
-        // CL transactions from Firestore are already CachedTransaction; use as-is.
-        if (!("timeStamp" in tx)) {
-          const c = tx as CachedTransaction;
-          const rest: CachedTransaction = { ...c };
-          delete rest.time;
-          setLoadingProgress({ current: i + 1, total: yearTxs.length, progressPercent: ((i + 1) / yearTxs.length) * 100 });
-          processedTxs.push({
-            ...rest,
-            date: formatDate(new Date(c.timestamp * 1000), timezone, globalCurrency),
-          });
-          continue;
-        }
-        const rawTs = parseInt((tx as EtherscanTransaction).timeStamp);
-        const timestamp = rawTs * 1000;
-        const date = new Date(timestamp);
-
-        // IMPORTANT: value units differ by reward type
-        // - EVM rewards: value is in WEI  -> ETH = value / 1e18
-        // - CL beacon withdrawals: value is in GWEI -> ETH = value / 1e9
-        const rawValue = parseFloat((tx as EtherscanTransaction).value);
-        const ethAmount =
-          (tx as EtherscanTransaction).rewardType === "CL"
-            ? rawValue / 1e9 // Gwei → ETH
-            : rawValue / 1e18; // Wei → ETH
-        
-        const dateKey = getDateKey(rawTs);
-        const ethPriceEUR = datePriceMapEUR.get(dateKey) || 0;
-        const ethPriceUSD = datePriceMapUSD.get(dateKey) || 0;
-        
+        const c = yearTxs[i];
+        const rest: CachedTransaction = { ...c };
+        delete rest.time;
         setLoadingProgress({ current: i + 1, total: yearTxs.length, progressPercent: ((i + 1) / yearTxs.length) * 100 });
-        
-        const taxesInEth = ethAmount * (tracker.taxRate / 100);
-        
         processedTxs.push({
-          date: formatDate(date, timezone, globalCurrency),
-          ethAmount,
-          ethPriceEUR: 0,
-          ethPriceUSD: 0,
-          taxRate: tracker.taxRate,
-          taxesInEth,
-          transactionHash: (tx as EtherscanTransaction).hash,
-          timestamp: rawTs,
-          rewardType: (tx as EtherscanTransaction).rewardType || "EVM",
-          rewardSubType: (tx as EtherscanTransaction).rewardSubType,
-        } as CachedTransaction);
+          ...rest,
+          date: formatDate(new Date(c.timestamp * 1000), timezone, globalCurrency),
+        });
       }
     
     // Get existing cached transactions and merge, preferring freshly-processed data
@@ -807,7 +745,9 @@ export const Dashboard: React.FC = () => {
     // Don't check for missing prices here - let the useEffect handle it after transactions are set
     } catch (error: any) {
       console.error("Failed to fetch transactions:", error);
-      setError(`Failed to fetch transactions: ${error.message || "Unknown error"}. Please check your Etherscan API key and wallet address.`);
+      setError(
+        `Failed to load transactions: ${error.message || "Unknown error"}. Check Firestore and the beacon-sync (Dune) workflow.`
+      );
       setTransactions([]);
     } finally {
       setLoading(false);

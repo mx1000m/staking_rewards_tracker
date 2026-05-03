@@ -11,13 +11,10 @@ export interface Tracker {
   currency: Currency;
   country: string;
   taxRate: number;
-  etherscanKey: string;
   name: string;
   createdAt: number;
   // Validator-level metadata (optional for backward compatibility)
   validatorPublicKey?: string; // Beacon chain validator pubkey (0x...)
-  beaconApiProvider?: "beaconcha"; // Beacon API provider identifier
-  beaconApiKey?: string; // Optional per-tracker override; typically stored per user
   mevMode?: "none" | "direct" | "pool" | "mixed"; // How MEV rewards are received
   mevPoolPayoutAddress?: string; // Execution-layer address receiving MEV pool payouts
   // Set by beacon-sync script (read-only in app)

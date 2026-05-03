@@ -2,7 +2,7 @@ name: Beacon Chain Sync
 
 on:
   schedule:
-    # Run daily at 01:00 UTC (after daily-sync at 00:45 UTC so yesterday’s eth-prices key is on main before Dune sync)
+    # Run daily at 01:00 UTC (after daily-sync ~00:45 UTC updates eth-prices.json on main)
     - cron: '0 1 * * *'
   workflow_dispatch:
 
