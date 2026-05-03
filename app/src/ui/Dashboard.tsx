@@ -253,9 +253,13 @@ export const Dashboard: React.FC = () => {
     // Try centralized storage first, then fall back to stored prices (for backward compatibility)
     let ethPrice: number;
     if (currency === "EUR") {
-      ethPrice = getEthPriceFromStorage(dateKey, "EUR") || tx.ethPriceEUR || tx.ethPrice || 0;
+      ethPrice =
+        getEthPriceFromStorage(dateKey, "EUR") ||
+        tx.ethPriceEUR ||
+        (tx as { ethPrice?: number }).ethPrice ||
+        0;
     } else {
-      ethPrice = getEthPriceFromStorage(dateKey, "USD") || tx.ethPriceUSD || tx.ethPrice || 0;
+      ethPrice = getEthPriceFromStorage(dateKey, "USD") || tx.ethPriceUSD || 0;
     }
     const result = tx.ethAmount * ethPrice;
     return isNaN(result) ? 0 : result;
@@ -274,8 +278,11 @@ export const Dashboard: React.FC = () => {
     const dateKey = getDateKey(tx.timestamp);
     // Try centralized storage first, then fall back to stored prices
     const price = currency === "EUR"
-      ? (getEthPriceFromStorage(dateKey, "EUR") || tx.ethPriceEUR || tx.ethPrice || 0)
-      : (getEthPriceFromStorage(dateKey, "USD") || tx.ethPriceUSD || tx.ethPrice || 0);
+      ? (getEthPriceFromStorage(dateKey, "EUR") ||
+          tx.ethPriceEUR ||
+          (tx as { ethPrice?: number }).ethPrice ||
+          0)
+      : (getEthPriceFromStorage(dateKey, "USD") || tx.ethPriceUSD || 0);
     return isNaN(price) ? 0 : price;
   };
 

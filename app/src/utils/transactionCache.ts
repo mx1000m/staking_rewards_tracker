@@ -7,9 +7,8 @@ export interface CachedTransaction {
   date: string;
   time: string;
   ethAmount: number;
-  ethPriceEUR: number; // DEPRECATED: No longer stored, kept for interface compatibility. Prices fetched from centralized storage.
-  ethPriceUSD: number; // DEPRECATED: No longer stored, kept for interface compatibility. Prices fetched from centralized storage.
-  ethPrice?: number; // Legacy field (deprecated)
+  ethPriceEUR: number;
+  ethPriceUSD: number;
   taxRate: number;
   taxesInEth: number;
   transactionHash: string;

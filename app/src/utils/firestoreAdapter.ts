@@ -15,6 +15,7 @@ import {
   writeBatch,
   serverTimestamp,
   deleteDoc,
+  deleteField,
 } from "firebase/firestore";
 import { db } from "../config/firebase";
 import { CachedTransaction } from "./transactionCache";
@@ -79,8 +80,7 @@ const transactionToFirestore = (tx: CachedTransaction): any => ({
   ethAmount: tx.ethAmount,
   ethPriceEUR: tx.ethPriceEUR,
   ethPriceUSD: tx.ethPriceUSD,
-  // Keep legacy ethPrice for backward compatibility during migration
-  ethPrice: tx.ethPrice || tx.ethPriceEUR || 0,
+  ethPrice: deleteField(),
   taxRate: tx.taxRate,
   taxesInEth: tx.taxesInEth,
   transactionHash: tx.transactionHash,
@@ -99,17 +99,16 @@ const transactionToFirestore = (tx: CachedTransaction): any => ({
 
 // Convert Firestore document to transaction
 const firestoreToTransaction = (data: any, txHash: string): CachedTransaction => {
-  // Handle backward compatibility: if ethPriceEUR/USD don't exist, use legacy ethPrice
+  // Legacy docs may only have `ethPrice` (always mirrored EUR); never use it for USD.
   const ethPriceEUR = data.ethPriceEUR ?? data.ethPrice ?? 0;
-  const ethPriceUSD = data.ethPriceUSD ?? data.ethPrice ?? 0;
-  
+  const ethPriceUSD = data.ethPriceUSD ?? 0;
+
   return {
     date: data.date || "",
     time: data.time || "",
     ethAmount: data.ethAmount || 0,
     ethPriceEUR,
     ethPriceUSD,
-    ethPrice: data.ethPrice || ethPriceEUR, // Keep for backward compatibility
     taxRate: data.taxRate || 0,
     taxesInEth: data.taxesInEth || 0,
     transactionHash: txHash,

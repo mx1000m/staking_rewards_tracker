@@ -358,6 +358,7 @@ async function processTracker(
         ? {
             validatorBalanceEth: latestValidatorBalanceEth ?? undefined,
             topUpEth,
+            ethPrice: FieldValue.delete(),
             updatedAt: FieldValue.serverTimestamp(),
           }
         : {
@@ -366,7 +367,7 @@ async function processTracker(
             ethAmount: clAmount,
             ethPriceEUR,
             ethPriceUSD,
-            ethPrice: ethPriceEUR || ethPriceUSD,
+            ethPrice: FieldValue.delete(),
             taxRate,
             taxesInEth: clAmount * (taxRate / 100),
             transactionHash: clHash,
@@ -391,7 +392,7 @@ async function processTracker(
         ethAmount: elAmount,
         ethPriceEUR,
         ethPriceUSD,
-        ethPrice: ethPriceEUR || ethPriceUSD,
+        ethPrice: FieldValue.delete(),
         taxRate,
         taxesInEth: elAmount * (taxRate / 100),
         transactionHash: elHash,

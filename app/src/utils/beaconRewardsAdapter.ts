@@ -46,7 +46,6 @@ export async function fetchConsensusRewardsAsTransactions(options: {
       ethAmount,
       ethPriceEUR: 0,
       ethPriceUSD: 0,
-      ethPrice: 0,
       taxRate: 0,
       taxesInEth: 0,
       transactionHash: `beaconcha_${trackerId}_${idx}`,
