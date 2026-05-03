@@ -1329,34 +1329,24 @@ export const Dashboard: React.FC = () => {
 
   return (
     <div style={{ width: "100%", minWidth: "1130px", paddingLeft: "15px", paddingRight: "15px", boxSizing: "border-box" }}>
-      {/* Your validator */}
-      <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validator</h3>
-      <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
-        <div style={{ borderRadius: "13px", padding: "24px" }}>
-          {trackers.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "20px", color: "#aaaaaa" }}>
-              No validator configured for this account yet.
-            </div>
-          ) : (
-            <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-              <button
-                onClick={() => setActiveTracker(trackers[0].id)}
-                style={{
-                  background: "#555555",
-                  padding: "12px 20px",
-                  border: "none",
-                  borderRadius: "10px",
-                  color: "white",
-                  cursor: "pointer",
-                  fontWeight: 600,
-                }}
-              >
-                {trackers[0].name || `Validator ${trackers[0].walletAddress.slice(0, 6)}...`}
-              </button>
-            </div>
-          )}
+      {trackers.length === 0 && (
+        <div
+          style={{
+            background: "#181818",
+            border: "1px solid #2b2b2b",
+            borderRadius: "14px",
+            marginBottom: "24px",
+            width: "100%",
+            minWidth: "1100px",
+            boxSizing: "border-box",
+            textAlign: "center",
+            padding: "20px",
+            color: "#aaaaaa",
+          }}
+        >
+          No validator configured for this account yet.
         </div>
-      </div>
+      )}
 
       {/* Validator overview - for the selected validator's rewards (all years) */}
       {trackers.length > 0 && (
