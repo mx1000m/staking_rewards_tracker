@@ -15,9 +15,11 @@
  *   REFETCH_DRY_RUN=1   — log only, do not write the file
  */
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ETH_PRICES_FILE = path.join(__dirname, "..", "data", "eth-prices.json");
 const MIN_REQUEST_INTERVAL = 2100;
 let lastRequestTime = 0;
@@ -99,12 +101,10 @@ async function main() {
   }
   const prices = JSON.parse(raw);
 
-  const updates = {};
   for (const dateKey of keys) {
     try {
       const eur = await fetchHistoryStrict(dateKey, "EUR", apiKey);
       const usd = await fetchHistoryStrict(dateKey, "USD", apiKey);
-      updates[dateKey] = { eur, usd };
       const prev = prices[dateKey];
       console.log(
         `${dateKey}  EUR ${eur.toFixed(4)}  USD ${usd.toFixed(4)}` +
