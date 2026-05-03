@@ -33,6 +33,12 @@ jobs:
           DUNE_QUERY_ID_CL: ${{ secrets.DUNE_QUERY_ID_CL }}
           DUNE_QUERY_ID_EL: ${{ secrets.DUNE_QUERY_ID_EL }}
           DUNE_QUERY_ID_EL_FALLBACK: ${{ secrets.DUNE_QUERY_ID_EL_FALLBACK }}
+          # Run each saved query on Dune before reading rows (no Dune UI “Query refresh” schedule required).
+          # Set to false/0/no to only GET latest saved results (saves execution credits; data may be stale).
+          DUNE_EXECUTE_BEFORE_FETCH: "true"
+          DUNE_EXECUTION_PERFORMANCE: "medium"
+          DUNE_EXECUTE_POLL_MS: "4000"
+          DUNE_EXECUTE_TIMEOUT_MS: "900000"
           BOOTSTRAP_UID: ${{ secrets.BOOTSTRAP_UID }}
           BOOTSTRAP_TRACKER_ID: ${{ secrets.BOOTSTRAP_TRACKER_ID }}
           BOOTSTRAP_TRACKER_NAME: ${{ secrets.BOOTSTRAP_TRACKER_NAME }}

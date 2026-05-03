@@ -14,6 +14,16 @@ const DUNE_API_KEY = process.env.DUNE_API_KEY || "";
 const DUNE_QUERY_ID_CL = process.env.DUNE_QUERY_ID_CL || "";
 const DUNE_QUERY_ID_EL = process.env.DUNE_QUERY_ID_EL || "";
 const DUNE_QUERY_ID_EL_FALLBACK = process.env.DUNE_QUERY_ID_EL_FALLBACK || "";
+/** When true (default), POST execute then read execution results so data is fresh without a Dune UI schedule. */
+const DUNE_EXECUTE_BEFORE_FETCH = !["0", "false", "no"].includes(
+  (process.env.DUNE_EXECUTE_BEFORE_FETCH ?? "true").trim().toLowerCase()
+);
+const DUNE_EXECUTION_PERF_RAW = (process.env.DUNE_EXECUTION_PERFORMANCE || "medium").trim().toLowerCase();
+const DUNE_EXECUTION_PERFORMANCE = ["small", "medium", "large"].includes(DUNE_EXECUTION_PERF_RAW)
+  ? DUNE_EXECUTION_PERF_RAW
+  : "medium";
+const DUNE_EXECUTE_POLL_MS = Math.max(2000, Number(process.env.DUNE_EXECUTE_POLL_MS || "4000"));
+const DUNE_EXECUTE_TIMEOUT_MS = Math.max(60_000, Number(process.env.DUNE_EXECUTE_TIMEOUT_MS || "900000"));
 const BOOTSTRAP_UID = process.env.BOOTSTRAP_UID || "";
 const BOOTSTRAP_TRACKER_ID = process.env.BOOTSTRAP_TRACKER_ID || "tracker-primary";
 const BOOTSTRAP_TRACKER_NAME = process.env.BOOTSTRAP_TRACKER_NAME || "Validator";
@@ -82,31 +92,143 @@ function resolveDuneUrl(pathOrUrl: string): string {
   return `${base}${path}`;
 }
 
-/** Fetch all rows for a saved query, following Dune pagination (`next_uri`). */
-async function duneLatestRows(queryId: string): Promise<DuneResultRow[]> {
-  if (!queryId) return [];
+function duneHeaders(): Record<string, string> {
+  return {
+    "X-Dune-Api-Key": DUNE_API_KEY,
+    "Content-Type": "application/json",
+  };
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function rowsFromDuneJson(json: DuneResultResponse): DuneResultRow[] {
+  return json.result?.rows ?? json.rows ?? [];
+}
+
+function nextUriFromDuneJson(json: DuneResultResponse): string | null {
+  const next = json.next_uri ?? json.result?.next_uri;
+  return typeof next === "string" && next.length > 0 ? resolveDuneUrl(next) : null;
+}
+
+/** Paginate any Dune JSON result URL (saved-query results or execution results). */
+async function duneFetchAllPages(firstUrl: string, errorContext: string): Promise<DuneResultRow[]> {
   const rows: DuneResultRow[] = [];
-  let url: string | null = `${DUNE_API_BASE}/query/${queryId}/results?limit=10000`;
+  let url: string | null = firstUrl;
 
   while (url) {
-    const res = await fetch(url, {
-      headers: {
-        "X-Dune-Api-Key": DUNE_API_KEY,
-        "Content-Type": "application/json",
-      },
-    });
+    const res = await fetch(url, { headers: duneHeaders() });
     if (!res.ok) {
       const body = await res.text();
-      throw new Error(`Dune query ${queryId} failed (${res.status}): ${body.slice(0, 300)}`);
+      throw new Error(`Dune ${errorContext} failed (${res.status}): ${body.slice(0, 300)}`);
     }
     const json = (await res.json()) as DuneResultResponse;
-    const chunk = json.result?.rows ?? json.rows ?? [];
-    rows.push(...chunk);
-    const next = json.next_uri ?? json.result?.next_uri;
-    url = typeof next === "string" && next.length > 0 ? resolveDuneUrl(next) : null;
+    rows.push(...rowsFromDuneJson(json));
+    url = nextUriFromDuneJson(json);
   }
 
   return rows;
+}
+
+/** Latest stored results for a saved query (no new execution; stale if the query was never re-run). */
+async function duneLatestRows(queryId: string): Promise<DuneResultRow[]> {
+  if (!queryId) return [];
+  return duneFetchAllPages(
+    `${DUNE_API_BASE}/query/${queryId}/results?limit=10000`,
+    `query ${queryId} results`
+  );
+}
+
+interface ExecuteQueryResponse {
+  execution_id?: string;
+  state?: string;
+}
+
+interface ExecutionStatusResponse {
+  state?: string;
+  is_execution_finished?: boolean;
+  error?: { message?: string };
+}
+
+async function duneExecuteQuery(queryId: string): Promise<string> {
+  const perf = encodeURIComponent(DUNE_EXECUTION_PERFORMANCE);
+  const url = `${DUNE_API_BASE}/query/${queryId}/execute?performance=${perf}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: duneHeaders(),
+    body: "{}",
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Dune execute query ${queryId} failed (${res.status}): ${body.slice(0, 400)}`);
+  }
+  const json = (await res.json()) as ExecuteQueryResponse;
+  const id = json.execution_id;
+  if (!id) {
+    throw new Error(`Dune execute query ${queryId} returned no execution_id: ${JSON.stringify(json).slice(0, 200)}`);
+  }
+  return id;
+}
+
+async function duneWaitForExecution(executionId: string): Promise<void> {
+  const started = Date.now();
+  const failStates = new Set([
+    "QUERY_STATE_FAILED",
+    "QUERY_STATE_CANCELED",
+    "QUERY_STATE_CANCELLED",
+    "QUERY_STATE_EXPIRED",
+  ]);
+  const okStates = new Set(["QUERY_STATE_COMPLETED", "QUERY_STATE_COMPLETED_PARTIAL"]);
+
+  while (Date.now() - started < DUNE_EXECUTE_TIMEOUT_MS) {
+    const res = await fetch(`${DUNE_API_BASE}/execution/${executionId}/status`, {
+      headers: { "X-Dune-Api-Key": DUNE_API_KEY },
+    });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Dune execution status ${executionId} (${res.status}): ${body.slice(0, 400)}`);
+    }
+    const json = (await res.json()) as ExecutionStatusResponse;
+    const state = json.state || "";
+
+    if (failStates.has(state)) {
+      const msg = json.error?.message || state;
+      throw new Error(`Dune execution ${executionId} failed: ${msg}`);
+    }
+    if (okStates.has(state)) {
+      return;
+    }
+    if (json.is_execution_finished) {
+      throw new Error(`Dune execution ${executionId} finished in unexpected state: ${state || "(empty)"}`);
+    }
+
+    await sleep(DUNE_EXECUTE_POLL_MS);
+  }
+
+  throw new Error(`Dune execution ${executionId} timed out after ${DUNE_EXECUTE_TIMEOUT_MS}ms`);
+}
+
+async function duneRowsAfterExecute(queryId: string, label: string): Promise<DuneResultRow[]> {
+  console.log(`Dune execute: ${label} query ${queryId} (performance=${DUNE_EXECUTION_PERFORMANCE})`);
+  const executionId = await duneExecuteQuery(queryId);
+  console.log(`Dune execute: ${label} execution_id=${executionId} — polling status…`);
+  await duneWaitForExecution(executionId);
+  const rows = await duneFetchAllPages(
+    `${DUNE_API_BASE}/execution/${executionId}/results?limit=10000`,
+    `execution ${executionId} results`
+  );
+  console.log(`Dune execute: ${label} done, ${rows.length} row(s)`);
+  return rows;
+}
+
+/** Load query rows: optionally run a fresh execution first (recommended; avoids Dune UI schedule). */
+async function loadDuneQueryRows(queryId: string, label: string): Promise<DuneResultRow[]> {
+  if (!queryId) return [];
+  if (DUNE_EXECUTE_BEFORE_FETCH) {
+    return duneRowsAfterExecute(queryId, label);
+  }
+  return duneLatestRows(queryId);
 }
 
 async function loadEthPrices(): Promise<Record<string, { eur?: number; usd?: number }>> {
@@ -347,15 +469,18 @@ async function main() {
   }
 
   console.log("Dune sync starting...");
+  console.log(
+    `Dune fetch mode: ${DUNE_EXECUTE_BEFORE_FETCH ? "execute then read results (no UI schedule needed)" : "read latest saved results only"}`
+  );
   await ensureBootstrapTracker();
   const prices = await loadEthPrices();
   console.log(`Loaded ${Object.keys(prices).length} date keys from ETH prices.`);
 
-  const clRows = await duneLatestRows(DUNE_QUERY_ID_CL);
-  const elRows = DUNE_QUERY_ID_EL ? await duneLatestRows(DUNE_QUERY_ID_EL) : [];
+  const clRows = await loadDuneQueryRows(DUNE_QUERY_ID_CL, "CL");
+  const elRows = DUNE_QUERY_ID_EL ? await loadDuneQueryRows(DUNE_QUERY_ID_EL, "EL") : [];
   const fallbackElRows =
     elRows.length === 0 && DUNE_QUERY_ID_EL_FALLBACK
-      ? await duneLatestRows(DUNE_QUERY_ID_EL_FALLBACK)
+      ? await loadDuneQueryRows(DUNE_QUERY_ID_EL_FALLBACK, "EL-fallback")
       : [];
 
   const clByDate = buildClByDate(clRows);
