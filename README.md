@@ -6,6 +6,7 @@ This repo currently serves a static site from `frontend/` via GitHub Pages. A ne
 - **`COINGECKO_API_KEY`**: used by `scripts/daily-sync.js` for `data/eth-prices.json` (daily UTC close).
 - **`DUNE_API_KEY`**, **`DUNE_QUERY_ID_CL`**, **`DUNE_QUERY_ID_EL`** (or **`DUNE_QUERY_ID_EL_FALLBACK`**): used by `scripts/beacon-sync.ts` for reward rows in Firestore.
 - **`FIREBASE_SERVICE_ACCOUNT`**: required for `beacon-sync` (and any script that still uses Admin SDK).
+- **`BOOTSTRAP_VALIDATOR_PUBLIC_KEY`** (optional): full BLS pubkey `0x` + 96 hex; merged onto Firestore trackers that are missing `validatorPublicKey` when `beacon-sync` runs (no Beacon HTTP API).
 
 ## React app (v2)
 - Location: `app/` (Vite + React + TS). Base path is configured for GitHub Pages under `vite.config.ts`.

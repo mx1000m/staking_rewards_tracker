@@ -48,4 +48,6 @@ jobs:
           BOOTSTRAP_COUNTRY: ${{ secrets.BOOTSTRAP_COUNTRY }}
           BOOTSTRAP_CURRENCY: ${{ secrets.BOOTSTRAP_CURRENCY }}
           BOOTSTRAP_MEV_MODE: ${{ secrets.BOOTSTRAP_MEV_MODE }}
+          # Optional: full validator BLS pubkey (0x + 96 hex). Merged when tracker lacks validatorPublicKey (no Beacon HTTP API).
+          BOOTSTRAP_VALIDATOR_PUBLIC_KEY: ${{ secrets.BOOTSTRAP_VALIDATOR_PUBLIC_KEY }}
         run: npx tsx scripts/beacon-sync.ts
