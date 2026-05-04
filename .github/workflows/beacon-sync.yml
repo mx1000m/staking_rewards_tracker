@@ -2,8 +2,9 @@ name: Beacon Chain Sync
 
 on:
   schedule:
-    # Run daily at 01:00 UTC (after daily-sync ~00:45 UTC updates eth-prices.json on main)
-    - cron: '0 1 * * *'
+    # Run daily at 05:00 UTC (~4h after previous 01:00 slot) so Dune beacon tables are more likely
+    # to include the latest reward day; still after daily-sync ~00:45 UTC commits eth-prices.json.
+    - cron: '0 5 * * *'
   workflow_dispatch:
 
 env:
