@@ -1586,78 +1586,98 @@ export const Dashboard: React.FC = () => {
                     </span>
                   </div>
 
-                  <div style={{ marginTop: "14px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                    <span style={{ display: "block", marginBottom: "6px" }}>Public key</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 600, color: "#d4d4d4", wordBreak: "break-all" }}>
+                  <div
+                    style={{
+                      marginTop: "14px",
+                      fontSize: "0.85rem",
+                      color: "#aaaaaa",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span>
+                      Public key:{" "}
+                      <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
                         {activeTracker.validatorPublicKey
-                          ? `${activeTracker.validatorPublicKey.slice(0, 12)}…${activeTracker.validatorPublicKey.slice(-8)}`
+                          ? `${activeTracker.validatorPublicKey.slice(0, 10)}…${activeTracker.validatorPublicKey.slice(-5)}`
                           : "—"}
                       </span>
-                      {activeTracker.validatorPublicKey ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyToClipboard(activeTracker.validatorPublicKey!, "Validator public key")
-                          }
-                          title="Copy public key"
+                    </span>
+                    {activeTracker.validatorPublicKey ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyToClipboard(activeTracker.validatorPublicKey!, "Validator public key")
+                        }
+                        title="Copy public key"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          padding: 0,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <img
+                          src="/staking_rewards_tracker/icons/copy_icon.svg"
+                          alt="Copy public key"
                           style={{
-                            background: "transparent",
-                            border: "none",
-                            padding: 0,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
+                            width: "16px",
+                            height: "16px",
+                            filter: "brightness(0) saturate(100%) invert(67%)",
                           }}
-                        >
-                          <img
-                            src="/staking_rewards_tracker/icons/copy_icon.svg"
-                            alt="Copy public key"
-                            style={{
-                              width: "16px",
-                              height: "16px",
-                              filter: "brightness(0) saturate(100%) invert(67%)",
-                            }}
-                          />
-                        </button>
-                      ) : null}
-                    </div>
+                        />
+                      </button>
+                    ) : null}
                   </div>
 
-                  <div style={{ marginTop: "12px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                    <span style={{ display: "block", marginBottom: "6px" }}>Withdrawal address</span>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 600, color: "#d4d4d4", wordBreak: "break-all" }}>
+                  <div
+                    style={{
+                      marginTop: "10px",
+                      fontSize: "0.85rem",
+                      color: "#aaaaaa",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <span>
+                      Withdrawal address:{" "}
+                      <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
                         {activeTracker.walletAddress
                           ? `${activeTracker.walletAddress.slice(0, 10)}…${activeTracker.walletAddress.slice(-5)}`
                           : "—"}
                       </span>
-                      {activeTracker.walletAddress ? (
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(activeTracker.walletAddress, "Withdrawal address")}
-                          title="Copy withdrawal address"
+                    </span>
+                    {activeTracker.walletAddress ? (
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(activeTracker.walletAddress, "Withdrawal address")}
+                        title="Copy withdrawal address"
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          padding: 0,
+                          cursor: "pointer",
+                          display: "inline-flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <img
+                          src="/staking_rewards_tracker/icons/copy_icon.svg"
+                          alt="Copy withdrawal address"
                           style={{
-                            background: "transparent",
-                            border: "none",
-                            padding: 0,
-                            cursor: "pointer",
-                            display: "inline-flex",
-                            alignItems: "center",
+                            width: "16px",
+                            height: "16px",
+                            filter: "brightness(0) saturate(100%) invert(67%)",
                           }}
-                        >
-                          <img
-                            src="/staking_rewards_tracker/icons/copy_icon.svg"
-                            alt="Copy withdrawal address"
-                            style={{
-                              width: "16px",
-                              height: "16px",
-                              filter: "brightness(0) saturate(100%) invert(67%)",
-                            }}
-                          />
-                        </button>
-                      ) : null}
-                    </div>
+                        />
+                      </button>
+                    ) : null}
                   </div>
 
                   <p

@@ -251,6 +251,50 @@ async function loadEthPrices(): Promise<Record<string, { eur?: number; usd?: num
   return (await res.json()) as Record<string, { eur?: number; usd?: number }>;
 }
 
+const BEACON_REST_BASE = (process.env.BEACON_REST_BASE || "https://ethereum-beacon-api.publicnode.com").replace(
+  /\/$/,
+  ""
+);
+
+function validatorIndexFromClRows(rows: DuneResultRow[]): string | null {
+  for (const row of rows) {
+    const v = row.validator_index;
+    if (v !== undefined && v !== null && String(v).trim() !== "") {
+      return String(v).trim();
+    }
+  }
+  return null;
+}
+
+/** Execution (0x01) withdrawal credentials: 20-byte address at end of 32-byte field. */
+function withdrawalEthAddressFromCredentials(withdrawalCredentialsHex: string): string | null {
+  const wc = withdrawalCredentialsHex.trim().toLowerCase();
+  if (!wc.startsWith("0x01") || wc.length < 66) return null;
+  return `0x${wc.slice(26, 66)}`;
+}
+
+async function fetchBeaconValidatorByIndex(
+  index: string
+): Promise<{ pubkey: string; withdrawalAddress: string | null } | null> {
+  const url = `${BEACON_REST_BASE}/eth/v1/beacon/states/head/validators/${encodeURIComponent(index)}`;
+  const res = await fetch(url, { headers: { accept: "application/json" } });
+  if (!res.ok) {
+    const t = await res.text();
+    console.warn(`Beacon REST validators/${index} -> ${res.status}: ${t.slice(0, 200)}`);
+    return null;
+  }
+  const json = (await res.json()) as {
+    data?: { validator?: { pubkey?: string; withdrawal_credentials?: string } };
+  };
+  const pub = json.data?.validator?.pubkey;
+  if (!pub || typeof pub !== "string") return null;
+  const pubkey = pub.startsWith("0x") ? pub : `0x${pub}`;
+  const wc = json.data?.validator?.withdrawal_credentials;
+  const withdrawalAddress =
+    typeof wc === "string" && wc.length > 0 ? withdrawalEthAddressFromCredentials(wc) : null;
+  return { pubkey, withdrawalAddress };
+}
+
 function buildClByDate(rows: DuneResultRow[]): Record<string, DailyClData> {
   const out: Record<string, DailyClData> = {};
   for (const row of rows) {
@@ -512,6 +556,17 @@ async function main() {
       ? await loadDuneQueryRows(DUNE_QUERY_ID_EL_FALLBACK, "EL-fallback")
       : [];
 
+  const validatorIndexStr = validatorIndexFromClRows(clRows);
+  let beaconValidatorMeta: { pubkey: string; withdrawalAddress: string | null } | null = null;
+  if (validatorIndexStr) {
+    beaconValidatorMeta = await fetchBeaconValidatorByIndex(validatorIndexStr);
+    if (beaconValidatorMeta) {
+      console.log(
+        `Beacon REST: index ${validatorIndexStr} -> pubkey ok, withdrawal ${beaconValidatorMeta.withdrawalAddress ? "ok" : "n/a (non-exec credentials)"}`
+      );
+    }
+  }
+
   const clByDate = buildClByDate(clRows);
   const elByDate = buildElByDate(elRows.length > 0 ? elRows : fallbackElRows);
   const clDateKeys = Object.keys(clByDate).sort();
@@ -537,6 +592,25 @@ async function main() {
       };
       const n = await processTracker(uid, tracker, prices, clByDate, elByDate);
       totalWritten += n;
+
+      // One CL Dune feed / one index: fill missing pubkey & withdrawal on each tracker (single-validator setups).
+      if (beaconValidatorMeta && validatorIndexStr) {
+        const patch: Record<string, unknown> = {};
+        if (!data.validatorPublicKey && beaconValidatorMeta.pubkey) {
+          patch.validatorPublicKey = beaconValidatorMeta.pubkey;
+        }
+        if (!data.walletAddress && beaconValidatorMeta.withdrawalAddress) {
+          patch.walletAddress = beaconValidatorMeta.withdrawalAddress;
+        }
+        const idxNum = Number(validatorIndexStr);
+        if (Number.isFinite(idxNum)) {
+          patch.validatorIndex = idxNum;
+        }
+        if (Object.keys(patch).length > 0) {
+          await doc.ref.set(patch, { merge: true });
+          console.log(`Tracker ${doc.id}: merged beacon metadata [${Object.keys(patch).join(", ")}]`);
+        }
+      }
     }
   }
 

@@ -15,6 +15,8 @@ export interface Tracker {
   createdAt: number;
   // Validator-level metadata (optional for backward compatibility)
   validatorPublicKey?: string; // Beacon chain validator pubkey (0x...)
+  /** Consensus layer validator index (e.g. from Dune / beacon-sync). */
+  validatorIndex?: number;
   mevMode?: "none" | "direct" | "pool" | "mixed"; // How MEV rewards are received
   mevPoolPayoutAddress?: string; // Execution-layer address receiving MEV pool payouts
   // Set by beacon-sync script (read-only in app)
