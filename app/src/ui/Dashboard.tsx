@@ -1145,7 +1145,11 @@ export const Dashboard: React.FC = () => {
     try {
       await navigator.clipboard.writeText(text);
       console.log(`${label} copied to clipboard`);
-      if (label === "Wallet address") {
+      if (
+        label === "Wallet address" ||
+        label === "Validator public key" ||
+        label === "Withdrawal address"
+      ) {
         setWalletCopied(true);
         setTimeout(() => setWalletCopied(false), 650);
       }
@@ -1504,71 +1508,175 @@ export const Dashboard: React.FC = () => {
           <h3 style={{ margin: "0 0 8px 0", fontSize: "0.9rem", fontWeight: 500, color: "#aaaaaa" }}>Your validator</h3>
           <div style={{ background: "#181818", border: "1px solid #2b2b2b", borderRadius: "14px", marginBottom: "24px", width: "100%", minWidth: "1100px", boxSizing: "border-box" }}>
             <div style={{ borderRadius: "13px", padding: "24px" }}>
-              {/* Header row: validator name, validator pubkey + copy, action buttons */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12, position: "relative" }}>
-                  <h2 style={{ margin: 0, color: "#f0f0f0" }}>
-                    {activeTracker.name || `${(activeTracker.validatorPublicKey || activeTracker.walletAddress).slice(0, 10)}...`}
-                  </h2>
-                  <div style={{ width: "1px", height: "16px", background: "#aaaaaa" }}></div>
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
-                    onMouseEnter={(e) => {
-                      const p = e.currentTarget.querySelector("p");
-                      const img = e.currentTarget.querySelector("img");
-                      if (p) p.style.color = "#f0f0f0";
-                      if (img) img.style.filter = "brightness(0) invert(1)";
-                    }}
-                    onMouseLeave={(e) => {
-                      const p = e.currentTarget.querySelector("p");
-                      const img = e.currentTarget.querySelector("img");
-                      if (p) p.style.color = "#aaaaaa";
-                      if (img) img.style.filter = "brightness(0) saturate(100%) invert(67%)";
-                      (e.currentTarget as HTMLDivElement).style.transform = "scale(1)";
-                    }}
-                    onMouseDown={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.transform = "scale(0.96)";
-                    }}
-                    onMouseUp={(e) => {
-                      (e.currentTarget as HTMLDivElement).style.transform = "scale(1)";
-                    }}
-                    onClick={() =>
-                      copyToClipboard(
-                        activeTracker.validatorPublicKey || activeTracker.walletAddress,
-                        activeTracker.validatorPublicKey ? "Validator public key" : "Wallet address"
-                      )
-                    }
-                  >
-                    <p style={{ margin: 0, fontSize: "0.85rem", color: "#aaaaaa", transition: "color 0.2s" }}>
-                      {(activeTracker.validatorPublicKey || activeTracker.walletAddress).slice(0, 7)}...
-                      {(activeTracker.validatorPublicKey || activeTracker.walletAddress).slice(-5)}
-                    </p>
-                    <img
-                      src="/staking_rewards_tracker/icons/copy_icon.svg"
-                      alt="Copy"
-                      style={{ width: "16px", height: "16px", filter: "brightness(0) saturate(100%) invert(67%)", transition: "filter 0.2s", border: "none" }}
-                    />
-                  </div>
+              {/* Validator summary: name, balance, top-ups / withdrawals, keys, tax; actions on the right */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  gap: 20,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ flex: "1 1 260px", minWidth: 0, position: "relative" }}>
                   {walletCopied && (
                     <div
                       style={{
                         position: "absolute",
-                        top: "-18px",
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        padding: "2px 6px",
+                        top: 0,
+                        right: 0,
+                        padding: "2px 8px",
                         borderRadius: "6px",
                         background: "#2b2b2b",
                         color: "#f0f0f0",
                         fontSize: "0.7rem",
                         pointerEvents: "none",
+                        zIndex: 1,
                       }}
                     >
                       Copied!
                     </div>
                   )}
+                  <h2 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.35rem", lineHeight: 1.25 }}>
+                    {activeTracker.name || "Validator"}
+                  </h2>
+
+                  <div style={{ marginTop: "14px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+                    Balance:{" "}
+                    <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
+                      {activeTracker.validatorBalanceEth != null
+                        ? formatNumber(activeTracker.validatorBalanceEth, 6, globalCurrency)
+                        : "—"}
+                    </span>
+                    <span style={{ fontWeight: 600, fontSize: "0.75rem", color: "#d4d4d4" }}> ETH</span>
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: "12px 28px",
+                      alignItems: "baseline",
+                    }}
+                  >
+                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>
+                      Top ups:{" "}
+                      <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
+                        {activeTracker.topUpsCount ?? totalTopUpsCount}
+                      </span>
+                      <span style={{ color: "#8e8e8e" }}> | </span>
+                      <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
+                        {formatNumber(
+                          Math.round(activeTracker.topUpsEthTotal ?? totalTopUpsEth),
+                          0,
+                          globalCurrency
+                        )}
+                      </span>
+                      <span style={{ fontWeight: 600, fontSize: "0.75rem", color: "#d4d4d4" }}> ETH</span>
+                    </span>
+                    <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>
+                      Withdrawals:{" "}
+                      <span style={{ fontWeight: 600, color: "#d4d4d4" }}>0</span>
+                      <span style={{ color: "#8e8e8e" }}> | </span>
+                      <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
+                        {formatNumber(0, 0, globalCurrency)}
+                      </span>
+                      <span style={{ fontWeight: 600, fontSize: "0.75rem", color: "#d4d4d4" }}> ETH</span>
+                    </span>
+                  </div>
+
+                  <div style={{ marginTop: "14px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+                    <span style={{ display: "block", marginBottom: "6px" }}>Public key</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 600, color: "#d4d4d4", wordBreak: "break-all" }}>
+                        {activeTracker.validatorPublicKey
+                          ? `${activeTracker.validatorPublicKey.slice(0, 12)}…${activeTracker.validatorPublicKey.slice(-8)}`
+                          : "—"}
+                      </span>
+                      {activeTracker.validatorPublicKey ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyToClipboard(activeTracker.validatorPublicKey!, "Validator public key")
+                          }
+                          title="Copy public key"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <img
+                            src="/staking_rewards_tracker/icons/copy_icon.svg"
+                            alt="Copy public key"
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              filter: "brightness(0) saturate(100%) invert(67%)",
+                            }}
+                          />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div style={{ marginTop: "12px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+                    <span style={{ display: "block", marginBottom: "6px" }}>Withdrawal address</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 600, color: "#d4d4d4", wordBreak: "break-all" }}>
+                        {activeTracker.walletAddress
+                          ? `${activeTracker.walletAddress.slice(0, 10)}…${activeTracker.walletAddress.slice(-5)}`
+                          : "—"}
+                      </span>
+                      {activeTracker.walletAddress ? (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(activeTracker.walletAddress, "Withdrawal address")}
+                          title="Copy withdrawal address"
+                          style={{
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                          }}
+                        >
+                          <img
+                            src="/staking_rewards_tracker/icons/copy_icon.svg"
+                            alt="Copy withdrawal address"
+                            style={{
+                              width: "16px",
+                              height: "16px",
+                              filter: "brightness(0) saturate(100%) invert(67%)",
+                            }}
+                          />
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <p
+                    style={{
+                      margin: "14px 0 0 0",
+                      fontSize: "0.85rem",
+                      color: "#aaaaaa",
+                    }}
+                  >
+                    Income tax rate:{" "}
+                    <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
+                      {typeof activeTracker.taxRate === "number"
+                        ? `${formatNumber(activeTracker.taxRate, 0, globalCurrency)}%`
+                        : "—"}
+                    </span>
+                  </p>
                 </div>
-                <div style={{ display: "flex", gap: 16 }}>
+
+                <div style={{ display: "flex", gap: 16, flexShrink: 0 }}>
                   <button
                     onClick={() => setShowSettings(true)}
                     style={{ background: "#2b2b2b", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", textTransform: "none" }}
@@ -1632,42 +1740,6 @@ export const Dashboard: React.FC = () => {
                   </button>
                 </div>
               </div>
-
-              {/* Balance row */}
-              <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#aaaaaa" }}>
-                <span>
-                  Balance:{" "}
-                  <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
-                    {activeTracker.validatorBalanceEth != null ? formatNumber(activeTracker.validatorBalanceEth, 6, globalCurrency) : "—"}
-                  </span>
-                  <span style={{ fontWeight: 600, fontSize: "0.595rem", color: "#d4d4d4" }}> ETH</span>
-                </span>
-                <span style={{ marginLeft: "14px" }}>
-                  Top ups:{" "}
-                  <span style={{ fontWeight: 600, color: "#d4d4d4" }}>{activeTracker.topUpsCount ?? totalTopUpsCount}</span>
-                  <span style={{ color: "#8e8e8e" }}> | </span>
-                  <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
-                    {formatNumber(activeTracker.topUpsEthTotal ?? totalTopUpsEth, 6, globalCurrency)}
-                  </span>
-                  <span style={{ fontWeight: 600, fontSize: "0.595rem", color: "#d4d4d4" }}> ETH</span>
-                </span>
-              </div>
-
-              {/* Income tax rate */}
-              <p
-                style={{
-                  margin: "6px 0 0 0",
-                  fontSize: "0.85rem",
-                  color: "#aaaaaa",
-                }}
-              >
-                Income tax rate:{" "}
-                <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
-                  {typeof activeTracker.taxRate === "number"
-                    ? `${formatNumber(activeTracker.taxRate, 0, globalCurrency)}%`
-                    : "—"}
-                </span>
-              </p>
 
               {/* Filters row: year dropdown + months bar */}
               <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", marginTop: "24px", marginBottom: "12px" }}>
