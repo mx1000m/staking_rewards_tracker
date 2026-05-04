@@ -230,12 +230,33 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  // Format date based on currency preference
-  // EUR: DD/MM/YYYY (e.g., "05/01/2026")
-  // USD: MM/DD/YYYY (e.g., "01/05/2026")
+  // Format date based on currency preference (slash-separated, zero-padded)
+  // EUR: DD/MM/YYYY — USD: MM/DD/YYYY
   const formatDate = (date: Date, timezone: string, currency: "EUR" | "USD"): string => {
-    const locale = currency === "EUR" ? "en-GB" : "en-US";
-    return date.toLocaleDateString(locale, { timeZone: timezone });
+    const opts: Intl.DateTimeFormatOptions = {
+      timeZone: timezone,
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    };
+    return date.toLocaleDateString(currency === "EUR" ? "en-GB" : "en-US", opts);
+  };
+
+  /** Display date for a reward row; follows global EUR/USD choice (not stored `tx.date`, which may be YYYY-MM-DD). */
+  const formatTransactionDateForDisplay = (
+    tx: CachedTransaction,
+    timezone: string,
+    currency: "EUR" | "USD"
+  ): string => {
+    if (typeof tx.timestamp === "number" && tx.timestamp > 0) {
+      return formatDate(new Date(tx.timestamp * 1000), timezone, currency);
+    }
+    const dk = tx.date?.trim().slice(0, 10);
+    if (dk && /^\d{4}-\d{2}-\d{2}$/.test(dk)) {
+      const [y, m, d] = dk.split("-").map(Number);
+      return formatDate(new Date(Date.UTC(y, m - 1, d, 12, 0, 0)), timezone, currency);
+    }
+    return tx.date?.trim() || "—";
   };
 
   const getEthPriceFromStorage = (dateKey: string, currency: "EUR" | "USD"): number => {
@@ -1164,7 +1185,12 @@ export const Dashboard: React.FC = () => {
       const rewardsInCurrency = getRewardsInCurrency(tx, globalCurrency);
       const taxesInCurrency = getTaxesInCurrency(tx, globalCurrency);
       const priceMissing = ethPrice === 0;
-      const datePrefix = priceMissing ? `⚠ - ${tx.date || ""} - ETH PRICE MISSING` : (tx.date || "");
+      const displayDate = formatTransactionDateForDisplay(
+        tx,
+        getTimezoneForCountry(activeTracker.country),
+        globalCurrency
+      );
+      const datePrefix = priceMissing ? `⚠ - ${displayDate} - ETH PRICE MISSING` : displayDate;
       const epochsLabel =
         tx.rewardType === "CL" && typeof tx.epochStart === "number" && typeof tx.epochEnd === "number"
           ? `${tx.epochStart} - ${tx.epochEnd}`
@@ -2025,7 +2051,13 @@ export const Dashboard: React.FC = () => {
                           </tr>
                           <tr>
                       <td style={{ padding: "12px", color: "#aaaaaa", textAlign: "left" }}>
-                        <div>{tx.date}</div>
+                        <div>
+                          {formatTransactionDateForDisplay(
+                            tx,
+                            activeTracker ? getTimezoneForCountry(activeTracker.country) : "UTC",
+                            globalCurrency
+                          )}
+                        </div>
                         {tx.rewardType === "CL" && typeof tx.epochStart === "number" && typeof tx.epochEnd === "number" ? (
                           <div style={{ marginTop: "2px", fontSize: "0.8rem", color: "#777777", whiteSpace: "nowrap" }}>
                             Epochs {formatEpoch(tx.epochStart)} – {formatEpoch(tx.epochEnd)}
