@@ -3393,7 +3393,7 @@ export const Dashboard: React.FC = () => {
                       style={{
                         position: "absolute",
                         right: "14px",
-                        top: "42px",
+                        top: "40px",
                         color: "#9aa0b4",
                         fontSize: "0.82rem",
                         pointerEvents: "none",
@@ -3428,7 +3428,7 @@ export const Dashboard: React.FC = () => {
                       style={{
                         position: "absolute",
                         right: "14px",
-                        top: "42px",
+                        top: "40px",
                         color: "#9aa0b4",
                         fontSize: "0.9rem",
                         pointerEvents: "none",
@@ -3456,13 +3456,30 @@ export const Dashboard: React.FC = () => {
 
                 {saleSimulation ? (
                   <div style={{ marginTop: 14, fontSize: "0.85rem", color: "#aaaaaa", lineHeight: 1.4 }}>
-                    <div>You entered: <strong style={{ color: "#f0f0f0" }}>{formatNumber(saleSimulation.requestedEth, 6, globalCurrency)} ETH</strong></div>
-                    <div>Will be sold now: <strong style={{ color: "#f0f0f0" }}>{formatNumber(saleSimulation.fulfilledEth, 6, globalCurrency)} ETH</strong></div>
+                    <div>
+                      Amount of ETH to sell:{" "}
+                      <strong style={{ color: "#f0f0f0" }}>
+                        {formatNumber(saleSimulation.requestedEth, 6, globalCurrency)} ETH @{" "}
+                        {formatNumber(
+                          parseInputNumber(sellPriceInput, globalCurrency) ||
+                            (currentEthPrice
+                              ? globalCurrency === "EUR"
+                                ? currentEthPrice.eur
+                                : currentEthPrice.usd
+                              : 0),
+                          2,
+                          globalCurrency
+                        )}
+                      </strong>
+                    </div>
                     {saleSimulation.unfilledEth > EPS ? (
                       <div style={{ color: "#e4a729" }}>Not enough unsold ETH: missing {formatNumber(saleSimulation.unfilledEth, 6, globalCurrency)} ETH</div>
                     ) : null}
+                    <div>Value pre-CGT: <strong style={{ color: "#f0f0f0" }}>{formatCurrency(saleSimulation.totalValueAtSale, 2, globalCurrency)}</strong></div>
                     <div>Taxable gain: <strong style={{ color: "#f0f0f0" }}>{formatCurrency(saleSimulation.taxableGainTotal, 2, globalCurrency)}</strong></div>
                     <div>CGT ({formatNumber(cgtRate, 2, globalCurrency)}%): <strong style={{ color: "#f0f0f0" }}>{formatCurrency(saleSimulation.cgtTaxTotal, 2, globalCurrency)}</strong></div>
+                    <div style={{ borderTop: "1px solid #2b2b2b", margin: "8px 0 6px 0" }} />
+                    <div>Income after CGT: <strong style={{ color: "#f0f0f0" }}>{formatCurrency(saleSimulation.totalValueAtSale - saleSimulation.cgtTaxTotal, 2, globalCurrency)}</strong></div>
                   </div>
                 ) : null}
 
