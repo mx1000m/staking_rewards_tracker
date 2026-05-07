@@ -31,6 +31,41 @@ interface Transaction extends Omit<CachedTransaction, 'rewardsInCurrency' | 'tax
   taxesInCurrency?: number;
 }
 
+interface SaleLot {
+  transactionHash: string;
+  rewardDateIso: string;
+  soldEth: number;
+  receiptPrice: number;
+  salePrice: number;
+  valueAtReceipt: number;
+  valueAtSale: number;
+  gainOrLoss: number;
+  taxableGain: number;
+  cgtTax: number;
+  taxFree: boolean;
+}
+
+interface SaleSimulation {
+  lots: SaleLot[];
+  requestedEth: number;
+  fulfilledEth: number;
+  unfilledEth: number;
+  totalValueAtReceipt: number;
+  totalValueAtSale: number;
+  totalGainOrLoss: number;
+  taxableGainTotal: number;
+  cgtTaxTotal: number;
+}
+
+interface SaleRecord extends SaleSimulation {
+  id: string;
+  soldAtIso: string;
+  sellPrice: number;
+  cgtRate: number;
+  taxFreeAfterYears: number;
+  currency: "EUR" | "USD";
+}
+
 export const Dashboard: React.FC = () => {
   const { trackers, activeTrackerId, setActiveTracker, currency: globalCurrency } = useTrackerStore();
   const { user } = useAuth();
@@ -55,19 +90,70 @@ export const Dashboard: React.FC = () => {
   const exportModalCloseTimeoutRef = useRef<number | null>(null);
   const EXPORT_MODAL_ANIMATION_DURATION = 175;
   const [visibleTooltip, setVisibleTooltip] = useState<string | null>(null);
-  // Local holding status per transaction hash: "Hodling" (default) or "Sold"
-  const [holdingStatusMap, setHoldingStatusMap] = useState<Record<string, "Hodling" | "Sold">>({});
-  // Bulk "mark as sold" modal state
+  // FIFO sold amounts by reward transaction hash (partial sells supported)
+  const [soldAmountsMap, setSoldAmountsMap] = useState<Record<string, number>>({});
+  const [saleHistory, setSaleHistory] = useState<SaleRecord[]>([]);
+  const [sellAmountInput, setSellAmountInput] = useState<string>("");
+  const [sellPriceInput, setSellPriceInput] = useState<string>("");
+  const [sellDateIso, setSellDateIso] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [saleSimulation, setSaleSimulation] = useState<SaleSimulation | null>(null);
+  const [saleSimulationError, setSaleSimulationError] = useState<string | null>(null);
+  // "Mark as sold" modal state
   const [showMarkSoldModal, setShowMarkSoldModal] = useState(false);
-  const [markSoldMode, setMarkSoldMode] = useState<"year" | "custom">("year");
-  const [markSoldStartMonth, setMarkSoldStartMonth] = useState<number>(0);
-  const [markSoldEndMonth, setMarkSoldEndMonth] = useState<number>(0);
   const [walletCopied, setWalletCopied] = useState(false);
   // Centralized ETH prices storage (dateKey -> { eur: number, usd: number })
   const [ethPrices, setEthPrices] = useState<EthPricesDocument>({});
   const [ethPricesLoaded, setEthPricesLoaded] = useState(false);
 
   const activeTracker = trackers.find((t) => t.id === activeTrackerId);
+  const cgtRate = activeTracker?.capitalGainsTaxRate ?? 12;
+  const cgtTaxFreeAfterYears = activeTracker?.capitalGainsTaxFreeAfterYears ?? 2;
+  const soldAmountsStorageKey = activeTrackerId
+    ? `sold_amounts_${activeTrackerId}`
+    : null;
+  const saleHistoryStorageKey = activeTrackerId
+    ? `sale_history_${activeTrackerId}`
+    : null;
+  const EPS = 1e-12;
+
+  const soldAmountForTx = (txHash: string): number =>
+    Math.max(0, soldAmountsMap[txHash] || 0);
+  const remainingEthForTx = (tx: CachedTransaction): number =>
+    Math.max(0, (tx.ethAmount || 0) - soldAmountForTx(tx.transactionHash));
+  const isFullySold = (tx: CachedTransaction): boolean =>
+    remainingEthForTx(tx) <= EPS;
+
+  useEffect(() => {
+    if (!soldAmountsStorageKey) return;
+    try {
+      const raw = localStorage.getItem(soldAmountsStorageKey);
+      const parsed = raw ? (JSON.parse(raw) as Record<string, number>) : {};
+      setSoldAmountsMap(parsed || {});
+    } catch {
+      setSoldAmountsMap({});
+    }
+  }, [soldAmountsStorageKey]);
+
+  useEffect(() => {
+    if (!saleHistoryStorageKey) return;
+    try {
+      const raw = localStorage.getItem(saleHistoryStorageKey);
+      const parsed = raw ? (JSON.parse(raw) as SaleRecord[]) : [];
+      setSaleHistory(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setSaleHistory([]);
+    }
+  }, [saleHistoryStorageKey]);
+
+  useEffect(() => {
+    if (!soldAmountsStorageKey) return;
+    localStorage.setItem(soldAmountsStorageKey, JSON.stringify(soldAmountsMap));
+  }, [soldAmountsMap, soldAmountsStorageKey]);
+
+  useEffect(() => {
+    if (!saleHistoryStorageKey) return;
+    localStorage.setItem(saleHistoryStorageKey, JSON.stringify(saleHistory));
+  }, [saleHistory, saleHistoryStorageKey]);
 
   useEffect(() => {
     if (!activeTrackerId && trackers.length > 0) {
@@ -924,12 +1010,13 @@ export const Dashboard: React.FC = () => {
         stats[month] = { taxable: 0, taxFree: 0 };
       }
 
-      const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
-      // Determine CGT tax-free eligibility (Croatia rule: held >= 2 years and not sold)
+      const remainingEth = remainingEthForTx(tx);
+      if (remainingEth <= EPS) return;
+      // Determine CGT tax-free eligibility (held >= configured years and not fully sold)
       const rewardDate = new Date(tx.timestamp * 1000);
       const taxableUntil = new Date(rewardDate);
-      taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
-      const isTaxFree = holding !== "Sold" && now >= taxableUntil;
+      taxableUntil.setFullYear(taxableUntil.getFullYear() + cgtTaxFreeAfterYears);
+      const isTaxFree = now >= taxableUntil;
 
       if (isTaxFree) {
         stats[month].taxFree += 1;
@@ -954,7 +1041,7 @@ export const Dashboard: React.FC = () => {
     }
 
     return statusMap;
-  }, [transactions, selectedYear, holdingStatusMap]);
+  }, [transactions, selectedYear, soldAmountsMap, cgtTaxFreeAfterYears]);
 
   // Calculate totals for ALL trackers (for All validators overview)
   const [allTrackersTotals, setAllTrackersTotals] = React.useState({
@@ -1002,18 +1089,23 @@ export const Dashboard: React.FC = () => {
         allEthRewards += cached.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
         allEthTaxes += cached.reduce((sum, tx) => sum + (tx.taxesInEth || 0), 0);
 
-        // Capital gains tax‑free: rewards held >= 2 years.
+        // Capital gains tax‑free: rewards held >= configured years.
         const now = new Date();
         cached.forEach((tx) => {
-          const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
-          if (holding === "Sold") return;
+          const soldEth = Math.max(0, soldAmountsMap[tx.transactionHash] || 0);
+          const remainingEth = Math.max(0, (tx.ethAmount || 0) - soldEth);
+          if (remainingEth <= EPS) return;
           const rewardDate = new Date(tx.timestamp * 1000);
           const taxableUntil = new Date(rewardDate);
-          taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+          taxableUntil.setFullYear(taxableUntil.getFullYear() + cgtTaxFreeAfterYears);
           if (now >= taxableUntil) {
-            const cgtRewards = getRewardsInCurrency(tx, globalCurrency);
+            const cgtRewards =
+              remainingEth *
+              (globalCurrency === "EUR"
+                ? getEthPriceForDisplay(tx, "EUR")
+                : getEthPriceForDisplay(tx, "USD"));
             allCgtFreeRewards += isNaN(cgtRewards) ? 0 : cgtRewards;
-            allCgtFreeEth += tx.ethAmount || 0;
+            allCgtFreeEth += remainingEth;
           }
         });
       }
@@ -1032,7 +1124,7 @@ export const Dashboard: React.FC = () => {
     if (trackers.length > 0) {
       calculateAllTotals();
     }
-  }, [trackers, transactions, holdingStatusMap, globalCurrency]); // Recalculate when trackers, transactions, holding status, or currency changes
+  }, [trackers, transactions, soldAmountsMap, globalCurrency, cgtTaxFreeAfterYears]); // Recalculate when trackers, transactions, sold amounts, or currency changes
 
   // Year dropdown state - MUST be before early return to ensure hooks are always called
   const [isYearDropdownOpen, setIsYearDropdownOpen] = React.useState(false);
@@ -1072,24 +1164,24 @@ export const Dashboard: React.FC = () => {
     return sum + (tx.rewardType === "CL" ? (tx.topUpEth || 0) : 0);
   }, 0);
   
-  // Capital gains tax‑free amounts for the active tracker (rewards held >= 2 years)
+  // Capital gains tax‑free amounts for the active tracker (rewards held >= configured years)
   const nowForCgt = new Date();
   const totalCgtFreeEth = filteredTransactions.reduce((sum, tx) => {
-    const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
-    if (holding === "Sold") return sum;
+    const remainingEth = remainingEthForTx(tx);
+    if (remainingEth <= EPS) return sum;
     const rewardDate = new Date(tx.timestamp * 1000);
     const taxableUntil = new Date(rewardDate);
-    taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
-    return nowForCgt >= taxableUntil ? sum + (tx.ethAmount || 0) : sum;
+    taxableUntil.setFullYear(taxableUntil.getFullYear() + cgtTaxFreeAfterYears);
+    return nowForCgt >= taxableUntil ? sum + remainingEth : sum;
   }, 0);
   const totalCgtFreeRewards = filteredTransactions.reduce((sum, tx) => {
-    const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
-    if (holding === "Sold") return sum;
+    const remainingEth = remainingEthForTx(tx);
+    if (remainingEth <= EPS) return sum;
     const rewardDate = new Date(tx.timestamp * 1000);
     const taxableUntil = new Date(rewardDate);
-    taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+    taxableUntil.setFullYear(taxableUntil.getFullYear() + cgtTaxFreeAfterYears);
     if (nowForCgt >= taxableUntil) {
-      const cgtRewards = getRewardsInCurrency(tx, globalCurrency);
+      const cgtRewards = remainingEth * getEthPriceForDisplay(tx, globalCurrency);
       return sum + (isNaN(cgtRewards) ? 0 : cgtRewards);
     }
     return sum;
@@ -1139,6 +1231,135 @@ export const Dashboard: React.FC = () => {
     } catch (err) {
       console.error("Failed to copy:", err);
     }
+  };
+
+  const simulateFifoSale = (
+    amountEth: number,
+    salePricePerEth: number,
+    soldAtIsoDate: string
+  ): SaleSimulation => {
+    const eligible = [...transactions]
+      .filter((tx) => (tx.ethAmount || 0) > 0)
+      .sort((a, b) => a.timestamp - b.timestamp);
+    const soldAt = new Date(`${soldAtIsoDate}T12:00:00`);
+    let remainingToSell = amountEth;
+    const lots: SaleLot[] = [];
+
+    for (const tx of eligible) {
+      if (remainingToSell <= EPS) break;
+      const availableEth = remainingEthForTx(tx);
+      if (availableEth <= EPS) continue;
+      const sellEth = Math.min(availableEth, remainingToSell);
+      const receiptPrice = getEthPriceForDisplay(tx, globalCurrency);
+      const valueAtReceipt = sellEth * receiptPrice;
+      const valueAtSale = sellEth * salePricePerEth;
+      const gainOrLoss = valueAtSale - valueAtReceipt;
+      const taxableUntil = new Date(tx.timestamp * 1000);
+      taxableUntil.setFullYear(taxableUntil.getFullYear() + cgtTaxFreeAfterYears);
+      const taxFree = soldAt >= taxableUntil;
+      const taxableGain = taxFree ? 0 : Math.max(0, gainOrLoss);
+      const cgtTax = taxableGain * (cgtRate / 100);
+      lots.push({
+        transactionHash: tx.transactionHash,
+        rewardDateIso: new Date(tx.timestamp * 1000).toISOString().slice(0, 10),
+        soldEth: sellEth,
+        receiptPrice,
+        salePrice: salePricePerEth,
+        valueAtReceipt,
+        valueAtSale,
+        gainOrLoss,
+        taxableGain,
+        cgtTax,
+        taxFree,
+      });
+      remainingToSell -= sellEth;
+    }
+
+    const totals = lots.reduce(
+      (acc, l) => {
+        acc.fulfilled += l.soldEth;
+        acc.valueAtReceipt += l.valueAtReceipt;
+        acc.valueAtSale += l.valueAtSale;
+        acc.gainOrLoss += l.gainOrLoss;
+        acc.taxableGain += l.taxableGain;
+        acc.cgtTax += l.cgtTax;
+        return acc;
+      },
+      {
+        fulfilled: 0,
+        valueAtReceipt: 0,
+        valueAtSale: 0,
+        gainOrLoss: 0,
+        taxableGain: 0,
+        cgtTax: 0,
+      }
+    );
+
+    return {
+      lots,
+      requestedEth: amountEth,
+      fulfilledEth: totals.fulfilled,
+      unfilledEth: Math.max(0, amountEth - totals.fulfilled),
+      totalValueAtReceipt: totals.valueAtReceipt,
+      totalValueAtSale: totals.valueAtSale,
+      totalGainOrLoss: totals.gainOrLoss,
+      taxableGainTotal: totals.taxableGain,
+      cgtTaxTotal: totals.cgtTax,
+    };
+  };
+
+  const downloadSaleSimulationCsv = (sim: SaleSimulation): void => {
+    const headers = [
+      "Reward date",
+      "Tx hash",
+      "Sold ETH",
+      `Receipt ETH price (${globalCurrency})`,
+      `Sell ETH price (${globalCurrency})`,
+      `Value at receipt (${globalCurrency})`,
+      `Value at sale (${globalCurrency})`,
+      `Gain/Loss (${globalCurrency})`,
+      `Taxable gain (${globalCurrency})`,
+      `CGT tax ${formatNumber(cgtRate, 2, globalCurrency)}% (${globalCurrency})`,
+      "Tax free",
+    ];
+    const rows = sim.lots.map((l) => [
+      l.rewardDateIso,
+      l.transactionHash,
+      formatNumber(l.soldEth, 6, globalCurrency),
+      formatNumber(l.receiptPrice, 2, globalCurrency),
+      formatNumber(l.salePrice, 2, globalCurrency),
+      formatNumber(l.valueAtReceipt, 2, globalCurrency),
+      formatNumber(l.valueAtSale, 2, globalCurrency),
+      formatNumber(l.gainOrLoss, 2, globalCurrency),
+      formatNumber(l.taxableGain, 2, globalCurrency),
+      formatNumber(l.cgtTax, 2, globalCurrency),
+      l.taxFree ? "Yes" : "No",
+    ]);
+    const totalRow = [
+      "TOTAL",
+      "",
+      formatNumber(sim.fulfilledEth, 6, globalCurrency),
+      "",
+      "",
+      formatNumber(sim.totalValueAtReceipt, 2, globalCurrency),
+      formatNumber(sim.totalValueAtSale, 2, globalCurrency),
+      formatNumber(sim.totalGainOrLoss, 2, globalCurrency),
+      formatNumber(sim.taxableGainTotal, 2, globalCurrency),
+      formatNumber(sim.cgtTaxTotal, 2, globalCurrency),
+      "",
+    ];
+    const csv = [headers, ...rows, totalRow]
+      .map((r) => r.map((c) => `"${c}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${(activeTracker?.name || "validator").replace(/\s+/g, "_")}_sale_simulation.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // CSV Export with year filter
@@ -1709,7 +1930,19 @@ export const Dashboard: React.FC = () => {
                   <button
                     onClick={() => {
                       setShowMarkSoldModal(true);
-                      setMarkSoldMode("year");
+                      setSaleSimulation(null);
+                      setSaleSimulationError(null);
+                      setSellAmountInput("");
+                      setSellDateIso(new Date().toISOString().slice(0, 10));
+                      setSellPriceInput(
+                        currentEthPrice
+                          ? String(
+                              globalCurrency === "EUR"
+                                ? currentEthPrice.eur
+                                : currentEthPrice.usd
+                            )
+                          : ""
+                      );
                     }}
                     style={{ background: "#2b2b2b", padding: "10px 12px", transition: "all 0.2s", display: "inline-flex", alignItems: "center", gap: 6, border: "none", borderRadius: "9px", textTransform: "none" }}
                     title="Mark rewards as sold"
@@ -2290,42 +2523,29 @@ export const Dashboard: React.FC = () => {
                       {/* Hodling status column */}
                       <td style={{ padding: "12px 8px", textAlign: "center" }}>
                         {(() => {
-                          const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
-                          const isSold = holding === "Sold";
+                          const remaining = remainingEthForTx(tx);
+                          const sold = Math.max(0, (tx.ethAmount || 0) - remaining);
+                          const isSold = remaining <= EPS;
+                          const isPartial = sold > EPS && !isSold;
                           return (
-                            <button
-                              onClick={() => {
-                                setHoldingStatusMap((prev) => ({
-                                  ...prev,
-                                  [tx.transactionHash]: isSold ? "Hodling" : "Sold",
-                                }));
-                              }}
+                            <span
                               style={{
                                 padding: "4px 12px",
                                 borderRadius: 9999,
-                                border: isSold ? "1px solid transparent" : "1px solid #4b4b4b",
+                                border: isSold
+                                  ? "1px solid transparent"
+                                  : isPartial
+                                    ? "1px solid #5d5030"
+                                    : "1px solid #4b4b4b",
                                 background: "#2b2b2b",
-                                color: "#aaaaaa",
+                                color: isSold ? "#9aa0b4" : isPartial ? "#d2b37a" : "#aaaaaa",
                                 fontSize: "0.8rem",
-                                cursor: "pointer",
+                                cursor: "default",
                                 textTransform: "none",
-                                transition: "background 0.2s, transform 0.1s",
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = "#383838";
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = "#2b2b2b";
-                              }}
-                              onMouseDown={(e) => {
-                                e.currentTarget.style.transform = "scale(0.96)";
-                              }}
-                              onMouseUp={(e) => {
-                                e.currentTarget.style.transform = "scale(1)";
                               }}
                             >
-                              {isSold ? "Sold" : "Hodling"}
-                            </button>
+                              {isSold ? "Sold" : isPartial ? "Partial" : "Hodling"}
+                            </span>
                           );
                         })()}
                       </td>
@@ -3080,7 +3300,7 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Mark rewards as sold?</h3>
+                  <h3 style={{ margin: 0, color: "#f0f0f0", fontSize: "1.5rem" }}>Sell simulation (FIFO)</h3>
                   <button
                     onClick={() => setShowMarkSoldModal(false)}
                     style={{
@@ -3111,92 +3331,71 @@ export const Dashboard: React.FC = () => {
                   </button>
                 </div>
                 <p className="muted" style={{ marginTop: 0, marginBottom: "16px", color: "#aaaaaa" }}>
-                  Which period do you want to apply this to:
+                  Enter sell details. We allocate sold ETH using FIFO (oldest rewards first). Income tax is unchanged.
                 </p>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                  {/* Entire year */}
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      cursor: "pointer",
-                      color: "#e8e8f0",
-                      fontSize: "0.9rem",
-                    }}
-                  >
+                <div style={{ display: "grid", gap: "12px" }}>
+                  <div>
+                    <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem", marginBottom: "6px" }}>
+                      Amount to sell (ETH)
+                    </label>
                     <input
-                      type="radio"
-                      checked={markSoldMode === "year"}
-                      onChange={() => setMarkSoldMode("year")}
+                      className="input"
+                      value={sellAmountInput}
+                      onChange={(e) => setSellAmountInput(e.target.value)}
+                      placeholder="0.0200"
                     />
-                    <span>Entire year {selectedYear}</span>
-                  </label>
-
-                  {/* Custom range */}
-                  <label
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                      cursor: "pointer",
-                      fontSize: "0.9rem",
-                    }}
-                  >
-                    <span style={{ display: "flex", alignItems: "center", gap: 10, color: markSoldMode === "custom" ? "#f0f0f0" : "#aaaaaa" }}>
-                      <input
-                        type="radio"
-                        checked={markSoldMode === "custom"}
-                        onChange={() => setMarkSoldMode("custom")}
-                      />
-                      <span>Custom range:</span>
-                    </span>
-                    <div style={{ display: "flex", gap: 8, marginLeft: 26 }}>
-                      <select
-                        className="gradient-select"
-                        value={markSoldStartMonth}
-                        onChange={(e) => setMarkSoldStartMonth(parseInt(e.target.value))}
-                        onFocus={() => {
-                          if (markSoldMode === "year") {
-                            setMarkSoldMode("custom");
-                          }
-                        }}
-                        style={{ color: markSoldMode === "custom" ? "#f0f0f0" : "#aaaaaa", opacity: markSoldMode === "custom" ? 1 : 0.6 }}
-                      >
-                        {Array.from({ length: 12 }).map((_, idx) => {
-                          const name = new Date(2024, idx, 1).toLocaleDateString("en-US", { month: "short" });
-                          return (
-                            <option key={idx} value={idx}>
-                              {name}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      <span style={{ color: "#aaaaaa", alignSelf: "center" }}>–</span>
-                      <select
-                        className="gradient-select"
-                        value={markSoldEndMonth}
-                        onChange={(e) => setMarkSoldEndMonth(parseInt(e.target.value))}
-                        onFocus={() => {
-                          if (markSoldMode === "year") {
-                            setMarkSoldMode("custom");
-                          }
-                        }}
-                        style={{ color: markSoldMode === "custom" ? "#f0f0f0" : "#aaaaaa", opacity: markSoldMode === "custom" ? 1 : 0.6 }}
-                      >
-                        {Array.from({ length: 12 }).map((_, idx) => {
-                          const name = new Date(2024, idx, 1).toLocaleDateString("en-US", { month: "short" });
-                          return (
-                            <option key={idx} value={idx}>
-                              {name}
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
-                  </label>
+                  </div>
+                  <div>
+                    <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem", marginBottom: "6px" }}>
+                      Sell price per ETH ({globalCurrency})
+                    </label>
+                    <input
+                      className="input"
+                      value={sellPriceInput}
+                      onChange={(e) => setSellPriceInput(e.target.value)}
+                      placeholder={currentEthPrice ? String(globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd) : "0"}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem", marginBottom: "6px" }}>
+                      Sell date
+                    </label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={sellDateIso}
+                      onChange={(e) => setSellDateIso(e.target.value)}
+                    />
+                  </div>
                 </div>
+
+                {saleSimulationError ? (
+                  <p style={{ marginTop: 12, color: "#ff9b9b", fontSize: "0.85rem" }}>{saleSimulationError}</p>
+                ) : null}
+
+                {saleSimulation ? (
+                  <div style={{ marginTop: 14, fontSize: "0.85rem", color: "#aaaaaa", lineHeight: 1.4 }}>
+                    <div>Requested: <strong style={{ color: "#f0f0f0" }}>{formatNumber(saleSimulation.requestedEth, 6, globalCurrency)} ETH</strong></div>
+                    <div>Fulfilled: <strong style={{ color: "#f0f0f0" }}>{formatNumber(saleSimulation.fulfilledEth, 6, globalCurrency)} ETH</strong></div>
+                    {saleSimulation.unfilledEth > EPS ? (
+                      <div style={{ color: "#e4a729" }}>Not enough unsold ETH: missing {formatNumber(saleSimulation.unfilledEth, 6, globalCurrency)} ETH</div>
+                    ) : null}
+                    <div>Taxable gain: <strong style={{ color: "#f0f0f0" }}>{formatCurrency(saleSimulation.taxableGainTotal, 2, globalCurrency)}</strong></div>
+                    <div>CGT ({formatNumber(cgtRate, 2, globalCurrency)}%): <strong style={{ color: "#f0f0f0" }}>{formatCurrency(saleSimulation.cgtTaxTotal, 2, globalCurrency)}</strong></div>
+                  </div>
+                ) : null}
+
+                {saleHistory.length > 0 ? (
+                  <div style={{ marginTop: 16, maxHeight: 120, overflow: "auto", borderTop: "1px solid #2b2b2b", paddingTop: 8 }}>
+                    <p style={{ margin: 0, color: "#aaaaaa", fontSize: "0.8rem" }}>Recent sales</p>
+                    {saleHistory.slice(0, 3).map((s) => (
+                      <div key={s.id} style={{ fontSize: "0.78rem", color: "#9aa0b4", marginTop: 4 }}>
+                        {s.soldAtIso.slice(0, 10)} • {formatNumber(s.fulfilledEth, 6, globalCurrency)} ETH • CGT {formatCurrency(s.cgtTaxTotal, 2, globalCurrency)}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
 
                 <div className="actions" style={{ marginTop: "32px" }}>
                   <button
@@ -3221,26 +3420,94 @@ export const Dashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      if (!activeTracker) {
-                        setShowMarkSoldModal(false);
+                      const amount = Number(sellAmountInput);
+                      const salePrice =
+                        Number(sellPriceInput) ||
+                        (currentEthPrice
+                          ? globalCurrency === "EUR"
+                            ? currentEthPrice.eur
+                            : currentEthPrice.usd
+                          : 0);
+                      if (!Number.isFinite(amount) || amount <= 0) {
+                        setSaleSimulation(null);
+                        setSaleSimulationError("Enter a valid sell amount in ETH.");
                         return;
                       }
-                      const updated: Record<string, "Hodling" | "Sold"> = { ...holdingStatusMap };
-                      transactions.forEach((tx) => {
-                        const txDate = new Date(tx.timestamp * 1000);
-                        const year = txDate.getFullYear();
-                        const month = txDate.getMonth();
-                        if (markSoldMode === "year") {
-                          if (year === selectedYear) {
-                            updated[tx.transactionHash] = "Sold";
-                          }
-                        } else {
-                          if (year === selectedYear && month >= markSoldStartMonth && month <= markSoldEndMonth) {
-                            updated[tx.transactionHash] = "Sold";
-                          }
-                        }
+                      if (!Number.isFinite(salePrice) || salePrice <= 0) {
+                        setSaleSimulation(null);
+                        setSaleSimulationError("Enter a valid sell price per ETH.");
+                        return;
+                      }
+                      setSaleSimulationError(null);
+                      const sim = simulateFifoSale(amount, salePrice, sellDateIso || new Date().toISOString().slice(0, 10));
+                      setSaleSimulation(sim);
+                    }}
+                    style={{
+                      background: "#3c4a5c",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "10px 20px",
+                      color: "#f0f0f0",
+                      textTransform: "none",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Simulate
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!saleSimulation) return;
+                      downloadSaleSimulationCsv(saleSimulation);
+                    }}
+                    disabled={!saleSimulation}
+                    style={{
+                      background: "#2b2b2b",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "10px 20px",
+                      color: "#f0f0f0",
+                      textTransform: "none",
+                      fontWeight: 600,
+                      opacity: saleSimulation ? 1 : 0.6,
+                    }}
+                  >
+                    CSV
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (!saleSimulation) {
+                        setSaleSimulationError("Run simulation first.");
+                        return;
+                      }
+                      const soldAtIsoDate = sellDateIso || new Date().toISOString().slice(0, 10);
+                      const salePrice =
+                        Number(sellPriceInput) ||
+                        (currentEthPrice
+                          ? globalCurrency === "EUR"
+                            ? currentEthPrice.eur
+                            : currentEthPrice.usd
+                          : 0);
+                      setSoldAmountsMap((prev) => {
+                        const next = { ...prev };
+                        saleSimulation.lots.forEach((lot) => {
+                          next[lot.transactionHash] = Math.max(0, (next[lot.transactionHash] || 0) + lot.soldEth);
+                        });
+                        return next;
                       });
-                      setHoldingStatusMap(updated);
+                      setSaleHistory((prev) => [
+                        {
+                          ...saleSimulation,
+                          id: `sale_${Date.now()}`,
+                          soldAtIso: `${soldAtIsoDate}T12:00:00.000Z`,
+                          sellPrice: salePrice,
+                          cgtRate,
+                          taxFreeAfterYears: cgtTaxFreeAfterYears,
+                          currency: globalCurrency,
+                        },
+                        ...prev,
+                      ]);
+                      setSaleSimulation(null);
+                      setSellAmountInput("");
                       setShowMarkSoldModal(false);
                     }}
                     style={{

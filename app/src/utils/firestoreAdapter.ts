@@ -331,6 +331,14 @@ export async function saveFirestoreTracker(
       beaconApiKey: deleteField(),
       mevMode: tracker.mevMode || null,
       mevPoolPayoutAddress: deleteField(),
+      capitalGainsTaxRate:
+        typeof tracker.capitalGainsTaxRate === "number"
+          ? tracker.capitalGainsTaxRate
+          : 12,
+      capitalGainsTaxFreeAfterYears:
+        typeof tracker.capitalGainsTaxFreeAfterYears === "number"
+          ? tracker.capitalGainsTaxFreeAfterYears
+          : 2,
       createdAt: Timestamp.fromMillis(safeCreatedAtMs),
       updatedAt: serverTimestamp(),
     }, { merge: true });
@@ -367,6 +375,12 @@ export async function getFirestoreTrackers(uid: string): Promise<Tracker[]> {
         validatorPublicKey: data.validatorPublicKey || undefined,
         validatorIndex: typeof data.validatorIndex === "number" ? data.validatorIndex : undefined,
         mevMode: data.mevMode || undefined,
+        capitalGainsTaxRate:
+          typeof data.capitalGainsTaxRate === "number" ? data.capitalGainsTaxRate : 12,
+        capitalGainsTaxFreeAfterYears:
+          typeof data.capitalGainsTaxFreeAfterYears === "number"
+            ? data.capitalGainsTaxFreeAfterYears
+            : 2,
         lastSyncedEpoch: data.lastSyncedEpoch ?? undefined,
         validatorStatus: data.validatorStatus || undefined,
         validatorBalanceEth: data.validatorBalanceEth ?? undefined,

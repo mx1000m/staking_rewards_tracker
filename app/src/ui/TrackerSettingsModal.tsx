@@ -18,6 +18,12 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({
   const { user } = useAuth();
   const [name, setName] = useState<string>(tracker.name || "");
   const [taxRate, setTaxRate] = useState<number>(tracker.taxRate ?? 24);
+  const [capitalGainsTaxRate, setCapitalGainsTaxRate] = useState<number>(
+    tracker.capitalGainsTaxRate ?? 12
+  );
+  const [capitalGainsTaxFreeAfterYears, setCapitalGainsTaxFreeAfterYears] = useState<number>(
+    tracker.capitalGainsTaxFreeAfterYears ?? 2
+  );
   const [currency, setLocalCurrency] = useState<"EUR" | "USD">(globalCurrency);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +34,19 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({
     try {
       const normalizedName = name.trim() || tracker.name || "Validator 1";
       const normalizedTaxRate = Number.isFinite(taxRate) ? Math.max(0, Math.min(100, taxRate)) : 24;
-      updateTracker(tracker.id, { name: normalizedName, taxRate: normalizedTaxRate, currency });
+      const normalizedCgtRate = Number.isFinite(capitalGainsTaxRate)
+        ? Math.max(0, Math.min(100, capitalGainsTaxRate))
+        : 12;
+      const normalizedCgtYears = Number.isFinite(capitalGainsTaxFreeAfterYears)
+        ? Math.max(0, Math.min(50, Math.round(capitalGainsTaxFreeAfterYears)))
+        : 2;
+      updateTracker(tracker.id, {
+        name: normalizedName,
+        taxRate: normalizedTaxRate,
+        currency,
+        capitalGainsTaxRate: normalizedCgtRate,
+        capitalGainsTaxFreeAfterYears: normalizedCgtYears,
+      });
       setCurrency(currency);
       if (user) {
         await syncTrackerToFirestore(user.uid, {
@@ -36,6 +54,8 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({
           name: normalizedName,
           taxRate: normalizedTaxRate,
           currency,
+          capitalGainsTaxRate: normalizedCgtRate,
+          capitalGainsTaxFreeAfterYears: normalizedCgtYears,
         });
       }
       onSaved?.();
@@ -86,6 +106,52 @@ export const TrackerSettingsModal: React.FC<TrackerSettingsModalProps> = ({
             step={0.1}
             value={taxRate}
             onChange={(e) => setTaxRate(Number(e.target.value))}
+            style={{
+              width: "100%",
+              background: "#222222",
+              border: "1px solid #444444",
+              borderRadius: "10px",
+              padding: "10px 12px",
+              color: "#f0f0f0",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem", marginBottom: "6px" }}>
+            Capital gains tax rate (%)
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={0.1}
+            value={capitalGainsTaxRate}
+            onChange={(e) => setCapitalGainsTaxRate(Number(e.target.value))}
+            style={{
+              width: "100%",
+              background: "#222222",
+              border: "1px solid #444444",
+              borderRadius: "10px",
+              padding: "10px 12px",
+              color: "#f0f0f0",
+              boxSizing: "border-box",
+            }}
+          />
+        </div>
+
+        <div>
+          <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem", marginBottom: "6px" }}>
+            CGT tax-free after (years)
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={50}
+            step={1}
+            value={capitalGainsTaxFreeAfterYears}
+            onChange={(e) => setCapitalGainsTaxFreeAfterYears(Number(e.target.value))}
             style={{
               width: "100%",
               background: "#222222",

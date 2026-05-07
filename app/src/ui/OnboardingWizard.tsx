@@ -125,6 +125,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
         name: defaultName,
         validatorPublicKey: validatorPublicKey.trim() || undefined,
         mevMode,
+        capitalGainsTaxRate: 12,
+        capitalGainsTaxFreeAfterYears: 2,
       });
       
       // Sync to Firestore if authenticated

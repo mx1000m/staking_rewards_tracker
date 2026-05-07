@@ -17,6 +17,10 @@ export interface Tracker {
   /** Consensus layer validator index (e.g. from Dune / beacon-sync). */
   validatorIndex?: number;
   mevMode?: "none" | "direct" | "pool" | "mixed"; // How MEV rewards are received
+  /** Capital gains tax rate in percent (e.g. 12 for Croatia). */
+  capitalGainsTaxRate?: number;
+  /** Holding period in years after which CGT becomes tax free. */
+  capitalGainsTaxFreeAfterYears?: number;
   // Set by beacon-sync script (read-only in app)
   lastSyncedEpoch?: number | null;
   validatorStatus?: string; // e.g. active_ongoing
