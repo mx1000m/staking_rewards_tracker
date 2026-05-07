@@ -2,17 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useTrackerStore, Tracker } from "../store/trackerStore";
 import { getDateKey } from "../utils/priceCache";
 
-// Country to timezone mapping
-const COUNTRY_TIMEZONE: Record<string, string> = {
-  Croatia: "Europe/Zagreb",    // UTC+1 (winter) / UTC+2 (summer)
-  Germany: "Europe/Berlin",    // UTC+1 (winter) / UTC+2 (summer)
-  "United Kingdom": "Europe/London", // UTC+0 (winter) / UTC+1 (summer)
-};
-
-// Helper to get timezone for a country (defaults to UTC if not found)
-function getTimezoneForCountry(country: string): string {
-  return COUNTRY_TIMEZONE[country] || "UTC";
-}
+const DEFAULT_TIMEZONE = "Europe/Zagreb";
 import {
   getCachedTransactions,
   saveTransactions,
@@ -684,7 +674,7 @@ export const Dashboard: React.FC = () => {
 
       const processedTxs: CachedTransaction[] = [];
       
-      const timezone = getTimezoneForCountry(tracker.country);
+      const timezone = DEFAULT_TIMEZONE;
       for (let i = 0; i < yearTxs.length; i++) {
         const c = yearTxs[i];
         const rest: CachedTransaction = { ...c };
@@ -1012,22 +1002,20 @@ export const Dashboard: React.FC = () => {
         allEthRewards += cached.reduce((sum, tx) => sum + (tx.ethAmount || 0), 0);
         allEthTaxes += cached.reduce((sum, tx) => sum + (tx.taxesInEth || 0), 0);
 
-        // Capital gains tax‑free (currently implemented for Croatia: rewards held ≥ 2 years)
-        if (tracker.country === "Croatia") {
-          const now = new Date();
-          cached.forEach((tx) => {
-            const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
-            if (holding === "Sold") return;
-            const rewardDate = new Date(tx.timestamp * 1000);
-            const taxableUntil = new Date(rewardDate);
-            taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
-            if (now >= taxableUntil) {
-              const cgtRewards = getRewardsInCurrency(tx, globalCurrency);
-              allCgtFreeRewards += isNaN(cgtRewards) ? 0 : cgtRewards;
-              allCgtFreeEth += tx.ethAmount || 0;
-            }
-          });
-        }
+        // Capital gains tax‑free: rewards held >= 2 years.
+        const now = new Date();
+        cached.forEach((tx) => {
+          const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
+          if (holding === "Sold") return;
+          const rewardDate = new Date(tx.timestamp * 1000);
+          const taxableUntil = new Date(rewardDate);
+          taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+          if (now >= taxableUntil) {
+            const cgtRewards = getRewardsInCurrency(tx, globalCurrency);
+            allCgtFreeRewards += isNaN(cgtRewards) ? 0 : cgtRewards;
+            allCgtFreeEth += tx.ethAmount || 0;
+          }
+        });
       }
 
       setAllTrackersTotals({
@@ -1084,33 +1072,28 @@ export const Dashboard: React.FC = () => {
     return sum + (tx.rewardType === "CL" ? (tx.topUpEth || 0) : 0);
   }, 0);
   
-  // Capital gains tax‑free amounts for the active tracker (Croatia: rewards held ≥ 2 years)
+  // Capital gains tax‑free amounts for the active tracker (rewards held >= 2 years)
   const nowForCgt = new Date();
-  const isCroatia = activeTracker?.country === "Croatia";
-  const totalCgtFreeEth = isCroatia
-    ? filteredTransactions.reduce((sum, tx) => {
-        const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
-        if (holding === "Sold") return sum;
-        const rewardDate = new Date(tx.timestamp * 1000);
-        const taxableUntil = new Date(rewardDate);
-        taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
-        return nowForCgt >= taxableUntil ? sum + (tx.ethAmount || 0) : sum;
-      }, 0)
-    : 0;
-  const totalCgtFreeRewards = isCroatia
-    ? filteredTransactions.reduce((sum, tx) => {
-        const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
-        if (holding === "Sold") return sum;
-        const rewardDate = new Date(tx.timestamp * 1000);
-        const taxableUntil = new Date(rewardDate);
-        taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
-        if (nowForCgt >= taxableUntil) {
-          const cgtRewards = getRewardsInCurrency(tx, globalCurrency);
-          return sum + (isNaN(cgtRewards) ? 0 : cgtRewards);
-        }
-        return sum;
-      }, 0)
-    : 0;
+  const totalCgtFreeEth = filteredTransactions.reduce((sum, tx) => {
+    const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
+    if (holding === "Sold") return sum;
+    const rewardDate = new Date(tx.timestamp * 1000);
+    const taxableUntil = new Date(rewardDate);
+    taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+    return nowForCgt >= taxableUntil ? sum + (tx.ethAmount || 0) : sum;
+  }, 0);
+  const totalCgtFreeRewards = filteredTransactions.reduce((sum, tx) => {
+    const holding = holdingStatusMap[tx.transactionHash] ?? "Hodling";
+    if (holding === "Sold") return sum;
+    const rewardDate = new Date(tx.timestamp * 1000);
+    const taxableUntil = new Date(rewardDate);
+    taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
+    if (nowForCgt >= taxableUntil) {
+      const cgtRewards = getRewardsInCurrency(tx, globalCurrency);
+      return sum + (isNaN(cgtRewards) ? 0 : cgtRewards);
+    }
+    return sum;
+  }, 0);
 
   // Use global currency for all displays
   const currencySymbol = globalCurrency === "EUR" ? "€" : "$";
@@ -1191,7 +1174,7 @@ export const Dashboard: React.FC = () => {
       const priceMissing = ethPrice === 0;
       const displayDate = formatTransactionDateForDisplay(
         tx,
-        getTimezoneForCountry(activeTracker.country),
+        DEFAULT_TIMEZONE,
         globalCurrency
       );
       const datePrefix = priceMissing ? `⚠ - ${displayDate} - ETH PRICE MISSING` : displayDate;
@@ -1244,7 +1227,6 @@ export const Dashboard: React.FC = () => {
     
     // Create header rows with tracker information
     const trackerName = activeTracker.name || "Validator";
-    const trackerLocation = activeTracker.country || "Unknown";
     const trackerTaxRate = activeTracker.taxRate ?? 0;
     const beaconPubKey = activeTracker.validatorPublicKey || "";
     const validatorWithdrawalAddress = activeTracker.walletAddress || "";
@@ -1256,7 +1238,7 @@ export const Dashboard: React.FC = () => {
     
     // Header rows (text in first column only, rest empty - will appear to span when opened in Excel)
     const headerRows = [
-      [`Name: ${trackerName} - Location: ${trackerLocation} - Income tax rate: ${trackerTaxRate}%`, ...Array(numColumns - 1).fill("")],
+      [`Name: ${trackerName} - Income tax rate: ${trackerTaxRate}%`, ...Array(numColumns - 1).fill("")],
       [`Beacon chain public key: ${beaconPubKey}`, ...Array(numColumns - 1).fill("")],
       [`Validator withdrawal address: ${validatorWithdrawalAddress}`, ...Array(numColumns - 1).fill("")],
       [`Top ups: ${trackerTopUpsCount} | ${formatNumber(trackerTopUpsEthTotal, 6, globalCurrency)} ETH`, ...Array(numColumns - 1).fill("")],
@@ -1541,7 +1523,14 @@ export const Dashboard: React.FC = () => {
                     {activeTracker.name || "Validator"}
                   </h2>
 
-                  <div style={{ marginTop: "14px", fontSize: "0.85rem", color: "#aaaaaa" }}>
+                  <div
+                    style={{
+                      marginTop: "8px",
+                      fontSize: "0.85rem",
+                      color: "#aaaaaa",
+                      lineHeight: 1.35,
+                    }}
+                  >
                     Balance:{" "}
                     <span style={{ fontWeight: 600, color: "#d4d4d4" }}>
                       {activeTracker.validatorBalanceEth != null
@@ -1553,11 +1542,12 @@ export const Dashboard: React.FC = () => {
 
                   <div
                     style={{
-                      marginTop: "12px",
+                      marginTop: "8px",
                       display: "flex",
                       flexWrap: "wrap",
-                      gap: "12px 28px",
+                      gap: "4px 28px",
                       alignItems: "baseline",
+                      lineHeight: 1.35,
                     }}
                   >
                     <span style={{ fontSize: "0.85rem", color: "#aaaaaa" }}>
@@ -1588,13 +1578,14 @@ export const Dashboard: React.FC = () => {
 
                   <div
                     style={{
-                      marginTop: "14px",
+                      marginTop: "8px",
                       fontSize: "0.85rem",
                       color: "#aaaaaa",
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
                       flexWrap: "wrap",
+                      lineHeight: 1.35,
                     }}
                   >
                     <span>
@@ -1636,13 +1627,14 @@ export const Dashboard: React.FC = () => {
 
                   <div
                     style={{
-                      marginTop: "10px",
+                      marginTop: "8px",
                       fontSize: "0.85rem",
                       color: "#aaaaaa",
                       display: "flex",
                       alignItems: "center",
                       gap: 8,
                       flexWrap: "wrap",
+                      lineHeight: 1.35,
                     }}
                   >
                     <span>
@@ -1682,9 +1674,10 @@ export const Dashboard: React.FC = () => {
 
                   <p
                     style={{
-                      margin: "14px 0 0 0",
+                      margin: "8px 0 0 0",
                       fontSize: "0.85rem",
                       color: "#aaaaaa",
+                      lineHeight: 1.35,
                     }}
                   >
                     Income tax rate:{" "}
@@ -2146,7 +2139,7 @@ export const Dashboard: React.FC = () => {
                         <div>
                           {formatTransactionDateForDisplay(
                             tx,
-                            activeTracker ? getTimezoneForCountry(activeTracker.country) : "UTC",
+                            DEFAULT_TIMEZONE,
                             globalCurrency
                           )}
                         </div>
@@ -2199,7 +2192,7 @@ export const Dashboard: React.FC = () => {
                       </td>
                       {/* CGT Status column */}
                       <td style={{ padding: "12px 8px", textAlign: "center" }}>
-                        {isCroatia ? (() => {
+                        {(() => {
                           const rewardDate = new Date(tx.timestamp * 1000);
                           const taxableUntil = new Date(rewardDate);
                           taxableUntil.setFullYear(taxableUntil.getFullYear() + 2);
@@ -2209,8 +2202,7 @@ export const Dashboard: React.FC = () => {
                           const ratio = totalMs > 0 ? Math.min(1, elapsedMs / totalMs) : 1;
                           const progressPercent = Math.round(ratio * 100);
                           const isTaxFree = now >= taxableUntil;
-                          const timezone = activeTracker ? getTimezoneForCountry(activeTracker.country) : "UTC";
-                          const dateLabel = formatDate(taxableUntil, timezone, globalCurrency);
+                          const dateLabel = formatDate(taxableUntil, DEFAULT_TIMEZONE, globalCurrency);
                           const barColor = isTaxFree ? "#55b685" : "#aaaaaa";
                           const dotColor = isTaxFree ? "#55b685" : "#ff5252";
 
@@ -2293,9 +2285,7 @@ export const Dashboard: React.FC = () => {
                               />
                             </div>
                           );
-                        })() : (
-                          <span style={{ fontSize: "0.8rem", color: "#aaaaaa" }}>N/A</span>
-                        )}
+                        })()}
                       </td>
                       {/* Hodling status column */}
                       <td style={{ padding: "12px 8px", textAlign: "center" }}>

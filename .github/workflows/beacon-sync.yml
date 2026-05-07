@@ -45,7 +45,6 @@ jobs:
           BOOTSTRAP_TRACKER_NAME: ${{ secrets.BOOTSTRAP_TRACKER_NAME }}
           BOOTSTRAP_WALLET_ADDRESS: ${{ secrets.BOOTSTRAP_WALLET_ADDRESS }}
           BOOTSTRAP_TAX_RATE: ${{ secrets.BOOTSTRAP_TAX_RATE }}
-          BOOTSTRAP_COUNTRY: ${{ secrets.BOOTSTRAP_COUNTRY }}
           BOOTSTRAP_CURRENCY: ${{ secrets.BOOTSTRAP_CURRENCY }}
           BOOTSTRAP_MEV_MODE: ${{ secrets.BOOTSTRAP_MEV_MODE }}
           # Optional: full validator BLS pubkey (0x + 96 hex). Merged when tracker lacks validatorPublicKey (no Beacon HTTP API).

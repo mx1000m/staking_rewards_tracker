@@ -9,7 +9,6 @@ export interface Tracker {
   walletAddress: string; // Withdrawal address (Consensus Layer) - required
   feeRecipientAddress?: string; // Fee recipient (Execution Layer) - optional, defaults to walletAddress
   currency: Currency;
-  country: string;
   taxRate: number;
   name: string;
   createdAt: number;
@@ -18,7 +17,6 @@ export interface Tracker {
   /** Consensus layer validator index (e.g. from Dune / beacon-sync). */
   validatorIndex?: number;
   mevMode?: "none" | "direct" | "pool" | "mixed"; // How MEV rewards are received
-  mevPoolPayoutAddress?: string; // Execution-layer address receiving MEV pool payouts
   // Set by beacon-sync script (read-only in app)
   lastSyncedEpoch?: number | null;
   validatorStatus?: string; // e.g. active_ongoing

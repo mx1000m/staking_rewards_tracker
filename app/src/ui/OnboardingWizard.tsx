@@ -6,22 +6,14 @@ type OnboardingWizardProps = {
   onComplete?: () => void;
 };
 
-const COUNTRY_DEFAULT_TAX: Record<string, number> = {
-  Croatia: 24,
-  Germany: 25,
-  "United Kingdom": 20,
-};
-
 export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }) => {
   const { addTracker, syncTrackerToFirestore, trackers, currency: globalCurrency, setCurrency } = useTrackerStore();
   const { user } = useAuth();
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
-  const [walletAddress, setWalletAddress] = useState("");
   const [feeRecipientAddress, setFeeRecipientAddress] = useState("");
   const [validatorPublicKey, setValidatorPublicKey] = useState("");
   const [mevMode, setMevMode] = useState<"none" | "direct" | "pool" | "mixed">("none");
-  const [mevPoolPayoutAddress, setMevPoolPayoutAddress] = useState("");
   const [currency, setCurrencyLocal] = useState<Currency>(globalCurrency);
   
   // Update local currency when global currency changes
@@ -34,8 +26,7 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     setCurrencyLocal(newCurrency);
     setCurrency(newCurrency); // Update global currency
   };
-  const [country, setCountry] = useState("Croatia");
-  const [taxRate, setTaxRate] = useState<number>(COUNTRY_DEFAULT_TAX["Croatia"]);
+  const [taxRate, setTaxRate] = useState<number>(24);
   const [shakeNameInput, setShakeNameInput] = useState(false);
   const [shakeBeaconValidator, setShakeBeaconValidator] = useState(false);
 
@@ -59,14 +50,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     if (!trimmedName) return null;
     return trackers.find((t) => t.name === trimmedName) || null;
   }, [name, trackers]);
-
-  // Check for duplicate consensus layer address
-  const duplicateTracker = useMemo(() => {
-    // We no longer ask for consensus withdrawal address in the wizard;
-    // duplicate detection based on walletAddress is handled after the first
-    // sync when the withdrawal address is known.
-    return null;
-  }, [trackers]);
 
   // Prevent background scrolling while the wizard is open
   useEffect(() => {
@@ -99,14 +82,11 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
   }, [
     step,
     name,
-    walletAddress,
     feeRecipientAddress,
     currency,
     taxRate,
     validatorPublicKey,
     mevMode,
-    mevPoolPayoutAddress,
-    duplicateTracker,
     duplicateName,
   ]);
 
@@ -137,22 +117,14 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       // Update global currency preference (already updated via handleCurrencyChange)
       
       // Add tracker (currency is now global, but we keep it in tracker for backward compatibility)
-      const trimmedMevPayout = mevPoolPayoutAddress.trim();
-      const effectiveMevPayout =
-        mevMode === "pool"
-          ? trimmedMevPayout || walletAddress.trim()
-          : undefined;
-
       addTracker({
         walletAddress: "", // filled by beacon-sync from validator index / Dune
         feeRecipientAddress: feeRecipientAddress.trim() || undefined,
         currency, // Keep for backward compatibility, but global currency is used for display
-        country,
         taxRate,
         name: defaultName,
         validatorPublicKey: validatorPublicKey.trim() || undefined,
         mevMode,
-        mevPoolPayoutAddress: effectiveMevPayout,
       });
       
       // Sync to Firestore if authenticated
@@ -179,13 +151,6 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
     onComplete?.();
   };
 
-  const onChangeCountry = (val: string) => {
-    setCountry(val);
-    const def = COUNTRY_DEFAULT_TAX[val];
-    if (typeof def === "number") setTaxRate(def);
-  };
-
-
   return (
     <section style={{ position: "relative", width: "100%", boxSizing: "border-box" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
@@ -193,8 +158,8 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
           {step === 0 && "Start by naming your validator"}
           {step === 1 && "Add your validator public key"}
           {step === 2 && "Set up your execution rewards"}
-          {step === 3 && "Set your taxation country"}
-          {step === 4 && "Chose your currency preference"}
+          {step === 3 && "Set your income tax rate"}
+          {step === 4 && "Choose your currency preference"}
         </h1>
         <button
           onClick={handleCancel}
@@ -354,55 +319,24 @@ export const OnboardingWizard: React.FC<OnboardingWizardProps> = ({ onComplete }
       )}
       {step === 3 && (
         <div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-              marginBottom: "8px",
-            }}
-          >
-            <label style={{ display: "block", marginBottom: "0px", color: "#f0f0f0", fontSize: "0.9rem" }}>
-              Country
-            </label>
-            <div style={{ width: "120px", display: "flex", justifyContent: "flex-start" }}>
-              <label style={{ display: "block", color: "#f0f0f0", fontSize: "0.9rem", marginLeft: "-20px" }}>
-                Income tax rate
-              </label>
-            </div>
+          <label style={{ display: "block", marginBottom: "6px", color: "#f0f0f0", fontSize: "0.9rem" }}>
+            Income tax rate
+          </label>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", maxWidth: "220px" }}>
+            <input
+              className="input"
+              type="number"
+              min={0}
+              max={100}
+              step={0.1}
+              value={taxRate}
+              onChange={(e) => setTaxRate(parseFloat(e.target.value))}
+              style={{ width: "160px" }}
+            />
+            <span style={{ color: "#9aa0b4" }}>%</span>
           </div>
-          <div className="row">
-            <select
-              className="gradient-select"
-              value={country}
-              onChange={(e) => onChangeCountry(e.target.value)}
-              style={{ flex: 1 }}
-            >
-              {Object.keys(COUNTRY_DEFAULT_TAX).map((c) => {
-                const isDisabled = c !== "Croatia";
-                return (
-                  <option key={c} value={c} disabled={isDisabled}>
-                    {c}{isDisabled ? " (coming soon)" : ""}
-                  </option>
-                );
-              })}
-            </select>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <input
-                className="input"
-                type="number"
-                min={0}
-                max={100}
-                step={0.1}
-                value={taxRate}
-                onChange={(e) => setTaxRate(parseFloat(e.target.value))}
-                style={{ width: "120px" }}
-              />
-              <span style={{ color: "#9aa0b4" }}>%</span>
-            </div>
-          </div>
-          <p className="muted" style={{ margin: "4px 0 3px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
-            The country income tax rate is simply indicative. Please check with your local authorities for your exact tax rate.
+          <p className="muted" style={{ margin: "8px 0 3px 0", fontSize: "0.8rem", color: "#aaaaaa" }}>
+            Income tax rate is indicative. Please verify with your local tax authority.
           </p>
         </div>
       )}

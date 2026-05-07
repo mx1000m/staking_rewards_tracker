@@ -92,7 +92,7 @@ The app stores **full transaction history + paid decisions** in Firestore for cr
 ```
 users/{uid}/
   trackers/{trackerId}/
-    - name, walletAddress, currency, country, taxRate, validatorPublicKey, mevMode, …
+    - name, walletAddress, currency, taxRate, validatorPublicKey, mevMode, …
     transactions/{transactionHash}/
       - date, time, ethAmount, ethPrice, rewardsInCurrency
       - taxRate, taxesInEth, taxesInCurrency

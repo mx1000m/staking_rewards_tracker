@@ -29,7 +29,6 @@ const BOOTSTRAP_TRACKER_ID = process.env.BOOTSTRAP_TRACKER_ID || "tracker-primar
 const BOOTSTRAP_TRACKER_NAME = process.env.BOOTSTRAP_TRACKER_NAME || "Validator";
 const BOOTSTRAP_WALLET_ADDRESS = process.env.BOOTSTRAP_WALLET_ADDRESS || "";
 const BOOTSTRAP_TAX_RATE = Number(process.env.BOOTSTRAP_TAX_RATE || "24");
-const BOOTSTRAP_COUNTRY = process.env.BOOTSTRAP_COUNTRY || "Croatia";
 const BOOTSTRAP_CURRENCY = (process.env.BOOTSTRAP_CURRENCY || "EUR").toUpperCase() === "USD" ? "USD" : "EUR";
 const BOOTSTRAP_MEV_MODE = process.env.BOOTSTRAP_MEV_MODE || "direct";
 /** Optional: full validator BLS pubkey (0x + 96 hex). If set, merged onto trackers missing `validatorPublicKey` (no HTTP Beacon call). */
@@ -40,7 +39,6 @@ interface TrackerDoc {
   name?: string;
   walletAddress?: string;
   currency?: "EUR" | "USD";
-  country?: string;
   taxRate?: number;
   lastClSyncDateKey?: string | null;
   mevMode?: string;
@@ -490,7 +488,6 @@ async function ensureBootstrapTracker(): Promise<void> {
         walletAddress: BOOTSTRAP_WALLET_ADDRESS,
         feeRecipientAddress: BOOTSTRAP_WALLET_ADDRESS,
         currency: BOOTSTRAP_CURRENCY,
-        country: BOOTSTRAP_COUNTRY,
         taxRate: Number.isFinite(BOOTSTRAP_TAX_RATE) ? BOOTSTRAP_TAX_RATE : 24,
         createdAt,
         mevMode: BOOTSTRAP_MEV_MODE,
