@@ -1955,7 +1955,7 @@ export const Dashboard: React.FC = () => {
                       setShowMarkSoldModal(true);
                       setSaleSimulation(null);
                       setSaleSimulationError(null);
-                      setSellAmountInput("");
+                      setSellAmountInput(formatInputNumber(0.01, 2, globalCurrency));
                       setSellDateIso(new Date().toISOString().slice(0, 10));
                       setSellPriceInput(
                         currentEthPrice
@@ -3360,7 +3360,7 @@ export const Dashboard: React.FC = () => {
                 </p>
 
                 <div style={{ display: "grid", gap: "12px" }}>
-                  <div>
+                  <div style={{ position: "relative" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
                       <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem" }}>
                         Amount to sell (ETH)
@@ -3386,10 +3386,23 @@ export const Dashboard: React.FC = () => {
                       value={sellAmountInput}
                       onChange={(e) => setSellAmountInput(e.target.value)}
                       inputMode="decimal"
-                      placeholder="0.0200"
+                      placeholder={formatInputNumber(0.01, 2, globalCurrency)}
+                      style={{ paddingRight: "56px" }}
                     />
+                    <span
+                      style={{
+                        position: "absolute",
+                        right: "14px",
+                        top: "42px",
+                        color: "#9aa0b4",
+                        fontSize: "0.82rem",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      ETH
+                    </span>
                   </div>
-                  <div>
+                  <div style={{ position: "relative" }}>
                     <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem", marginBottom: "6px" }}>
                       Sell price per ETH ({globalCurrency})
                     </label>
@@ -3398,6 +3411,7 @@ export const Dashboard: React.FC = () => {
                       value={sellPriceInput}
                       onChange={(e) => setSellPriceInput(e.target.value)}
                       inputMode="decimal"
+                      style={{ paddingRight: "42px" }}
                       placeholder={
                         currentEthPrice
                           ? formatInputNumber(
@@ -3410,6 +3424,18 @@ export const Dashboard: React.FC = () => {
                           : "0"
                       }
                     />
+                    <span
+                      style={{
+                        position: "absolute",
+                        right: "14px",
+                        top: "42px",
+                        color: "#9aa0b4",
+                        fontSize: "0.9rem",
+                        pointerEvents: "none",
+                      }}
+                    >
+                      {globalCurrency === "EUR" ? "€" : "$"}
+                    </span>
                   </div>
                   <div>
                     <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem", marginBottom: "6px" }}>
