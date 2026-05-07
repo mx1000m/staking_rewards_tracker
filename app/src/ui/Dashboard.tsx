@@ -306,6 +306,28 @@ export const Dashboard: React.FC = () => {
     }
   };
 
+  const parseInputNumber = (raw: string, currency: "EUR" | "USD"): number => {
+    if (!raw) return NaN;
+    let normalized = raw.trim().replace(/\u2009/g, "").replace(/\s/g, "");
+    if (currency === "EUR") {
+      normalized = normalized.replace(/\./g, "").replace(/,/g, ".");
+    } else {
+      normalized = normalized.replace(/,/g, "");
+    }
+    return Number(normalized);
+  };
+
+  const formatInputNumber = (
+    value: number,
+    decimals: number,
+    currency: "EUR" | "USD"
+  ): string => {
+    if (!Number.isFinite(value)) return "";
+    let out = value.toFixed(decimals).replace(/\.?0+$/, "");
+    if (currency === "EUR") out = out.replace(".", ",");
+    return out;
+  };
+
   // Format date based on currency preference (slash-separated, zero-padded)
   // EUR: DD/MM/YYYY — USD: MM/DD/YYYY
   const formatDate = (date: Date, timezone: string, currency: "EUR" | "USD"): string => {
@@ -1163,6 +1185,7 @@ export const Dashboard: React.FC = () => {
   const totalTopUpsEth = filteredTransactions.reduce((sum, tx) => {
     return sum + (tx.rewardType === "CL" ? (tx.topUpEth || 0) : 0);
   }, 0);
+  const totalUnsoldEth = transactions.reduce((sum, tx) => sum + remainingEthForTx(tx), 0);
   
   // Capital gains tax‑free amounts for the active tracker (rewards held >= configured years)
   const nowForCgt = new Date();
@@ -1936,10 +1959,12 @@ export const Dashboard: React.FC = () => {
                       setSellDateIso(new Date().toISOString().slice(0, 10));
                       setSellPriceInput(
                         currentEthPrice
-                          ? String(
+                          ? formatInputNumber(
                               globalCurrency === "EUR"
                                 ? currentEthPrice.eur
-                                : currentEthPrice.usd
+                                : currentEthPrice.usd,
+                              2,
+                              globalCurrency
                             )
                           : ""
                       );
@@ -3336,13 +3361,31 @@ export const Dashboard: React.FC = () => {
 
                 <div style={{ display: "grid", gap: "12px" }}>
                   <div>
-                    <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem", marginBottom: "6px" }}>
-                      Amount to sell (ETH)
-                    </label>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                      <label style={{ display: "block", color: "#cccccc", fontSize: "0.88rem" }}>
+                        Amount to sell (ETH)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setSellAmountInput(formatInputNumber(totalUnsoldEth, 6, globalCurrency))}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "#8fb6ff",
+                          cursor: "pointer",
+                          fontSize: "0.8rem",
+                          padding: 0,
+                        }}
+                        title="Fill max sellable ETH"
+                      >
+                        Max: {formatNumber(totalUnsoldEth, 4, globalCurrency)} ETH
+                      </button>
+                    </div>
                     <input
                       className="input"
                       value={sellAmountInput}
                       onChange={(e) => setSellAmountInput(e.target.value)}
+                      inputMode="decimal"
                       placeholder="0.0200"
                     />
                   </div>
@@ -3354,7 +3397,18 @@ export const Dashboard: React.FC = () => {
                       className="input"
                       value={sellPriceInput}
                       onChange={(e) => setSellPriceInput(e.target.value)}
-                      placeholder={currentEthPrice ? String(globalCurrency === "EUR" ? currentEthPrice.eur : currentEthPrice.usd) : "0"}
+                      inputMode="decimal"
+                      placeholder={
+                        currentEthPrice
+                          ? formatInputNumber(
+                              globalCurrency === "EUR"
+                                ? currentEthPrice.eur
+                                : currentEthPrice.usd,
+                              2,
+                              globalCurrency
+                            )
+                          : "0"
+                      }
                     />
                   </div>
                   <div>
@@ -3376,8 +3430,8 @@ export const Dashboard: React.FC = () => {
 
                 {saleSimulation ? (
                   <div style={{ marginTop: 14, fontSize: "0.85rem", color: "#aaaaaa", lineHeight: 1.4 }}>
-                    <div>Requested: <strong style={{ color: "#f0f0f0" }}>{formatNumber(saleSimulation.requestedEth, 6, globalCurrency)} ETH</strong></div>
-                    <div>Fulfilled: <strong style={{ color: "#f0f0f0" }}>{formatNumber(saleSimulation.fulfilledEth, 6, globalCurrency)} ETH</strong></div>
+                    <div>You entered: <strong style={{ color: "#f0f0f0" }}>{formatNumber(saleSimulation.requestedEth, 6, globalCurrency)} ETH</strong></div>
+                    <div>Will be sold now: <strong style={{ color: "#f0f0f0" }}>{formatNumber(saleSimulation.fulfilledEth, 6, globalCurrency)} ETH</strong></div>
                     {saleSimulation.unfilledEth > EPS ? (
                       <div style={{ color: "#e4a729" }}>Not enough unsold ETH: missing {formatNumber(saleSimulation.unfilledEth, 6, globalCurrency)} ETH</div>
                     ) : null}
@@ -3420,9 +3474,9 @@ export const Dashboard: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      const amount = Number(sellAmountInput);
+                      const amount = parseInputNumber(sellAmountInput, globalCurrency);
                       const salePrice =
-                        Number(sellPriceInput) ||
+                        parseInputNumber(sellPriceInput, globalCurrency) ||
                         (currentEthPrice
                           ? globalCurrency === "EUR"
                             ? currentEthPrice.eur
@@ -3481,7 +3535,7 @@ export const Dashboard: React.FC = () => {
                       }
                       const soldAtIsoDate = sellDateIso || new Date().toISOString().slice(0, 10);
                       const salePrice =
-                        Number(sellPriceInput) ||
+                        parseInputNumber(sellPriceInput, globalCurrency) ||
                         (currentEthPrice
                           ? globalCurrency === "EUR"
                             ? currentEthPrice.eur
